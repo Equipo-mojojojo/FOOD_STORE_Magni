@@ -1,8 +1,8 @@
 """Repositorio de Ingrediente — acceso a BD."""
 import math
-from datetime import datetime, timezone
+from datetime import datetime, date, timezone
 from sqlalchemy.orm import Session
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, func
 
 from app.modules.ingredientes.model import Ingrediente
 
@@ -22,17 +22,25 @@ class IngredienteRepository:
         estado: str = "activo",
         sort_by: str = "nombre",
         sort_order: str = "asc",
+        created_from: date | None = None,
+        created_to: date | None = None,
+        updated_from: date | None = None,
+        updated_to: date | None = None,
+        starts_with: str | None = None,
     ) -> dict:
         """
-        Lista ingredientes con 6 filtros + paginación.
+        Lista ingredientes con 8 filtros + paginación.
 
         Filtros:
         1. search — buscar por nombre (ILIKE)
         2. es_alergeno — True/False/None(todos)
         3. estado — 'activo' / 'inactivo' / 'todos'
-        4. sort_by — 'nombre' / 'created_at'
+        4. sort_by — 'nombre' / 'created_at' / 'updated_at'
         5. sort_order — 'asc' / 'desc'
         6. per_page — 10 / 20 / 50
+        7. created_from / created_to — rango de fecha de creación
+        8. updated_from / updated_to — rango de fecha de actualización
+        9. starts_with — filtrar por letra inicial
         """
         query = self.db.query(Ingrediente)
 
@@ -50,6 +58,22 @@ class IngredienteRepository:
         # Filtro 2: alérgeno
         if es_alergeno is not None:
             query = query.filter(Ingrediente.es_alergeno == es_alergeno)
+
+        # Filtro 7: rango de fecha de creación
+        if created_from:
+            query = query.filter(func.date(Ingrediente.created_at) >= created_from)
+        if created_to:
+            query = query.filter(func.date(Ingrediente.created_at) <= created_to)
+
+        # Filtro 8: rango de fecha de actualización
+        if updated_from:
+            query = query.filter(func.date(Ingrediente.updated_at) >= updated_from)
+        if updated_to:
+            query = query.filter(func.date(Ingrediente.updated_at) <= updated_to)
+
+        # Filtro 9: empieza con letra
+        if starts_with:
+            query = query.filter(Ingrediente.nombre.ilike(f"{starts_with}%"))
 
         # Total para paginación
         total = query.count()

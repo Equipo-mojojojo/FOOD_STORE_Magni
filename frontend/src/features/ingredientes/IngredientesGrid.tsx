@@ -21,6 +21,11 @@ export default function IngredientesGrid({ estado }: Props) {
     estado,
     sort_by: "nombre",
     sort_order: "asc",
+    created_from: "",
+    created_to: "",
+    updated_from: "",
+    updated_to: "",
+    starts_with: "",
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Ingrediente | null>(null);
@@ -88,7 +93,7 @@ export default function IngredientesGrid({ estado }: Props) {
     }));
   };
 
-  const isDeleted = estado === "inactivo";
+  const isDeletedView = filters.estado === "inactivo";
 
   return (
     <div>
@@ -96,15 +101,15 @@ export default function IngredientesGrid({ estado }: Props) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-green-dark">
-            {isDeleted ? "Insumos Dados de Baja" : "Insumos Activos"}
+            {isDeletedView ? "Insumos Dados de Baja" : filters.estado === "todos" ? "Todos los Insumos" : "Insumos Activos"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {isDeleted
+            {isDeletedView
               ? "Ingredientes eliminados. Podes reactivarlos."
-              : "Gestion de ingredientes del sistema."}
+              : filters.estado === "todos" ? "Vista general de todos los insumos (activos y dados de baja)." : "Gestion de ingredientes del sistema."}
           </p>
         </div>
-        {!isDeleted && (
+        {!isDeletedView && (
           <button
             onClick={() => { setEditingItem(null); setModalOpen(true); }}
             className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
@@ -115,12 +120,12 @@ export default function IngredientesGrid({ estado }: Props) {
         )}
       </div>
 
-      {/* 6 Filtros */}
+      {/* Filtros Completos (8) */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {/* 1. Buscar por nombre */}
-          <div className="relative xl:col-span-2">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative xl:col-span-2 flex flex-col justify-end">
+            <Search size={16} className="absolute left-3 bottom-3 text-gray-400" />
             <input
               type="text"
               value={searchInput}
@@ -133,46 +138,91 @@ export default function IngredientesGrid({ estado }: Props) {
           </div>
 
           {/* 2. Filtrar por alérgeno */}
-          <select
-            value={filters.es_alergeno}
-            onChange={(e) => handleFilterChange("es_alergeno", e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
-          >
-            <option value="">Todos</option>
-            <option value="true">Alergenos</option>
-            <option value="false">No alergenos</option>
-          </select>
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.es_alergeno}
+              onChange={(e) => handleFilterChange("es_alergeno", e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value="">Todos los insumos</option>
+              <option value="true">Solo Alérgenos</option>
+              <option value="false">Sin Alérgenos</option>
+            </select>
+          </div>
 
-          {/* 3. Ordenar por */}
-          <select
-            value={filters.sort_by}
-            onChange={(e) => handleFilterChange("sort_by", e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
-          >
-            <option value="nombre">Ordenar: Nombre</option>
-            <option value="created_at">Ordenar: Fecha</option>
-          </select>
+          {/* 3. Letra inicial */}
+          <div className="flex flex-col justify-end">
+            <input
+              type="text"
+              maxLength={1}
+              value={filters.starts_with}
+              onChange={(e) => handleFilterChange("starts_with", e.target.value)}
+              placeholder="Empieza con letra..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
+            />
+          </div>
 
-          {/* 4. Orden asc/desc */}
-          <select
-            value={filters.sort_order}
-            onChange={(e) => handleFilterChange("sort_order", e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
-          >
-            <option value="asc">Ascendente</option>
-            <option value="desc">Descendente</option>
-          </select>
+          {/* 4. Fecha de creación */}
+          <div className="flex flex-col">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Fecha de creación</span>
+            <input
+              type="date"
+              value={filters.created_from}
+              onChange={(e) => handleFilterChange("created_from", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
+            />
+          </div>
 
-          {/* 5. Items por página */}
-          <select
-            value={filters.per_page}
-            onChange={(e) => handleFilterChange("per_page", Number(e.target.value))}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
-          >
-            <option value={10}>10 por pag</option>
-            <option value={20}>20 por pag</option>
-            <option value={50}>50 por pag</option>
-          </select>
+          {/* 5. Estado */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.estado}
+              onChange={(e) => handleFilterChange("estado", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value="activo">Solo Activos</option>
+              <option value="inactivo">Solo Eliminados</option>
+              <option value="todos">Mostrar Todos</option>
+            </select>
+          </div>
+
+          {/* 6. Ordenar por */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.sort_by}
+              onChange={(e) => handleFilterChange("sort_by", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value="nombre">Ordenar: Nombre</option>
+              <option value="created_at">Ordenar: Creación</option>
+              <option value="updated_at">Ordenar: Actualización</option>
+            </select>
+          </div>
+
+          {/* 7. Orden asc/desc */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.sort_order}
+              onChange={(e) => handleFilterChange("sort_order", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value="asc">Ascendente</option>
+              <option value="desc">Descendente</option>
+            </select>
+          </div>
+
+          {/* 8. Items por página */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.per_page}
+              onChange={(e) => handleFilterChange("per_page", Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value={10}>10 por pág</option>
+              <option value={20}>20 por pág</option>
+              <option value={50}>50 por pág</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -223,17 +273,19 @@ export default function IngredientesGrid({ estado }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {data.items.map((item) => (
+                {data.items.map((item) => {
+                  const isItemDeleted = item.deleted_at !== null;
+                  return (
                   <tr
                     key={item.id}
                     className={`transition-colors hover:bg-gray-50/50
-                      ${isDeleted ? "bg-danger-light/30" : ""}
+                      ${isItemDeleted ? "bg-danger-light/30" : ""}
                     `}
                   >
-                    <td className={`px-4 py-3 text-sm font-mono ${isDeleted ? "text-danger" : "text-gray-500"}`}>
+                    <td className={`px-4 py-3 text-sm font-mono ${isItemDeleted ? "text-danger" : "text-gray-500"}`}>
                       #{item.id}
                     </td>
-                    <td className={`px-4 py-3 text-sm font-medium ${isDeleted ? "text-danger line-through" : "text-gray-900"}`}>
+                    <td className={`px-4 py-3 text-sm font-medium ${isItemDeleted ? "text-danger line-through" : "text-gray-900"}`}>
                       {item.nombre}
                     </td>
                     <td className="px-4 py-3">
@@ -248,12 +300,12 @@ export default function IngredientesGrid({ estado }: Props) {
                         </span>
                       )}
                     </td>
-                    <td className={`px-4 py-3 text-sm ${isDeleted ? "text-danger" : "text-gray-500"}`}>
+                    <td className={`px-4 py-3 text-sm ${isItemDeleted ? "text-danger" : "text-gray-500"}`}>
                       {new Date(item.created_at).toLocaleDateString("es-AR")}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {isDeleted ? (
+                        {isItemDeleted ? (
                           <button
                             onClick={() => handleRestore(item.id)}
                             className="p-2 text-green-main hover:bg-green-pale rounded-lg transition-colors"
@@ -282,7 +334,7 @@ export default function IngredientesGrid({ estado }: Props) {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

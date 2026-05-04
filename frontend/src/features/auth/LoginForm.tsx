@@ -20,8 +20,16 @@ export default function LoginForm() {
       const res = await authApi.login({ email, password });
       login(res.access_token, res.user_id, res.nombre, res.email, res.rol);
       navigate("/");
-    } catch {
-      setError("Email o contrasena incorrectos");
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
+        const detail = axiosErr.response?.data?.detail;
+        setError(detail || `Error del servidor (${axiosErr.response?.status})`);
+      } else if (err instanceof Error) {
+        setError(`Error de red: ${err.message}`);
+      } else {
+        setError("Error desconocido al intentar iniciar sesión");
+      }
     } finally {
       setLoading(false);
     }

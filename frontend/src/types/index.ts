@@ -58,8 +58,13 @@ export interface IngredientesFilters {
   page: number;
   per_page: number;
   search: string;
-  es_alergeno: string; // "true" | "false" | ""
-  estado: string;      // "activo" | "inactivo" | "todos"
-  sort_by: string;     // "nombre" | "created_at"
-  sort_order: string;  // "asc" | "desc"
+  es_alergeno: string;      // "true" | "false" | ""
+  estado: string;            // "activo" | "inactivo" | "todos"
+  sort_by: string;           // "nombre" | "created_at" | "updated_at"
+  sort_order: string;        // "asc" | "desc"
+  created_from: string;      // "YYYY-MM-DD" | ""
+  created_to: string;        // "YYYY-MM-DD" | ""
+  updated_from: string;      // "YYYY-MM-DD" | ""
+  updated_to: string;        // "YYYY-MM-DD" | ""
+  starts_with: string;       // single letter | ""
 }

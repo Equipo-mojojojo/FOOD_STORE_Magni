@@ -25,6 +25,11 @@ class IngredienteService:
         estado: str,
         sort_by: str,
         sort_order: str,
+        created_from=None,
+        created_to=None,
+        updated_from=None,
+        updated_to=None,
+        starts_with: str | None = None,
     ) -> PaginatedIngredientes:
         """Lista ingredientes con filtros y paginación."""
         result = self.repo.get_paginated(
@@ -35,6 +40,11 @@ class IngredienteService:
             estado=estado,
             sort_by=sort_by,
             sort_order=sort_order,
+            created_from=created_from,
+            created_to=created_to,
+            updated_from=updated_from,
+            updated_to=updated_to,
+            starts_with=starts_with,
         )
         return PaginatedIngredientes(**result)
 

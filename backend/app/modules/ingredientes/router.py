@@ -1,4 +1,5 @@
-"""Router de Ingredientes — endpoints CRUD con 6 filtros y paginación."""
+"""Router de Ingredientes — endpoints CRUD con 8 filtros y paginación."""
+from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -23,12 +24,17 @@ def list_ingredientes(
     search: str | None = Query(None, description="Buscar por nombre"),
     es_alergeno: bool | None = Query(None, description="Filtrar por alérgeno"),
     estado: str = Query("activo", description="activo / inactivo / todos"),
-    sort_by: str = Query("nombre", description="Ordenar por: nombre / created_at"),
+    sort_by: str = Query("nombre", description="Ordenar por: nombre / created_at / updated_at"),
     sort_order: str = Query("asc", description="Orden: asc / desc"),
+    created_from: date | None = Query(None, description="Fecha creación desde (YYYY-MM-DD)"),
+    created_to: date | None = Query(None, description="Fecha creación hasta (YYYY-MM-DD)"),
+    updated_from: date | None = Query(None, description="Fecha actualización desde (YYYY-MM-DD)"),
+    updated_to: date | None = Query(None, description="Fecha actualización hasta (YYYY-MM-DD)"),
+    starts_with: str | None = Query(None, max_length=1, description="Filtrar por letra inicial"),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Lista ingredientes con 6 filtros y paginación."""
+    """Lista ingredientes con 8 filtros y paginación."""
     svc = IngredienteService(db)
     return svc.list_paginated(
         page=page,
@@ -38,6 +44,11 @@ def list_ingredientes(
         estado=estado,
         sort_by=sort_by,
         sort_order=sort_order,
+        created_from=created_from,
+        created_to=created_to,
+        updated_from=updated_from,
+        updated_to=updated_to,
+        starts_with=starts_with,
     )
 
 
