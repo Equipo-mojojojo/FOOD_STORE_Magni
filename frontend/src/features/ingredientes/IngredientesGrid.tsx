@@ -256,6 +256,9 @@ export default function IngredientesGrid({ estado }: Props) {
                     </div>
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Descripción
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Alergeno
                   </th>
                   <th
@@ -287,6 +290,9 @@ export default function IngredientesGrid({ estado }: Props) {
                     </td>
                     <td className={`px-4 py-3 text-sm font-medium ${isItemDeleted ? "text-danger line-through" : "text-gray-900"}`}>
                       {item.nombre}
+                    </td>
+                    <td className={`px-4 py-3 text-sm ${isItemDeleted ? "text-danger" : "text-gray-500"}`}>
+                      {item.descripcion || <span className="text-gray-300 italic">Sin descripción</span>}
                     </td>
                     <td className="px-4 py-3">
                       {item.es_alergeno ? (

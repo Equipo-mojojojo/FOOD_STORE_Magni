@@ -18,3 +18,12 @@ cd "d:\Clara\Documents\UTN\4to Cuatri\Prog4_Magni\FOOD STORE\frontend"
 
 # 3. Levantá la interfaz web
 npm run dev
+
+
+BASE DE DATOS (PostgreSQL - Docker)
+# 1. Posicionate en la raiz del proyecto el que corresponda a cada uno
+cd "d:\Clara\Documents\UTN\4to Cuatri\Prog4_Magni\FOOD STORE"
+
+# 2. Levanta Docker (Recordar abrir antes tu Docker)
+docker compose up -d
+

@@ -12,6 +12,7 @@ interface Props {
 
 export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }: Props) {
   const [nombre, setNombre] = useState("");
+  const [descripcion, setDescripcion] = useState("");
   const [esAlergeno, setEsAlergeno] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,9 +20,11 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   useEffect(() => {
     if (ingrediente) {
       setNombre(ingrediente.nombre);
+      setDescripcion(ingrediente.descripcion || "");
       setEsAlergeno(ingrediente.es_alergeno);
     } else {
       setNombre("");
+      setDescripcion("");
       setEsAlergeno(false);
     }
     setError("");
@@ -38,7 +41,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     setLoading(true);
     setError("");
     try {
-      await onSave({ nombre: nombre.trim(), es_alergeno: esAlergeno }, ingrediente?.id);
+      await onSave({ nombre: nombre.trim(), descripcion: descripcion.trim() || null, es_alergeno: esAlergeno }, ingrediente?.id);
       onClose();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string } } };
@@ -79,6 +82,16 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
               placeholder="Ej: Harina de trigo"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main focus:border-transparent outline-none text-sm"
               autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <textarea
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              placeholder="Ej: Harina de fuerza para panes"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main focus:border-transparent outline-none text-sm resize-none h-20"
             />
           </div>
 
