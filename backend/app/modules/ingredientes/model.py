@@ -1,26 +1,29 @@
-"""Modelo SQLAlchemy para Ingrediente."""
+"""
+Modelo SQLModel para Ingrediente.
+
+Migrado de SQLAlchemy Column() a SQLModel Field().
+Mismos campos, misma tabla, sintaxis más limpia.
+"""
+
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from typing import Optional
 
-from app.db.base import Base
+from sqlmodel import SQLModel, Field
 
 
-class Ingrediente(Base):
+class Ingrediente(SQLModel, table=True):
     """Entidad Ingrediente con soft-delete (deleted_at)."""
     __tablename__ = "ingredientes"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    nombre = Column(String(100), unique=True, nullable=False)
-    es_alergeno = Column(Boolean, nullable=False, default=False)
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nombre: str = Field(max_length=100, unique=True)
+    descripcion: Optional[str] = Field(default=None)
+    es_alergeno: bool = Field(default=False)
+
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
     )
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
     )
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_at: Optional[datetime] = Field(default=None)

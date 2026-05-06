@@ -6,12 +6,14 @@ from pydantic import BaseModel
 class IngredienteCreate(BaseModel):
     """Schema para crear un ingrediente."""
     nombre: str
+    descripcion: str | None = None
     es_alergeno: bool = False
 
 
 class IngredienteUpdate(BaseModel):
     """Schema para actualizar un ingrediente."""
     nombre: str | None = None
+    descripcion: str | None = None
     es_alergeno: bool | None = None
 
 
@@ -19,6 +21,7 @@ class IngredienteResponse(BaseModel):
     """Schema de respuesta de ingrediente."""
     id: int
     nombre: str
+    descripcion: str | None = None
     es_alergeno: bool
     created_at: datetime
     updated_at: datetime

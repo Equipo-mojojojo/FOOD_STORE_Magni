@@ -1,10 +1,9 @@
 """Router de Ingredientes — endpoints CRUD con 8 filtros y paginación."""
 from datetime import date
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 
-from app.db.session import get_db
-from app.core.dependencies import get_current_user
+from app.core.uow import UnitOfWork, get_uow
+from app.core.deps import get_current_user
 from app.modules.usuarios.model import Usuario
 from app.modules.ingredientes.service import IngredienteService
 from app.modules.ingredientes.schemas import (
@@ -31,11 +30,11 @@ def list_ingredientes(
     updated_from: date | None = Query(None, description="Fecha actualización desde (YYYY-MM-DD)"),
     updated_to: date | None = Query(None, description="Fecha actualización hasta (YYYY-MM-DD)"),
     starts_with: str | None = Query(None, max_length=1, description="Filtrar por letra inicial"),
-    db: Session = Depends(get_db),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
     """Lista ingredientes con 8 filtros y paginación."""
-    svc = IngredienteService(db)
+    svc = IngredienteService(uow)
     return svc.list_paginated(
         page=page,
         per_page=per_page,
@@ -55,22 +54,22 @@ def list_ingredientes(
 @router.post("", response_model=IngredienteResponse, status_code=201)
 def create_ingrediente(
     data: IngredienteCreate,
-    db: Session = Depends(get_db),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
     """Crea un nuevo ingrediente."""
-    svc = IngredienteService(db)
+    svc = IngredienteService(uow)
     return svc.create(data)
 
 
 @router.get("/{ingrediente_id}", response_model=IngredienteResponse)
 def get_ingrediente(
     ingrediente_id: int,
-    db: Session = Depends(get_db),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
     """Obtiene un ingrediente por ID."""
-    svc = IngredienteService(db)
+    svc = IngredienteService(uow)
     return svc.get_by_id(ingrediente_id)
 
 
@@ -78,31 +77,31 @@ def get_ingrediente(
 def update_ingrediente(
     ingrediente_id: int,
     data: IngredienteUpdate,
-    db: Session = Depends(get_db),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
     """Actualiza un ingrediente."""
-    svc = IngredienteService(db)
+    svc = IngredienteService(uow)
     return svc.update(ingrediente_id, data)
 
 
 @router.delete("/{ingrediente_id}", response_model=IngredienteResponse)
 def delete_ingrediente(
     ingrediente_id: int,
-    db: Session = Depends(get_db),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
     """Soft-delete de un ingrediente."""
-    svc = IngredienteService(db)
+    svc = IngredienteService(uow)
     return svc.soft_delete(ingrediente_id)
 
 
 @router.patch("/{ingrediente_id}/restore", response_model=IngredienteResponse)
 def restore_ingrediente(
     ingrediente_id: int,
-    db: Session = Depends(get_db),
+    uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
     """Restaura un ingrediente dado de baja."""
-    svc = IngredienteService(db)
+    svc = IngredienteService(uow)
     return svc.restore(ingrediente_id)

@@ -1,8 +1,8 @@
 """Servicio de Ingrediente — lógica de negocio."""
-from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.modules.ingredientes.repository import IngredienteRepository
+from app.core.uow import UnitOfWork
+from app.modules.ingredientes.model import Ingrediente
 from app.modules.ingredientes.schemas import (
     IngredienteCreate,
     IngredienteUpdate,
@@ -13,8 +13,8 @@ from app.modules.ingredientes.schemas import (
 class IngredienteService:
     """Capa de servicio para ingredientes."""
 
-    def __init__(self, db: Session):
-        self.repo = IngredienteRepository(db)
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
 
     def list_paginated(
         self,
@@ -32,25 +32,27 @@ class IngredienteService:
         starts_with: str | None = None,
     ) -> PaginatedIngredientes:
         """Lista ingredientes con filtros y paginación."""
-        result = self.repo.get_paginated(
-            page=page,
-            per_page=per_page,
-            search=search,
-            es_alergeno=es_alergeno,
-            estado=estado,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            created_from=created_from,
-            created_to=created_to,
-            updated_from=updated_from,
-            updated_to=updated_to,
-            starts_with=starts_with,
-        )
+        with self.uow:
+            result = self.uow.ingredientes.get_paginated(
+                page=page,
+                per_page=per_page,
+                search=search,
+                es_alergeno=es_alergeno,
+                estado=estado,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                created_from=created_from,
+                created_to=created_to,
+                updated_from=updated_from,
+                updated_to=updated_to,
+                starts_with=starts_with,
+            )
         return PaginatedIngredientes(**result)
 
     def get_by_id(self, ingrediente_id: int):
         """Obtiene un ingrediente por ID o lanza 404."""
-        ingrediente = self.repo.get_by_id(ingrediente_id)
+        with self.uow:
+            ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
         if not ingrediente:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -60,30 +62,77 @@ class IngredienteService:
 
     def create(self, data: IngredienteCreate):
         """Crea un nuevo ingrediente."""
-        return self.repo.create(nombre=data.nombre, es_alergeno=data.es_alergeno)
+        from sqlalchemy.exc import IntegrityError
+        with self.uow:
+            ingrediente = Ingrediente(nombre=data.nombre, descripcion=data.descripcion, es_alergeno=data.es_alergeno)
+            try:
+                self.uow.ingredientes.add(ingrediente)
+                self.uow.commit() # Ensure it gets the ID before returning
+                self.uow.session.refresh(ingrediente)
+            except IntegrityError:
+                self.uow.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Este ingrediente ya existe"
+                )
+        return ingrediente
 
     def update(self, ingrediente_id: int, data: IngredienteUpdate):
         """Actualiza un ingrediente existente."""
-        ingrediente = self.get_by_id(ingrediente_id)
-        update_data = data.model_dump(exclude_unset=True)
-        return self.repo.update(ingrediente, **update_data)
+        from sqlalchemy.exc import IntegrityError
+        with self.uow:
+            ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
+            if not ingrediente:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ingrediente no encontrado",
+                )
+            update_data = data.model_dump(exclude_unset=True)
+            for key, value in update_data.items():
+                setattr(ingrediente, key, value)
+            try:
+                self.uow.ingredientes.update(ingrediente)
+                self.uow.commit()
+            except IntegrityError:
+                self.uow.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Este ingrediente ya existe"
+                )
+        return ingrediente
 
     def soft_delete(self, ingrediente_id: int):
         """Soft-delete de un ingrediente."""
-        ingrediente = self.get_by_id(ingrediente_id)
-        if ingrediente.deleted_at is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El ingrediente ya está dado de baja",
-            )
-        return self.repo.soft_delete(ingrediente)
+        with self.uow:
+            ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
+            if not ingrediente:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ingrediente no encontrado",
+                )
+            if ingrediente.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El ingrediente ya está dado de baja",
+                )
+            self.uow.ingredientes.soft_delete(ingrediente)
+        return ingrediente
 
     def restore(self, ingrediente_id: int):
         """Restaura un ingrediente dado de baja."""
-        ingrediente = self.get_by_id(ingrediente_id)
-        if ingrediente.deleted_at is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El ingrediente ya está activo",
-            )
-        return self.repo.restore(ingrediente)
+        with self.uow:
+            # Note: get_by_id on ingrediente repo allows getting inactive as well.
+            # The BaseRepository get_by_id doesn't filter by deleted_at unless overridden.
+            ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
+            if not ingrediente:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ingrediente no encontrado",
+                )
+            if ingrediente.deleted_at is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El ingrediente ya está activo",
+                )
+            self.uow.ingredientes.restore(ingrediente)
+        return ingrediente
