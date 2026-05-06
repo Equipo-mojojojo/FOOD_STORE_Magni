@@ -49,6 +49,62 @@ class IngredienteService:
             )
         return PaginatedIngredientes(**result)
 
+    def export_csv(
+        self,
+        search: str | None,
+        es_alergeno: bool | None,
+        estado: str,
+        sort_by: str,
+        sort_order: str,
+        created_from=None,
+        created_to=None,
+        updated_from=None,
+        updated_to=None,
+        starts_with: str | None = None,
+    ) -> str:
+        """Exporta ingredientes a formato CSV aplicando filtros."""
+        import csv
+        import io
+        
+        with self.uow:
+            result = self.uow.ingredientes.get_paginated(
+                page=1,
+                per_page=1000000, # Un límite grande para traer todos los de la consulta
+                search=search,
+                es_alergeno=es_alergeno,
+                estado=estado,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                created_from=created_from,
+                created_to=created_to,
+                updated_from=updated_from,
+                updated_to=updated_to,
+                starts_with=starts_with,
+            )
+        
+        output = io.StringIO()
+        # Generar CSV compatible con Excel (separador coma/punto y coma según la región del Excel del usuario, dejamos coma por defecto que es universal en CSVs standard)
+        writer = csv.writer(output, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+        # Cabeceras
+        writer.writerow(["ID", "Nombre", "Descripcion", "Alergeno", "Estado", "Fecha Creacion", "Fecha Actualizacion"])
+        
+        for item in result["items"]:
+            estado_txt = "Dado de baja" if item.deleted_at else "Activo"
+            alergeno_txt = "Si" if item.es_alergeno else "No"
+            created_txt = item.created_at.strftime("%Y-%m-%d %H:%M") if item.created_at else ""
+            updated_txt = item.updated_at.strftime("%Y-%m-%d %H:%M") if item.updated_at else ""
+            writer.writerow([
+                item.id,
+                item.nombre,
+                item.descripcion or "",
+                alergeno_txt,
+                estado_txt,
+                created_txt,
+                updated_txt
+            ])
+            
+        return output.getvalue()
+
     def get_by_id(self, ingrediente_id: int):
         """Obtiene un ingrediente por ID o lanza 404."""
         with self.uow:

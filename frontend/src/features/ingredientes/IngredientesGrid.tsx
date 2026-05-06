@@ -1,6 +1,6 @@
 /** Grilla de ingredientes con 6 filtros y paginación. */
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Edit2, Trash2, RotateCcw, AlertTriangle, ArrowUpDown } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, RotateCcw, AlertTriangle, ArrowUpDown, Download } from "lucide-react";
 import { ingredientesApi } from "../../api/ingredientesApi";
 import Pagination from "../../components/Pagination";
 import IngredienteForm from "./IngredienteForm";
@@ -84,6 +84,23 @@ export default function IngredientesGrid({ estado }: Props) {
     fetchData();
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const blob = await ingredientesApi.exportCsv(filters);
+      // Crear URL temporal para descargar el Blob
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `ingredientes_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (err) {
+      console.error("Error exportando a CSV:", err);
+      alert("Error al exportar los datos.");
+    }
+  };
+
   const toggleSort = (col: string) => {
     setFilters((f) => ({
       ...f,
@@ -109,15 +126,24 @@ export default function IngredientesGrid({ estado }: Props) {
               : filters.estado === "todos" ? "Vista general de todos los insumos (activos y dados de baja)." : "Gestion de ingredientes del sistema."}
           </p>
         </div>
-        {!isDeletedView && (
+        <div className="flex gap-2">
           <button
-            onClick={() => { setEditingItem(null); setModalOpen(true); }}
-            className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+            onClick={handleExportCsv}
+            className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
           >
-            <Plus size={18} />
-            Nuevo Insumo
+            <Download size={18} />
+            Exportar CSV
           </button>
-        )}
+          {!isDeletedView && (
+            <button
+              onClick={() => { setEditingItem(null); setModalOpen(true); }}
+              className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+            >
+              <Plus size={18} />
+              Nuevo Insumo
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filtros Completos (8) */}

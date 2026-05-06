@@ -94,7 +94,7 @@ export default function LoginForm() {
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          admin@foodstore.com / admin123
+          admin@foodstore.com / admin
         </p>
       </div>
     </div>
