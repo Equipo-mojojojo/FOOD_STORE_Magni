@@ -48,7 +48,7 @@ export default function Sidebar({ open, onClose }: Props) {
             <NavLink
               key={to}
               to={to}
-              end={to === "/"}
+              end
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200

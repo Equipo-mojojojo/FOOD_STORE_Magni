@@ -29,6 +29,27 @@ export const ingredientesApi = {
     return res.data;
   },
 
+  exportCsv: async (filters: IngredientesFilters): Promise<Blob> => {
+    const params: Record<string, string | number> = {
+      estado: filters.estado,
+      sort_by: filters.sort_by,
+      sort_order: filters.sort_order,
+    };
+    if (filters.search) params.search = filters.search;
+    if (filters.es_alergeno !== "") params.es_alergeno = filters.es_alergeno;
+    if (filters.created_from) params.created_from = filters.created_from;
+    if (filters.created_to) params.created_to = filters.created_to;
+    if (filters.updated_from) params.updated_from = filters.updated_from;
+    if (filters.updated_to) params.updated_to = filters.updated_to;
+    if (filters.starts_with) params.starts_with = filters.starts_with;
+
+    const res = await axiosClient.get("/ingredientes/export/csv", {
+      params,
+      responseType: "blob", // Fundamental para procesar el CSV binario sin corromperlo
+    });
+    return res.data;
+  },
+
   getById: async (id: number): Promise<Ingrediente> => {
     const res = await axiosClient.get<Ingrediente>(`/ingredientes/${id}`);
     return res.data;
