@@ -32,7 +32,10 @@ python -m venv .venv
 # 3. Instalar dependencias (SOLO SI HAY CAMBIOS en requirements.txt)
 pip install -r requirements.txt
 
-# 4. Levantar el servidor
+# 4. Ejecutar el seed — Carga usuario admin y datos iniciales (SOLO LA PRIMERA VEZ)
+python -m app.db.seed
+
+# 5. Levantar el servidor
 uvicorn app.main:app --reload --port 8000
 ```
 *El backend estará corriendo en `http://localhost:8000` y podés ver la documentación en `http://localhost:8000/docs`.*
@@ -53,5 +56,17 @@ npm install
 npm run dev
 ```
 *El frontend estará corriendo en `http://localhost:5173`. Hacé Ctrl+Click en la terminal para abrirlo en tu navegador.*
+
+---
+
+## 📝 Credenciales por Defecto
+
+Después de ejecutar el seed, podés iniciar sesión con:
+
+- **Email:** `admin@foodstore.com`
+- **Contraseña:** `admin`
+- **Rol:** `ADMIN`
+
+Estas credenciales se crean automáticamente cuando ejecutás `python -m app.db.seed`.
 
 

@@ -1,18 +1,17 @@
 /** Grilla de ingredientes con 6 filtros y paginación. */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Edit2, Trash2, RotateCcw, AlertTriangle, ArrowUpDown, Download } from "lucide-react";
 import { ingredientesApi } from "../../api/ingredientesApi";
 import Pagination from "../../components/Pagination";
 import IngredienteForm from "./IngredienteForm";
 import type { Ingrediente, IngredientesFilters, PaginatedResponse, IngredienteCreate } from "../../types";
+import { useIngredientes, useCrearIngrediente, useActualizarIngrediente, useEliminarIngrediente, useRestaurarIngrediente } from "../../hooks/useIngredientes";
 
 interface Props {
   estado: "activo" | "inactivo";
 }
 
 export default function IngredientesGrid({ estado }: Props) {
-  const [data, setData] = useState<PaginatedResponse<Ingrediente> | null>(null);
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<IngredientesFilters>({
     page: 1,
     per_page: 10,
@@ -31,21 +30,12 @@ export default function IngredientesGrid({ estado }: Props) {
   const [editingItem, setEditingItem] = useState<Ingrediente | null>(null);
   const [searchInput, setSearchInput] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await ingredientesApi.list(filters);
-      setData(result);
-    } catch (err) {
-      console.error("Error cargando ingredientes:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const { data, isLoading: loading } = useIngredientes(filters);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const crearMut = useCrearIngrediente();
+  const actualizarMut = useActualizarIngrediente();
+  const eliminarMut = useEliminarIngrediente();
+  const restaurarMut = useRestaurarIngrediente();
 
   // Actualizar estado cuando cambia la prop
   useEffect(() => {
@@ -66,22 +56,20 @@ export default function IngredientesGrid({ estado }: Props) {
 
   const handleSave = async (formData: IngredienteCreate, id?: number) => {
     if (id) {
-      await ingredientesApi.update(id, formData);
+      await actualizarMut.mutateAsync({ id, data: formData });
     } else {
-      await ingredientesApi.create(formData);
+      await crearMut.mutateAsync(formData);
     }
-    fetchData();
+    setModalOpen(false);
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Dar de baja este ingrediente?")) return;
-    await ingredientesApi.delete(id);
-    fetchData();
+    await eliminarMut.mutateAsync(id);
   };
 
   const handleRestore = async (id: number) => {
-    await ingredientesApi.restore(id);
-    fetchData();
+    await restaurarMut.mutateAsync(id);
   };
 
   const handleExportCsv = async () => {
