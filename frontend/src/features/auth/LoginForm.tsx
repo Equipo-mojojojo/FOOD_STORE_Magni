@@ -17,8 +17,7 @@ export default function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const res = await authApi.login({ email, password });
-      login(res.access_token, res.user_id, res.nombre, res.email, res.rol);
+      await login({ email, password });
       navigate("/");
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {

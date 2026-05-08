@@ -10,11 +10,11 @@ const axiosClient = axios.create({
 
 // Interceptor: agrega token automáticamente
 axiosClient.interceptors.request.use((config) => {
-  const stored = localStorage.getItem("auth-storage");
+  const stored = localStorage.getItem("authStore");
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      const token = parsed?.state?.token;
+      const token = parsed?.state?.accessToken;
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -30,7 +30,7 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("auth-storage");
+      localStorage.removeItem("authStore");
       window.location.href = "/login";
     }
     return Promise.reject(error);

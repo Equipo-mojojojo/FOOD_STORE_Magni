@@ -8,15 +8,9 @@ Uso:
 Requiere PostgreSQL corriendo con las variables de .env configuradas.
 
 Crea:
-  - admin / admin  (rol=ADMIN)
+  - Administrador / admin  (rol=ADMIN)
   - 10 ingredientes básicos
 """
-
-import sys
-from pathlib import Path
-
-# Agregar la carpeta backend al path para permitir imports relativos
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlmodel import Session, select
 from app.core.database import engine, create_all_tables

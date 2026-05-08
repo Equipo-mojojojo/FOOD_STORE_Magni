@@ -2,13 +2,12 @@
 import { Menu, LogOut } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
+import { useUiStore } from "../store/uiStore";
 
-interface Props {
-  onToggleSidebar: () => void;
-}
-
-export default function Navbar({ onToggleSidebar }: Props) {
-  const { nombre, logout } = useAuthStore();
+export default function Navbar() {
+  const usuario = useAuthStore((s) => s.usuario);
+  const logout = useAuthStore((s) => s.logout);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -20,7 +19,7 @@ export default function Navbar({ onToggleSidebar }: Props) {
     <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-3">
         <button
-          onClick={onToggleSidebar}
+          onClick={toggleSidebar}
           className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <Menu size={24} className="text-green-dark" />
@@ -32,7 +31,7 @@ export default function Navbar({ onToggleSidebar }: Props) {
 
       <div className="flex items-center gap-4">
         <span className="text-sm text-gray-600 hidden sm:block">
-          Hola, <strong className="text-green-dark">{nombre}</strong>
+          Hola, <strong className="text-green-dark">{usuario?.nombre || 'Usuario'}</strong>
         </span>
         <button
           onClick={handleLogout}
