@@ -8,7 +8,7 @@ Uso:
 Requiere PostgreSQL corriendo con las variables de .env configuradas.
 
 Crea:
-  - admin / admin123  (rol=ADMIN)
+  - Administrador / admin  (rol=ADMIN)
   - 10 ingredientes básicos
 """
 

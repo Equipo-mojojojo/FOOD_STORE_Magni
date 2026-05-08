@@ -1,7 +1,7 @@
 /** App principal — Router + Layout con Sidebar. */
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState } from "react";
 import { useAuthStore } from "./store/authStore";
+import { useUiStore } from "./store/uiStore";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
@@ -11,13 +11,15 @@ import IngredientesPage from "./pages/IngredientesPage";
 import IngredientesDeletedPage from "./pages/IngredientesDeletedPage";
 
 function AppLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarOpen = useUiStore((s) => s.sidebarOpen);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const closeSidebar = useUiStore((s) => s.closeSidebar);
 
   return (
     <div className="flex h-screen overflow-hidden bg-cream">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <Navbar onToggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<HomePage />} />

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
 export default function HomePage() {
-  const nombre = useAuthStore((s) => s.nombre);
+  const nombre = useAuthStore((s) => s.usuario?.nombre || 'Usuario');
 
   const cards = [
     {

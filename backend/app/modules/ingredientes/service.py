@@ -123,7 +123,7 @@ class IngredienteService:
             ingrediente = Ingrediente(nombre=data.nombre, descripcion=data.descripcion, es_alergeno=data.es_alergeno)
             try:
                 self.uow.ingredientes.add(ingrediente)
-                self.uow.commit() # Ensure it gets the ID before returning
+                self.uow.session.flush()  
                 self.uow.session.refresh(ingrediente)
             except IntegrityError:
                 self.uow.rollback()
@@ -148,7 +148,7 @@ class IngredienteService:
                 setattr(ingrediente, key, value)
             try:
                 self.uow.ingredientes.update(ingrediente)
-                self.uow.commit()
+                self.uow.session.flush()
             except IntegrityError:
                 self.uow.rollback()
                 raise HTTPException(
