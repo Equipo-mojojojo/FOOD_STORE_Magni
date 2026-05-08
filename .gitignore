@@ -63,3 +63,7 @@ Thumbs.db
 
 # Scripts temporales
 check_db.py
+
+# Documentación de referencia local / material del integrador
+2026Integrador/
+.tmp_integrador_text/

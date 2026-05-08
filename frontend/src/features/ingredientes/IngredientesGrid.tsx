@@ -4,11 +4,24 @@ import { Plus, Search, Edit2, Trash2, RotateCcw, AlertTriangle, ArrowUpDown, Dow
 import { ingredientesApi } from "../../api/ingredientesApi";
 import Pagination from "../../components/Pagination";
 import IngredienteForm from "./IngredienteForm";
-import type { Ingrediente, IngredientesFilters, PaginatedResponse, IngredienteCreate } from "../../types";
+import type { Ingrediente, IngredientesFilters, IngredienteCreate } from "../../types";
 import { useIngredientes, useCrearIngrediente, useActualizarIngrediente, useEliminarIngrediente, useRestaurarIngrediente } from "../../hooks/useIngredientes";
+
+const ARGENTINA_TIME_ZONE = "America/Argentina/Buenos_Aires";
 
 interface Props {
   estado: "activo" | "inactivo";
+}
+
+function parseBackendDate(value: string) {
+  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/.test(value);
+  return new Date(hasTimezone ? value : `${value}Z`);
+}
+
+function formatArgentinaDate(value: string) {
+  return parseBackendDate(value).toLocaleDateString("es-AR", {
+    timeZone: ARGENTINA_TIME_ZONE,
+  });
 }
 
 export default function IngredientesGrid({ estado }: Props) {
@@ -42,8 +55,17 @@ export default function IngredientesGrid({ estado }: Props) {
     setFilters((f) => ({ ...f, estado, page: 1 }));
   }, [estado]);
 
+  // Buscar mientras se escribe, con debounce para no disparar una request por tecla.
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setFilters((f) => ({ ...f, search: searchInput.trim(), page: 1 }));
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchInput]);
+
   const handleSearch = () => {
-    setFilters((f) => ({ ...f, search: searchInput, page: 1 }));
+    setFilters((f) => ({ ...f, search: searchInput.trim(), page: 1 }));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -52,6 +74,15 @@ export default function IngredientesGrid({ estado }: Props) {
 
   const handleFilterChange = (key: keyof IngredientesFilters, value: string | number) => {
     setFilters((f) => ({ ...f, [key]: value, page: 1 }));
+  };
+
+  const handleCreatedDateChange = (value: string) => {
+    setFilters((f) => ({
+      ...f,
+      created_from: value,
+      created_to: value,
+      page: 1,
+    }));
   };
 
   const handleSave = async (formData: IngredienteCreate, id?: number) => {
@@ -98,7 +129,7 @@ export default function IngredientesGrid({ estado }: Props) {
     }));
   };
 
-  const isDeletedView = filters.estado === "inactivo";
+  const isDeletedView = estado === "inactivo";
 
   return (
     <div>
@@ -106,12 +137,12 @@ export default function IngredientesGrid({ estado }: Props) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-green-dark">
-            {isDeletedView ? "Insumos Dados de Baja" : filters.estado === "todos" ? "Todos los Insumos" : "Insumos Activos"}
+            {isDeletedView ? "Insumos Dados de Baja" : "Insumos Activos"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {isDeletedView
               ? "Ingredientes eliminados. Podes reactivarlos."
-              : filters.estado === "todos" ? "Vista general de todos los insumos (activos y dados de baja)." : "Gestion de ingredientes del sistema."}
+              : "Gestion de ingredientes del sistema."}
           </p>
         </div>
         <div className="flex gap-2">
@@ -134,7 +165,7 @@ export default function IngredientesGrid({ estado }: Props) {
         </div>
       </div>
 
-      {/* Filtros Completos (8) */}
+      {/* Filtros */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {/* 1. Buscar por nombre */}
@@ -158,49 +189,24 @@ export default function IngredientesGrid({ estado }: Props) {
               onChange={(e) => handleFilterChange("es_alergeno", e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
             >
-              <option value="">Todos los insumos</option>
+              <option value="">Todos</option>
               <option value="true">Solo Alérgenos</option>
               <option value="false">Sin Alérgenos</option>
             </select>
           </div>
 
-          {/* 3. Letra inicial */}
-          <div className="flex flex-col justify-end">
-            <input
-              type="text"
-              maxLength={1}
-              value={filters.starts_with}
-              onChange={(e) => handleFilterChange("starts_with", e.target.value)}
-              placeholder="Empieza con letra..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
-            />
-          </div>
-
-          {/* 4. Fecha de creación */}
+          {/* 3. Fecha de creación */}
           <div className="flex flex-col">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Fecha de creación</span>
+            <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Creado el día</span>
             <input
               type="date"
               value={filters.created_from}
-              onChange={(e) => handleFilterChange("created_from", e.target.value)}
+              onChange={(e) => handleCreatedDateChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
             />
           </div>
 
-          {/* 5. Estado */}
-          <div className="flex flex-col justify-end">
-            <select
-              value={filters.estado}
-              onChange={(e) => handleFilterChange("estado", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
-            >
-              <option value="activo">Solo Activos</option>
-              <option value="inactivo">Solo Eliminados</option>
-              <option value="todos">Mostrar Todos</option>
-            </select>
-          </div>
-
-          {/* 6. Ordenar por */}
+          {/* 4. Ordenar por */}
           <div className="flex flex-col justify-end">
             <select
               value={filters.sort_by}
@@ -213,7 +219,7 @@ export default function IngredientesGrid({ estado }: Props) {
             </select>
           </div>
 
-          {/* 7. Orden asc/desc */}
+          {/* 5. Orden asc/desc */}
           <div className="flex flex-col justify-end">
             <select
               value={filters.sort_order}
@@ -225,7 +231,7 @@ export default function IngredientesGrid({ estado }: Props) {
             </select>
           </div>
 
-          {/* 8. Items por página */}
+          {/* 6. Items por página */}
           <div className="flex flex-col justify-end">
             <select
               value={filters.per_page}
@@ -321,7 +327,7 @@ export default function IngredientesGrid({ estado }: Props) {
                       )}
                     </td>
                     <td className={`px-4 py-3 text-sm ${isItemDeleted ? "text-danger" : "text-gray-500"}`}>
-                      {new Date(item.created_at).toLocaleDateString("es-AR")}
+                      {formatArgentinaDate(item.created_at)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
