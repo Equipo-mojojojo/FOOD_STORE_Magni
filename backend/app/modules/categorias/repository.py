@@ -1,0 +1,116 @@
+from datetime import date, datetime, timezone
+from typing import List
+from sqlmodel import Session, select
+
+from app.core.base_repository import BaseRepository
+from app.modules.categorias.model import Categoria
+
+
+class CategoriaRepository(BaseRepository[Categoria]):
+    def __init__(self, session: Session):
+        super().__init__(Categoria, session)
+
+    def soft_delete(self, categoria: Categoria) -> Categoria:
+        """Soft-delete: setea deleted_at."""
+        categoria.deleted_at = datetime.now(timezone.utc)
+        return self.update(categoria)
+
+    def restore(self, categoria: Categoria) -> Categoria:
+        """Restaura una categoría dada de baja."""
+        categoria.deleted_at = None
+        return self.update(categoria)
+
+    def get_tree(self, estado: str = "activo") -> List[Categoria]:
+        """Retorna todas las categorías activas para armar el árbol."""
+        stmt = select(Categoria)
+
+        # Estado (Soft delete)
+        if estado == "activo":
+            stmt = stmt.where(Categoria.deleted_at.is_(None))
+        elif estado == "inactivo":
+            stmt = stmt.where(Categoria.deleted_at.isnot(None))
+
+        stmt = stmt.order_by(Categoria.nombre)
+        result = self.session.exec(stmt)
+        return list(result.all())
+
+    def get_paginated(
+        self,
+        page: int = 1,
+        per_page: int = 10,
+        search: str | None = None,
+        estado: str = "activo",
+        sort_by: str = "nombre",
+        sort_order: str = "asc",
+        created_from: date | None = None,
+        created_to: date | None = None,
+        updated_from: date | None = None,
+        updated_to: date | None = None,
+        starts_with: str | None = None,
+    ) -> dict:
+        """Lista categorías con filtros avanzados + paginación."""
+        import math
+        from sqlalchemy import asc, desc, func, or_
+        
+        query = select(Categoria)
+
+        # Estado (Soft delete)
+        if estado == "activo":
+            query = query.where(Categoria.deleted_at.is_(None))
+        elif estado == "inactivo":
+            query = query.where(Categoria.deleted_at.isnot(None))
+
+        if search:
+            query = query.where(
+                or_(
+                    Categoria.nombre.ilike(f"%{search}%"),
+                    Categoria.descripcion.ilike(f"%{search}%")
+                )
+            )
+
+        if created_from:
+            query = query.where(func.date(Categoria.created_at) >= created_from)
+        if created_to:
+            query = query.where(func.date(Categoria.created_at) <= created_to)
+
+        if updated_from:
+            query = query.where(func.date(Categoria.updated_at) >= updated_from)
+        if updated_to:
+            query = query.where(func.date(Categoria.updated_at) <= updated_to)
+
+        if starts_with:
+            query = query.where(Categoria.nombre.ilike(f"{starts_with}%"))
+
+        # Total count (antes de paginar)
+        total = len(self.session.exec(query).all())
+
+        # Sort
+        sort_column = getattr(Categoria, sort_by, Categoria.nombre)
+        order_func = asc if sort_order == "asc" else desc
+        query = query.order_by(order_func(sort_column))
+
+        # Pagination
+        pages = math.ceil(total / per_page) if total > 0 else 1
+        offset = (page - 1) * per_page
+        items = self.session.exec(query.offset(offset).limit(per_page)).all()
+
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": pages,
+        }
+
+    def has_active_products(self, categoria_id: int) -> bool:
+        """Verifica si la categoría tiene productos activos asociados."""
+        from app.modules.productos.model import ProductoCategoria, Producto
+        stmt = (
+            select(ProductoCategoria)
+            .join(Producto)
+            .where(ProductoCategoria.categoria_id == categoria_id)
+            .where(Producto.deleted_at.is_(None))
+            .limit(1)
+        )
+        result = self.session.exec(stmt)
+        return result.first() is not None

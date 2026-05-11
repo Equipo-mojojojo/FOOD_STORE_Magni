@@ -43,7 +43,13 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
             query = query.where(Ingrediente.deleted_at.isnot(None))
 
         if search:
-            query = query.where(Ingrediente.nombre.ilike(f"%{search}%"))
+            from sqlalchemy import or_
+            query = query.where(
+                or_(
+                    Ingrediente.nombre.ilike(f"%{search}%"),
+                    Ingrediente.descripcion.ilike(f"%{search}%")
+                )
+            )
 
         if es_alergeno is not None:
             query = query.where(Ingrediente.es_alergeno == es_alergeno)

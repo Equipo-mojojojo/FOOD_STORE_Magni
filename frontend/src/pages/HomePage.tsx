@@ -1,5 +1,4 @@
-/** Página Home / Dashboard. */
-import { Package, PackageX, ShieldCheck } from "lucide-react";
+import { Package, PackageX, ShieldCheck, Tags, ShoppingBag, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
@@ -8,18 +7,25 @@ export default function HomePage() {
 
   const cards = [
     {
-      title: "Insumos Activos",
-      description: "Gestion y busqueda de ingredientes activos del sistema",
+      title: "Productos",
+      description: "Gestión de catálogo, precios y stock de productos finales",
+      icon: ShoppingBag,
+      to: "/productos",
+      color: "bg-orange-500",
+    },
+    {
+      title: "Categorías",
+      description: "Organización jerárquica del menú y agrupación de productos",
+      icon: Tags,
+      to: "/categorias",
+      color: "bg-blue-500",
+    },
+    {
+      title: "Ingrediente",
+      description: "Administración de ingredientes y materias primas del sistema",
       icon: Package,
       to: "/ingredientes",
       color: "bg-green-main",
-    },
-    {
-      title: "Insumos Dados de Baja",
-      description: "Ingredientes eliminados. Posibilidad de reactivarlos.",
-      icon: PackageX,
-      to: "/ingredientes/dados-de-baja",
-      color: "bg-danger",
     },
   ];
 
@@ -38,7 +44,7 @@ export default function HomePage() {
 
       {/* Quick access cards */}
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Acceso rapido</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {cards.map((card) => (
           <Link
             key={card.to}

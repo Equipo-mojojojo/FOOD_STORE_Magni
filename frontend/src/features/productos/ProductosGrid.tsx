@@ -1,0 +1,326 @@
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Plus, Search, Edit2, Trash2, Package, Filter, X, RotateCcw } from "lucide-react";
+import { useProductos, useEliminarProducto, useCrearProducto, useActualizarProducto, useRestaurarProducto } from "../../hooks/useProductos";
+import { useCategoriasFlat } from "../../hooks/useCategorias";
+import Pagination from "../../components/Pagination";
+import ProductoForm from "./ProductoForm";
+import type { Producto, ProductosFilters, ProductoCreate } from "../../types";
+
+export default function ProductosGrid() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const catParam = searchParams.get("categoria");
+
+  const [filters, setFilters] = useState<ProductosFilters>({
+    page: 1,
+    per_page: 10,
+    search: "",
+    categoria: catParam ? Number(catParam) : undefined,
+    disponible: "",
+    estado: "activo",
+    sort_by: "nombre",
+    sort_order: "asc",
+    created_from: "",
+    created_to: "",
+    updated_from: "",
+    updated_to: "",
+    starts_with: "",
+  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Producto | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+
+  // Sincronizar filtros si cambia el parámetro de URL
+  useEffect(() => {
+    if (catParam) {
+      setFilters(prev => ({ ...prev, categoria: Number(catParam), page: 1 }));
+    }
+  }, [catParam]);
+
+  // Debounce para búsqueda
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setFilters((f) => ({ ...f, search: searchInput.trim(), page: 1 }));
+    }, 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  const { data, isLoading } = useProductos(filters);
+  const { data: categorias } = useCategoriasFlat();
+
+  const crearMut = useCrearProducto();
+  const actualizarMut = useActualizarProducto();
+  const eliminarMut = useEliminarProducto();
+  const restaurarMut = useRestaurarProducto();
+
+  const handleFilterChange = (key: keyof ProductosFilters, value: any) => {
+    setFilters((f) => ({ ...f, [key]: value, page: 1 }));
+  };
+
+  const handleSave = async (formData: ProductoCreate, id?: number) => {
+    if (id) {
+      await actualizarMut.mutateAsync({ id, data: formData });
+    } else {
+      await crearMut.mutateAsync(formData);
+    }
+    setModalOpen(false);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Dar de baja este producto?")) return;
+    await eliminarMut.mutateAsync(id);
+  };
+
+  const handleRestore = async (id: number) => {
+    await restaurarMut.mutateAsync(id);
+  };
+
+  const isDeletedView = filters.estado === "inactivo";
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-green-dark">
+            {isDeletedView ? "Productos Dados de Baja" : "Gestión de Productos"}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {isDeletedView 
+              ? "Productos eliminados. Podes reactivarlos." 
+              : "Administra los platos y bebidas del menú."}
+          </p>
+        </div>
+        {!isDeletedView && (
+          <button
+            onClick={() => { setEditingItem(null); setModalOpen(true); }}
+            className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm"
+          >
+            <Plus size={18} />
+            Nuevo Producto
+          </button>
+        )}
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {/* Buscar */}
+          <div className="relative xl:col-span-2 flex flex-col justify-end">
+            <Search size={16} className="absolute left-3 bottom-3 text-gray-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar productos..."
+              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main outline-none"
+            />
+          </div>
+
+          {/* Categoría */}
+          <div className="flex flex-col">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Categoría</span>
+            <select
+              value={filters.categoria || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleFilterChange("categoria", val ? Number(val) : undefined);
+                if (val) searchParams.set("categoria", val);
+                else searchParams.delete("categoria");
+                setSearchParams(searchParams);
+              }}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main outline-none bg-white"
+            >
+              <option value="">Todas</option>
+              {categorias?.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Disponibilidad */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.disponible}
+              onChange={(e) => handleFilterChange("disponible", e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main outline-none bg-white"
+            >
+              <option value="">Todos (Stock)</option>
+              <option value="true">Solo Disponibles</option>
+              <option value="false">Sin Stock</option>
+            </select>
+          </div>
+
+          {/* Estado (Activo/Inactivo) */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.estado}
+              onChange={(e) => handleFilterChange("estado", e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main outline-none bg-white"
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Dados de Baja</option>
+              <option value="todos">Ver Todos</option>
+            </select>
+          </div>
+
+          {/* Ordenar por */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.sort_by}
+              onChange={(e) => handleFilterChange("sort_by", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main outline-none bg-white"
+            >
+              <option value="nombre">Ordenar: Nombre</option>
+              <option value="precio_base">Ordenar: Precio</option>
+              <option value="stock_cantidad">Ordenar: Stock</option>
+              <option value="created_at">Ordenar: Creación</option>
+            </select>
+          </div>
+
+          {/* Orden asc/desc */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.sort_order}
+              onChange={(e) => handleFilterChange("sort_order", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main outline-none bg-white"
+            >
+              <option value="asc">Ascendente</option>
+              <option value="desc">Descendente</option>
+            </select>
+          </div>
+
+          {/* Items por página */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.per_page}
+              onChange={(e) => handleFilterChange("per_page", Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main outline-none bg-white"
+            >
+              <option value={10}>10 por pág</option>
+              <option value={20}>20 por pág</option>
+              <option value={50}>50 por pág</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabla */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-8 h-8 border-3 border-green-main border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : !data || data.items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <Package size={48} className="mb-3 opacity-20" />
+            <p>No se encontraron productos.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50/50 text-left">
+                  <th className="px-4 py-3 font-semibold text-gray-500">ID</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Producto</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Categorías</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Precio</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Stock</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500">Estado</th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {data.items.map((prod) => {
+                  const isItemDeleted = prod.deleted_at !== null;
+                  return (
+                    <tr key={prod.id} className={`hover:bg-gray-50/50 transition-colors ${isItemDeleted ? 'bg-danger-light/10' : ''}`}>
+                      <td className={`px-4 py-3 font-mono ${isItemDeleted ? 'text-danger' : 'text-gray-400'}`}>#{prod.id}</td>
+                      <td className="px-4 py-3">
+                        <div className={`font-medium ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`}>{prod.nombre}</div>
+                        <div className="text-xs text-gray-500 truncate max-w-[200px]">{prod.descripcion}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {prod.categorias?.map(c => (
+                            <span key={c.id} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium">
+                              {c.nombre}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className={`px-4 py-3 font-semibold ${isItemDeleted ? 'text-danger' : 'text-gray-900'}`}>${prod.precio_base.toLocaleString()}</td>
+                      <td className="px-4 py-3">
+                        <span className={`font-medium ${prod.stock_cantidad < 5 ? 'text-danger' : 'text-gray-600'}`}>
+                          {prod.stock_cantidad}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {isItemDeleted ? (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-danger-light text-danger">
+                            Baja
+                          </span>
+                        ) : (
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            prod.disponible ? 'bg-green-pale text-green-dark' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            {prod.disponible ? 'Disponible' : 'Sin stock'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1">
+                          {isItemDeleted ? (
+                            <button
+                              onClick={() => handleRestore(prod.id)}
+                              className="p-1.5 text-green-main hover:bg-green-pale rounded transition-colors"
+                              title="Restaurar"
+                            >
+                              <RotateCcw size={16} />
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => { setEditingItem(prod); setModalOpen(true); }}
+                                className="p-1.5 text-gray-400 hover:text-green-main hover:bg-green-pale rounded transition-colors"
+                                title="Editar"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(prod.id)}
+                                className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
+                                title="Dar de baja"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {data && (
+        <Pagination
+          page={data.page}
+          pages={data.pages}
+          total={data.total}
+          onPageChange={(p) => setFilters({ ...filters, page: p })}
+        />
+      )}
+
+      <ProductoForm
+        isOpen={modalOpen}
+        producto={editingItem}
+        onClose={() => { setModalOpen(false); setEditingItem(null); }}
+        onSave={handleSave}
+      />
+    </div>
+  );
+}

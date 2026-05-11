@@ -57,13 +57,12 @@ export interface PaginatedResponse<T> {
   pages: number;
 }
 
-export interface IngredientesFilters {
+export interface BaseFilters {
   page: number;
   per_page: number;
   search: string;
-  es_alergeno: string;      // "true" | "false" | ""
   estado: string;            // "activo" | "inactivo" | "todos"
-  sort_by: string;           // "nombre" | "created_at" | "updated_at"
+  sort_by: string;
   sort_order: string;        // "asc" | "desc"
   created_from: string;      // "YYYY-MM-DD" | ""
   created_to: string;        // "YYYY-MM-DD" | ""
@@ -71,3 +70,70 @@ export interface IngredientesFilters {
   updated_to: string;        // "YYYY-MM-DD" | ""
   starts_with: string;       // single letter | ""
 }
+
+export interface IngredientesFilters extends BaseFilters {
+  es_alergeno: string;      // "true" | "false" | ""
+}
+
+// --- CATEGORIAS ---
+export interface Categoria {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  padre_id: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CategoriaTree extends Categoria {
+  subcategorias: CategoriaTree[];
+}
+
+export interface CategoriaCreate {
+  nombre: string;
+  descripcion?: string | null;
+  padre_id?: number | null;
+}
+
+export interface CategoriaUpdate {
+  nombre?: string;
+  descripcion?: string | null;
+  padre_id?: number | null;
+  activo?: boolean;
+}
+
+// --- PRODUCTOS ---
+export interface Producto {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  precio_base: number;
+  stock_cantidad: number;
+  disponible: boolean;
+  categorias: Categoria[];
+  ingredientes: Ingrediente[];
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface ProductoCreate {
+  nombre: string;
+  descripcion: string | null;
+  precio_base: number;
+  stock_cantidad: number;
+  disponible: boolean;
+  categoria_ids: number[];
+  ingrediente_ids: number[];
+}
+
+export interface ProductoUpdate extends Partial<ProductoCreate> {}
+
+export interface ProductosFilters extends BaseFilters {
+  categoria?: number;
+  disponible?: string; // "true" | "false" | ""
+}
+
+export interface CategoriasFilters extends BaseFilters {}
+
