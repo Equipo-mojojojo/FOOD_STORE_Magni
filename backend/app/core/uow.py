@@ -20,6 +20,10 @@ from sqlmodel import Session
 from app.core.database import engine
 from app.modules.usuarios.repository import UsuarioRepository
 from app.modules.ingredientes.repository import IngredienteRepository
+from app.modules.productos.repository import (
+    ProductoRepository, ProductoCategoriaRepository, ProductoIngredienteRepository
+)
+from app.modules.categorias.repository import CategoriaRepository
 
 
 class UnitOfWork:
@@ -38,6 +42,10 @@ class UnitOfWork:
         self.session = Session(engine, expire_on_commit=False)
         self.usuarios = UsuarioRepository(self.session)
         self.ingredientes = IngredienteRepository(self.session)
+        self.productos = ProductoRepository(self.session)
+        self.categorias = CategoriaRepository(self.session)
+        self.producto_categorias = ProductoCategoriaRepository(self.session)
+        self.producto_ingredientes = ProductoIngredienteRepository(self.session)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

@@ -9,10 +9,6 @@ import { useIngredientes, useCrearIngrediente, useActualizarIngrediente, useElim
 
 const ARGENTINA_TIME_ZONE = "America/Argentina/Buenos_Aires";
 
-interface Props {
-  estado: "activo" | "inactivo";
-}
-
 function parseBackendDate(value: string) {
   const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/.test(value);
   return new Date(hasTimezone ? value : `${value}Z`);
@@ -24,13 +20,13 @@ function formatArgentinaDate(value: string) {
   });
 }
 
-export default function IngredientesGrid({ estado }: Props) {
+export default function IngredientesGrid() {
   const [filters, setFilters] = useState<IngredientesFilters>({
     page: 1,
     per_page: 10,
     search: "",
     es_alergeno: "",
-    estado,
+    estado: "activo",
     sort_by: "nombre",
     sort_order: "asc",
     created_from: "",
@@ -49,11 +45,6 @@ export default function IngredientesGrid({ estado }: Props) {
   const actualizarMut = useActualizarIngrediente();
   const eliminarMut = useEliminarIngrediente();
   const restaurarMut = useRestaurarIngrediente();
-
-  // Actualizar estado cuando cambia la prop
-  useEffect(() => {
-    setFilters((f) => ({ ...f, estado, page: 1 }));
-  }, [estado]);
 
   // Buscar mientras se escribe, con debounce para no disparar una request por tecla.
   useEffect(() => {
@@ -106,7 +97,6 @@ export default function IngredientesGrid({ estado }: Props) {
   const handleExportCsv = async () => {
     try {
       const blob = await ingredientesApi.exportCsv(filters);
-      // Crear URL temporal para descargar el Blob
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement("a");
       link.href = url;
@@ -129,7 +119,7 @@ export default function IngredientesGrid({ estado }: Props) {
     }));
   };
 
-  const isDeletedView = estado === "inactivo";
+  const isDeletedView = filters.estado === "inactivo";
 
   return (
     <div>
@@ -137,12 +127,12 @@ export default function IngredientesGrid({ estado }: Props) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-green-dark">
-            {isDeletedView ? "Insumos Dados de Baja" : "Insumos Activos"}
+            {isDeletedView ? "Ingredientes Dados de Baja" : "Gestión de Ingrediente"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {isDeletedView
-              ? "Ingredientes eliminados. Podes reactivarlos."
-              : "Gestion de ingredientes del sistema."}
+              ? "Listado de ingredientes eliminados."
+              : "Gestiona los ingredientes del sistema."}
           </p>
         </div>
         <div className="flex gap-2">
@@ -159,7 +149,7 @@ export default function IngredientesGrid({ estado }: Props) {
               className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               <Plus size={18} />
-              Nuevo Insumo
+              Nuevo Ingrediente
             </button>
           )}
         </div>
@@ -180,6 +170,19 @@ export default function IngredientesGrid({ estado }: Props) {
               placeholder="Buscar por nombre..."
               className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
             />
+          </div>
+
+          {/* 2. Estado */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.estado}
+              onChange={(e) => handleFilterChange("estado", e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value="activo">Activos</option>
+              <option value="inactivo">Dados de Baja</option>
+              <option value="todos">Todos</option>
+            </select>
           </div>
 
           {/* 2. Filtrar por alérgeno */}

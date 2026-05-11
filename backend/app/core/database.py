@@ -28,4 +28,6 @@ def create_all_tables() -> None:
     """
     import app.modules.usuarios.model       # noqa: F401
     import app.modules.ingredientes.model   # noqa: F401
+    import app.modules.categorias.model     # noqa: F401
+    import app.modules.productos.model      # noqa: F401
     SQLModel.metadata.create_all(engine)

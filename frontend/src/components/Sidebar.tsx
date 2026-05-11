@@ -1,6 +1,6 @@
 /** Sidebar de navegación. */
 import { NavLink } from "react-router-dom";
-import { Home, Package, PackageX, X } from "lucide-react";
+import { Home, Package, PackageX, X, Layers, ShoppingBag } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -9,8 +9,9 @@ interface Props {
 
 const links = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/ingredientes", label: "Insumos Activos", icon: Package },
-  { to: "/ingredientes/dados-de-baja", label: "Insumos Baja", icon: PackageX },
+  { to: "/productos", label: "Productos", icon: ShoppingBag },
+  { to: "/categorias", label: "Categorías", icon: Layers },
+  { to: "/ingredientes", label: "Ingrediente", icon: Package },
 ];
 
 export default function Sidebar({ open, onClose }: Props) {

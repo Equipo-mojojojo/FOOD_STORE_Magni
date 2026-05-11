@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import create_all_tables
 from app.modules.auth.router import router as auth_router
 from app.modules.ingredientes.router import router as ingredientes_router
+from app.modules.productos.router import router as productos_router
+from app.modules.categorias.router import router as categorias_router
 
 app = FastAPI(
     title="🍔 Food Store API",
@@ -38,6 +40,8 @@ def on_startup():
 # Routers
 app.include_router(auth_router)
 app.include_router(ingredientes_router)
+app.include_router(productos_router)
+app.include_router(categorias_router)
 
 
 @app.get("/", tags=["Health"])

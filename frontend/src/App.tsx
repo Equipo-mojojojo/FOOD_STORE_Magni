@@ -8,7 +8,8 @@ import Sidebar from "./components/Sidebar";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import IngredientesPage from "./pages/IngredientesPage";
-import IngredientesDeletedPage from "./pages/IngredientesDeletedPage";
+import CategoriasPage from "./pages/CategoriasPage";
+import ProductosPage from "./pages/ProductosPage";
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
@@ -19,12 +20,13 @@ function AppLayout() {
     <div className="flex h-screen overflow-hidden bg-cream">
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Navbar onToggleSidebar={toggleSidebar} />
+        <Navbar />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/ingredientes" element={<IngredientesPage />} />
-            <Route path="/ingredientes/dados-de-baja" element={<IngredientesDeletedPage />} />
+            <Route path="/categorias" element={<CategoriasPage />} />
+            <Route path="/productos" element={<ProductosPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
