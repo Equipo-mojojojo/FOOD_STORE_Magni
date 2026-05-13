@@ -13,11 +13,11 @@ export const ingredientesApi = {
     const params: Record<string, string | number> = {
       page: filters.page,
       per_page: filters.per_page,
-      estado: filters.estado,
       sort_by: filters.sort_by,
       sort_order: filters.sort_order,
     };
     if (filters.search) params.search = filters.search;
+    if (filters.estado) params.estado = filters.estado;
     if (filters.es_alergeno !== "") params.es_alergeno = filters.es_alergeno;
     if (filters.created_from) params.created_from = filters.created_from;
     if (filters.created_to) params.created_to = filters.created_to;
@@ -31,11 +31,11 @@ export const ingredientesApi = {
 
   exportCsv: async (filters: IngredientesFilters): Promise<Blob> => {
     const params: Record<string, string | number> = {
-      estado: filters.estado,
       sort_by: filters.sort_by,
       sort_order: filters.sort_order,
     };
     if (filters.search) params.search = filters.search;
+    if (filters.estado) params.estado = filters.estado;
     if (filters.es_alergeno !== "") params.es_alergeno = filters.es_alergeno;
     if (filters.created_from) params.created_from = filters.created_from;
     if (filters.created_to) params.created_to = filters.created_to;
@@ -45,7 +45,7 @@ export const ingredientesApi = {
 
     const res = await axiosClient.get("/ingredientes/export/csv", {
       params,
-      responseType: "blob", // Fundamental para procesar el CSV binario sin corromperlo
+      responseType: "blob",
     });
     return res.data;
   },
@@ -65,8 +65,12 @@ export const ingredientesApi = {
     return res.data;
   },
 
-  delete: async (id: number): Promise<Ingrediente> => {
-    const res = await axiosClient.delete<Ingrediente>(`/ingredientes/${id}`);
+  delete: async (id: number): Promise<void> => {
+    await axiosClient.delete(`/ingredientes/${id}`);
+  },
+
+  darDeBaja: async (id: number): Promise<Ingrediente> => {
+    const res = await axiosClient.patch<Ingrediente>(`/ingredientes/${id}/baja`);
     return res.data;
   },
 

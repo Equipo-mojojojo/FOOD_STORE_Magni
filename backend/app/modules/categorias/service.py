@@ -98,9 +98,9 @@ def update_categoria(uow: UnitOfWork, cat_id: int, data: CategoriaUpdate) -> Cat
 
     # Manejo de estado (activo/inactivo)
     if data.activo is True:
-        cat.deleted_at = None
+        cat.active_at = None
     elif data.activo is False:
-        cat.deleted_at = datetime.now(timezone.utc)
+        cat.active_at = datetime.now(timezone.utc)
 
     update_data = data.model_dump(exclude_unset=True, exclude={"activo"})
     for key, value in update_data.items():
@@ -109,8 +109,16 @@ def update_categoria(uow: UnitOfWork, cat_id: int, data: CategoriaUpdate) -> Cat
     return uow.categorias.update(cat)
 
 
+def dar_de_baja_categoria(uow: UnitOfWork, cat_id: int):
+    """Baja (reversible) de categoría."""
+    cat = uow.categorias.get_by_id(cat_id)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    uow.categorias.dar_de_baja(cat)
+
+
 def delete_categoria(uow: UnitOfWork, cat_id: int):
-    """Soft delete de categoría. RN: no eliminar si tiene productos activos."""
+    """Eliminación lógica (irreversible) de categoría. RN: no eliminar si tiene productos activos."""
     cat = uow.categorias.get_by_id(cat_id)
     if not cat:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
@@ -122,7 +130,7 @@ def delete_categoria(uow: UnitOfWork, cat_id: int):
             detail="No se puede eliminar: la categoría tiene productos activos asociados",
         )
 
-    uow.categorias.soft_delete(cat)
+    uow.categorias.eliminar(cat)
 
 
 def restore_categoria(uow: UnitOfWork, cat_id: int):
@@ -130,4 +138,4 @@ def restore_categoria(uow: UnitOfWork, cat_id: int):
     cat = uow.categorias.get_by_id(cat_id)
     if not cat:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
-    uow.categorias.restore(cat)
+    uow.categorias.restaurar(cat)

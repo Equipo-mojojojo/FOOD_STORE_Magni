@@ -80,18 +80,18 @@ def update_producto(
         return ProductoRead.model_validate(prod)
 
 
-@router.delete(
-    "/{prod_id}",
+@router.patch(
+    "/{prod_id}/baja",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={404: {"description": "Producto no encontrado"}},
     dependencies=[Depends(require_role(["ADMIN"]))]
 )
-def delete_producto(
+def dar_de_baja_producto(
     prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
 ):
-    """Eliminar (soft delete) un producto."""
+    """Dar de baja un producto (reversible). Visible en filtro 'inactivo'."""
     with UnitOfWork() as uow:
-        service.delete_producto(uow, prod_id)
+        service.dar_de_baja_producto(uow, prod_id)
 
 
 @router.patch(
@@ -108,3 +108,15 @@ def restore_producto(
         service.restore_producto(uow, prod_id)
 
 
+@router.delete(
+    "/{prod_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={404: {"description": "Producto no encontrado"}},
+    dependencies=[Depends(require_role(["ADMIN"]))]
+)
+def eliminar_producto(
+    prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
+):
+    """Eliminación lógica de un producto. Irreversible e invisible para el usuario."""
+    with UnitOfWork() as uow:
+        service.eliminar_producto(uow, prod_id)

@@ -18,6 +18,7 @@ class ProductoCreate(BaseModel):
     precio_base: Annotated[Decimal, Field(gt=0, description="Precio base del producto (>0)")]
     stock_cantidad: Annotated[int, Field(ge=0, description="Cantidad en stock (>=0)")] = 0
     disponible: bool = True
+    activo: Optional[bool] = True
     categoria_ids: List[int] = Field(default=[], description="IDs de categorías asociadas (N:N)")
     ingrediente_ids: List[int] = Field(default=[], description="IDs de ingredientes asociados (N:N)")
 
@@ -44,6 +45,7 @@ class ProductoUpdate(BaseModel):
     precio_base: Optional[Decimal] = Field(default=None, gt=0)
     stock_cantidad: Optional[int] = Field(default=None, ge=0)
     disponible: Optional[bool] = None
+    activo: Optional[bool] = None
     categoria_ids: Optional[List[int]] = None
     ingrediente_ids: Optional[List[int]] = None
 
@@ -76,7 +78,7 @@ class ProductoRead(BaseModel):
     ingredientes: List[IngredienteSimple] = []
     created_at: datetime
     updated_at: datetime
-    deleted_at: Optional[datetime] = None
+    active_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 

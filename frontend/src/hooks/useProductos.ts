@@ -39,6 +39,16 @@ export const useActualizarProducto = () => {
   });
 };
 
+export const useDarDeBajaProducto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => productosApi.darDeBaja(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
+    },
+  });
+};
+
 export const useEliminarProducto = () => {
   const queryClient = useQueryClient();
   return useMutation({

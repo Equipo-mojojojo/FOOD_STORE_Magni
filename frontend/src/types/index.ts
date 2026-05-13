@@ -34,19 +34,22 @@ export interface Ingrediente {
   es_alergeno: boolean;
   created_at: string;
   updated_at: string;
-  deleted_at: string | null;
+  active_at: string | null;
+  deleted_at: string | null;  // eliminación lógica (solo para backend, nunca visible)
 }
 
 export interface IngredienteCreate {
   nombre: string;
   descripcion: string | null;
   es_alergeno: boolean;
+  activo?: boolean;
 }
 
 export interface IngredienteUpdate {
   nombre?: string;
   descripcion?: string | null;
   es_alergeno?: boolean;
+  activo?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -73,6 +76,7 @@ export interface BaseFilters {
 
 export interface IngredientesFilters extends BaseFilters {
   es_alergeno: string;      // "true" | "false" | ""
+  estado?: string;
 }
 
 // --- CATEGORIAS ---
@@ -87,6 +91,7 @@ export interface Categoria {
 }
 
 export interface CategoriaTree extends Categoria {
+  active_at: string | null;
   subcategorias: CategoriaTree[];
 }
 
@@ -115,7 +120,7 @@ export interface Producto {
   ingredientes: Ingrediente[];
   created_at: string;
   updated_at: string;
-  deleted_at: string | null;
+  active_at: string | null;   // baja (reversible, visible en filtro)
 }
 
 export interface ProductoCreate {
@@ -124,11 +129,14 @@ export interface ProductoCreate {
   precio_base: number;
   stock_cantidad: number;
   disponible: boolean;
+  activo?: boolean;
   categoria_ids: number[];
   ingrediente_ids: number[];
 }
 
-export interface ProductoUpdate extends Partial<ProductoCreate> {}
+export interface ProductoUpdate extends Partial<ProductoCreate> {
+  activo?: boolean;
+}
 
 export interface ProductosFilters extends BaseFilters {
   categoria?: number;

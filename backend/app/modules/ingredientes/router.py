@@ -23,8 +23,8 @@ def list_ingredientes(
     page: int = Query(1, ge=1, description="Número de página"),
     per_page: int = Query(10, ge=1, le=50, description="Items por página"),
     search: str | None = Query(None, description="Buscar por nombre"),
+    estado: str = Query("activo", pattern="^(activo|inactivo|todos)$"),
     es_alergeno: bool | None = Query(None, description="Filtrar por alérgeno"),
-    estado: str = Query("activo", description="activo / inactivo / todos"),
     sort_by: str = Query("nombre", description="Ordenar por: nombre / created_at / updated_at"),
     sort_order: str = Query("asc", description="Orden: asc / desc"),
     created_from: date | None = Query(None, description="Fecha creación desde (YYYY-MM-DD)"),
@@ -35,14 +35,14 @@ def list_ingredientes(
     uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Lista ingredientes con 8 filtros y paginación."""
+    """Lista ingredientes activos con filtros y paginación. Eliminados nunca aparecen."""
     svc = IngredienteService(uow)
     return svc.list_paginated(
         page=page,
         per_page=per_page,
         search=search,
-        es_alergeno=es_alergeno,
         estado=estado,
+        es_alergeno=es_alergeno,
         sort_by=sort_by,
         sort_order=sort_order,
         created_from=created_from,
@@ -56,8 +56,8 @@ def list_ingredientes(
 @router.get("/export/csv")
 def export_ingredientes_csv(
     search: str | None = Query(None, description="Buscar por nombre"),
+    estado: str = Query("activo", pattern="^(activo|inactivo|todos)$"),
     es_alergeno: bool | None = Query(None, description="Filtrar por alérgeno"),
-    estado: str = Query("activo", description="activo / inactivo / todos"),
     sort_by: str = Query("nombre", description="Ordenar por: nombre / created_at / updated_at"),
     sort_order: str = Query("asc", description="Orden: asc / desc"),
     created_from: date | None = Query(None, description="Fecha creación desde (YYYY-MM-DD)"),
@@ -68,12 +68,12 @@ def export_ingredientes_csv(
     uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Exporta los ingredientes filtrados a un archivo CSV."""
+    """Exporta los ingredientes activos filtrados a un archivo CSV."""
     svc = IngredienteService(uow)
     csv_content = svc.export_csv(
         search=search,
-        es_alergeno=es_alergeno,
         estado=estado,
+        es_alergeno=es_alergeno,
         sort_by=sort_by,
         sort_order=sort_order,
         created_from=created_from,
@@ -125,23 +125,34 @@ def update_ingrediente(
     return svc.update(ingrediente_id, data)
 
 
-@router.delete("/{ingrediente_id}", response_model=IngredienteResponse)
-def delete_ingrediente(
+@router.delete("/{ingrediente_id}", status_code=204)
+def eliminar_ingrediente(
     ingrediente_id: int,
     uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Soft-delete de un ingrediente."""
+    """Eliminación lógica de un ingrediente. Irreversible e invisible."""
     svc = IngredienteService(uow)
-    return svc.soft_delete(ingrediente_id)
+    svc.eliminar(ingrediente_id)
+
+
+@router.patch("/{ingrediente_id}/baja", response_model=IngredienteResponse)
+def dar_de_baja_ingrediente(
+    ingrediente_id: int,
+    uow: UnitOfWork = Depends(get_uow),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Da de baja a un ingrediente (inactivo)."""
+    svc = IngredienteService(uow)
+    return svc.dar_de_baja(ingrediente_id)
 
 
 @router.patch("/{ingrediente_id}/restore", response_model=IngredienteResponse)
-def restore_ingrediente(
+def restaurar_ingrediente(
     ingrediente_id: int,
     uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Restaura un ingrediente dado de baja."""
+    """Restaura un ingrediente dado de baja (activo)."""
     svc = IngredienteService(uow)
-    return svc.restore(ingrediente_id)
+    return svc.restaurar(ingrediente_id)

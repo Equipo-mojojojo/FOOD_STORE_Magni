@@ -45,11 +45,15 @@ export const productosApi = {
     return res.data;
   },
 
-  delete: async (id: number): Promise<void> => {
-    await axiosClient.delete(`/productos/${id}`);
+  darDeBaja: async (id: number): Promise<void> => {
+    await axiosClient.patch(`/productos/${id}/baja`);
   },
 
   restore: async (id: number): Promise<void> => {
     await axiosClient.patch(`/productos/${id}/restore`);
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosClient.delete(`/productos/${id}`);
   },
 };

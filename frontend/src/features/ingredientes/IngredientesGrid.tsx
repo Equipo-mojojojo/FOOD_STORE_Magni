@@ -1,6 +1,6 @@
-/** Grilla de ingredientes con 6 filtros y paginación. */
+/** Grilla de ingredientes con filtros y paginación. */
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit2, Trash2, RotateCcw, AlertTriangle, ArrowUpDown, Download } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, AlertTriangle, ArrowUpDown, Download, RotateCcw } from "lucide-react";
 import { ingredientesApi } from "../../api/ingredientesApi";
 import Pagination from "../../components/Pagination";
 import IngredienteForm from "./IngredienteForm";
@@ -85,13 +85,9 @@ export default function IngredientesGrid() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Dar de baja este ingrediente?")) return;
+  const handleEliminar = async (id: number) => {
+    if (!confirm("¿ELIMINAR este ingrediente? Esta acción es IRREVERSIBLE.")) return;
     await eliminarMut.mutateAsync(id);
-  };
-
-  const handleRestore = async (id: number) => {
-    await restaurarMut.mutateAsync(id);
   };
 
   const handleExportCsv = async () => {
@@ -119,21 +115,13 @@ export default function IngredientesGrid() {
     }));
   };
 
-  const isDeletedView = filters.estado === "inactivo";
-
   return (
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-green-dark">
-            {isDeletedView ? "Ingredientes Dados de Baja" : "Gestión de Ingrediente"}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {isDeletedView
-              ? "Listado de ingredientes eliminados."
-              : "Gestiona los ingredientes del sistema."}
-          </p>
+          <h1 className="text-2xl font-bold text-green-dark">Gestión de Ingrediente</h1>
+          <p className="text-sm text-gray-500 mt-1">Gestiona los ingredientes del sistema.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -143,15 +131,13 @@ export default function IngredientesGrid() {
             <Download size={18} />
             Exportar CSV
           </button>
-          {!isDeletedView && (
-            <button
-              onClick={() => { setEditingItem(null); setModalOpen(true); }}
-              className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
-            >
-              <Plus size={18} />
-              Nuevo Ingrediente
-            </button>
-          )}
+          <button
+            onClick={() => { setEditingItem(null); setModalOpen(true); }}
+            className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+          >
+            <Plus size={18} />
+            Nuevo Ingrediente
+          </button>
         </div>
       </div>
 
@@ -172,7 +158,20 @@ export default function IngredientesGrid() {
             />
           </div>
 
-          {/* 2. Estado */}
+          {/* Filtrar por alérgeno */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.es_alergeno}
+              onChange={(e) => handleFilterChange("es_alergeno", e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value="">Todos (Alérgenos)</option>
+              <option value="true">Solo Alérgenos</option>
+              <option value="false">Sin Alérgenos</option>
+            </select>
+          </div>
+
+          {/* Filtro Estado */}
           <div className="flex flex-col justify-end">
             <select
               value={filters.estado}
@@ -181,20 +180,7 @@ export default function IngredientesGrid() {
             >
               <option value="activo">Activos</option>
               <option value="inactivo">Dados de Baja</option>
-              <option value="todos">Todos</option>
-            </select>
-          </div>
-
-          {/* 2. Filtrar por alérgeno */}
-          <div className="flex flex-col justify-end">
-            <select
-              value={filters.es_alergeno}
-              onChange={(e) => handleFilterChange("es_alergeno", e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
-            >
-              <option value="">Todos</option>
-              <option value="true">Solo Alérgenos</option>
-              <option value="false">Sin Alérgenos</option>
+              <option value="todos">Todos (Estado)</option>
             </select>
           </div>
 
@@ -300,21 +286,19 @@ export default function IngredientesGrid() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.items.map((item) => {
-                  const isItemDeleted = item.deleted_at !== null;
+                  const isItemDeleted = item.active_at !== null;
                   return (
                   <tr
                     key={item.id}
-                    className={`transition-colors hover:bg-gray-50/50
-                      ${isItemDeleted ? "bg-danger-light/30" : ""}
-                    `}
+                    className={`transition-colors hover:bg-gray-50/50 ${isItemDeleted ? 'bg-danger-light/10' : ''}`}
                   >
-                    <td className={`px-4 py-3 text-sm font-mono ${isItemDeleted ? "text-danger" : "text-gray-500"}`}>
+                    <td className={`px-4 py-3 text-sm font-mono ${isItemDeleted ? 'text-danger' : 'text-gray-500'}`}>
                       #{item.id}
                     </td>
-                    <td className={`px-4 py-3 text-sm font-medium ${isItemDeleted ? "text-danger line-through" : "text-gray-900"}`}>
+                    <td className={`px-4 py-3 text-sm font-medium max-w-[150px] truncate ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`} title={item.nombre}>
                       {item.nombre}
                     </td>
-                    <td className={`px-4 py-3 text-sm ${isItemDeleted ? "text-danger" : "text-gray-500"}`}>
+                    <td className={`px-4 py-3 text-sm max-w-[250px] truncate ${isItemDeleted ? 'text-danger' : 'text-gray-500'}`} title={item.descripcion || ""}>
                       {item.descripcion || <span className="text-gray-300 italic">Sin descripción</span>}
                     </td>
                     <td className="px-4 py-3">
@@ -329,37 +313,35 @@ export default function IngredientesGrid() {
                         </span>
                       )}
                     </td>
-                    <td className={`px-4 py-3 text-sm ${isItemDeleted ? "text-danger" : "text-gray-500"}`}>
+                    <td className={`px-4 py-3 text-sm ${isItemDeleted ? 'text-danger' : 'text-gray-500'}`}>
                       {formatArgentinaDate(item.created_at)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {isItemDeleted ? (
                           <button
-                            onClick={() => handleRestore(item.id)}
+                            onClick={() => restaurarMut.mutateAsync(item.id)}
                             className="p-2 text-green-main hover:bg-green-pale rounded-lg transition-colors"
-                            title="Reactivar"
+                            title="Restaurar"
                           >
                             <RotateCcw size={16} />
                           </button>
                         ) : (
-                          <>
-                            <button
-                              onClick={() => { setEditingItem(item); setModalOpen(true); }}
-                              className="p-2 text-gray-500 hover:text-green-main hover:bg-green-pale rounded-lg transition-colors"
-                              title="Editar"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="p-2 text-gray-500 hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
-                              title="Dar de baja"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
+                          <button
+                            onClick={() => { setEditingItem(item); setModalOpen(true); }}
+                            className="p-2 text-gray-500 hover:text-green-main hover:bg-green-pale rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit2 size={16} />
+                          </button>
                         )}
+                        <button
+                          onClick={() => handleEliminar(item.id)}
+                          className="p-2 text-gray-500 hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
+                          title="Eliminar lógicamente"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>

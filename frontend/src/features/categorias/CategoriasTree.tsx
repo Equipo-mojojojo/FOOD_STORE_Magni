@@ -166,7 +166,7 @@ function TreeNode({
   }, [search]);
 
   const hasSub = node.subcategorias && node.subcategorias.length > 0;
-  const isDeleted = node.deleted_at !== null;
+  const isDeleted = node.active_at !== null;
 
   const filteredSubs = node.subcategorias?.filter(sub => {
     const term = search.trim().toLowerCase();
@@ -190,11 +190,11 @@ function TreeNode({
           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
 
-        <div className="flex-1 flex items-center gap-3 ml-1">
-          <span className={`font-medium ${hasSub ? 'text-gray-900' : 'text-gray-600'} ${isMatch && search ? 'bg-yellow-100 text-yellow-900 px-1 rounded' : ''} ${isDeleted ? 'text-danger line-through' : ''}`}>
+        <div className="flex-1 flex items-center gap-3 ml-1 overflow-hidden">
+          <span title={node.nombre} className={`font-medium truncate max-w-[150px] ${hasSub ? 'text-gray-900' : 'text-gray-600'} ${isMatch && search ? 'bg-yellow-100 text-yellow-900 px-1 rounded' : ''} ${isDeleted ? 'text-danger line-through' : ''}`}>
             {node.nombre}
           </span>
-          <span className={`text-xs font-normal ${isDeleted ? 'text-danger' : 'text-gray-400'}`}>
+          <span title={node.descripcion || ""} className={`text-xs font-normal truncate max-w-[250px] ${isDeleted ? 'text-danger' : 'text-gray-400'}`}>
             {node.descripcion}
           </span>
           {isDeleted && (

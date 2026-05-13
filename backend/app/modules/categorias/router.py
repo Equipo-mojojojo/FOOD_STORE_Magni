@@ -102,9 +102,23 @@ def update_categoria(
 def delete_categoria(
     cat_id: Annotated[int, Path(ge=1, description="ID de la categoría")],
 ):
-    """Eliminar (soft delete) una categoría."""
+    """Eliminación lógica permanente de una categoría."""
     with UnitOfWork() as uow:
         service.delete_categoria(uow, cat_id)
+
+
+@router.patch(
+    "/{cat_id}/baja",
+    status_code=status.HTTP_200_OK,
+    responses={404: {"description": "Categoría no encontrada"}},
+    dependencies=[Depends(require_role(["ADMIN"]))]
+)
+def dar_de_baja_categoria(
+    cat_id: Annotated[int, Path(ge=1, description="ID de la categoría")],
+):
+    """Da de baja una categoría (cambia estado a inactivo)."""
+    with UnitOfWork() as uow:
+        service.dar_de_baja_categoria(uow, cat_id)
 
 
 @router.patch(

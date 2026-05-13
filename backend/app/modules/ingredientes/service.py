@@ -21,8 +21,8 @@ class IngredienteService:
         page: int,
         per_page: int,
         search: str | None,
-        es_alergeno: bool | None,
         estado: str,
+        es_alergeno: bool | None,
         sort_by: str,
         sort_order: str,
         created_from=None,
@@ -31,14 +31,14 @@ class IngredienteService:
         updated_to=None,
         starts_with: str | None = None,
     ) -> PaginatedIngredientes:
-        """Lista ingredientes con filtros y paginación."""
+        """Lista ingredientes activos con filtros y paginación. Eliminados nunca aparecen."""
         with self.uow:
             result = self.uow.ingredientes.get_paginated(
                 page=page,
                 per_page=per_page,
                 search=search,
-                es_alergeno=es_alergeno,
                 estado=estado,
+                es_alergeno=es_alergeno,
                 sort_by=sort_by,
                 sort_order=sort_order,
                 created_from=created_from,
@@ -52,8 +52,8 @@ class IngredienteService:
     def export_csv(
         self,
         search: str | None,
-        es_alergeno: bool | None,
         estado: str,
+        es_alergeno: bool | None,
         sort_by: str,
         sort_order: str,
         created_from=None,
@@ -62,17 +62,17 @@ class IngredienteService:
         updated_to=None,
         starts_with: str | None = None,
     ) -> str:
-        """Exporta ingredientes a formato CSV aplicando filtros."""
+        """Exporta ingredientes activos a formato CSV aplicando filtros."""
         import csv
         import io
         
         with self.uow:
             result = self.uow.ingredientes.get_paginated(
                 page=1,
-                per_page=1000000, # Un límite grande para traer todos los de la consulta
+                per_page=1000000,
                 search=search,
-                es_alergeno=es_alergeno,
                 estado=estado,
+                es_alergeno=es_alergeno,
                 sort_by=sort_by,
                 sort_order=sort_order,
                 created_from=created_from,
@@ -83,13 +83,10 @@ class IngredienteService:
             )
         
         output = io.StringIO()
-        # Generar CSV compatible con Excel (separador coma/punto y coma según la región del Excel del usuario, dejamos coma por defecto que es universal en CSVs standard)
         writer = csv.writer(output, delimiter=",", quoting=csv.QUOTE_MINIMAL)
-        # Cabeceras
-        writer.writerow(["ID", "Nombre", "Descripcion", "Alergeno", "Estado", "Fecha Creacion", "Fecha Actualizacion"])
+        writer.writerow(["ID", "Nombre", "Descripcion", "Alergeno", "Fecha Creacion", "Fecha Actualizacion"])
         
         for item in result["items"]:
-            estado_txt = "Dado de baja" if item.deleted_at else "Activo"
             alergeno_txt = "Si" if item.es_alergeno else "No"
             created_txt = item.created_at.strftime("%Y-%m-%d %H:%M") if item.created_at else ""
             updated_txt = item.updated_at.strftime("%Y-%m-%d %H:%M") if item.updated_at else ""
@@ -98,7 +95,6 @@ class IngredienteService:
                 item.nombre,
                 item.descripcion or "",
                 alergeno_txt,
-                estado_txt,
                 created_txt,
                 updated_txt
             ])
@@ -143,7 +139,15 @@ class IngredienteService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Ingrediente no encontrado",
                 )
-            update_data = data.model_dump(exclude_unset=True)
+            update_data = data.model_dump(exclude_unset=True, exclude={"activo"})
+            
+            # Manejo de estado (activo/inactivo)
+            if data.activo is True:
+                ingrediente.active_at = None
+            elif data.activo is False:
+                from datetime import datetime, timezone
+                ingrediente.active_at = datetime.now(timezone.utc)
+
             for key, value in update_data.items():
                 setattr(ingrediente, key, value)
             try:
@@ -157,8 +161,8 @@ class IngredienteService:
                 )
         return ingrediente
 
-    def soft_delete(self, ingrediente_id: int):
-        """Soft-delete de un ingrediente."""
+    def eliminar(self, ingrediente_id: int):
+        """Eliminación lógica de un ingrediente. Irreversible e invisible."""
         with self.uow:
             ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
             if not ingrediente:
@@ -169,26 +173,31 @@ class IngredienteService:
             if ingrediente.deleted_at is not None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="El ingrediente ya está dado de baja",
+                    detail="El ingrediente ya fue eliminado",
                 )
-            self.uow.ingredientes.soft_delete(ingrediente)
+            self.uow.ingredientes.eliminar(ingrediente)
         return ingrediente
 
-    def restore(self, ingrediente_id: int):
-        """Restaura un ingrediente dado de baja."""
+    def dar_de_baja(self, ingrediente_id: int):
+        """Da de baja (reversible) a un ingrediente."""
         with self.uow:
-            # Note: get_by_id on ingrediente repo allows getting inactive as well.
-            # The BaseRepository get_by_id doesn't filter by deleted_at unless overridden.
             ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
             if not ingrediente:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Ingrediente no encontrado",
                 )
-            if ingrediente.deleted_at is None:
+            self.uow.ingredientes.dar_de_baja(ingrediente)
+        return ingrediente
+
+    def restaurar(self, ingrediente_id: int):
+        """Restaura a activo a un ingrediente dado de baja."""
+        with self.uow:
+            ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
+            if not ingrediente:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="El ingrediente ya está activo",
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ingrediente no encontrado",
                 )
-            self.uow.ingredientes.restore(ingrediente)
+            self.uow.ingredientes.restaurar(ingrediente)
         return ingrediente

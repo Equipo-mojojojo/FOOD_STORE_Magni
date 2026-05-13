@@ -24,8 +24,8 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         page: int = 1,
         per_page: int = 10,
         search: str | None = None,
-        es_alergeno: bool | None = None,
         estado: str = "activo",
+        es_alergeno: bool | None = None,
         sort_by: str = "nombre",
         sort_order: str = "asc",
         created_from: date | None = None,
@@ -34,13 +34,17 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         updated_to: date | None = None,
         starts_with: str | None = None,
     ) -> dict:
-        """Lista ingredientes con 8 filtros + paginación."""
+        """Lista ingredientes activos o inactivos. Eliminados lógicos NUNCA aparecen."""
         query = select(Ingrediente)
 
+        # SIEMPRE excluir eliminados lógicos (irreversible, invisible)
+        query = query.where(Ingrediente.deleted_at.is_(None))
+
+        # Estado (Baja)
         if estado == "activo":
-            query = query.where(Ingrediente.deleted_at.is_(None))
+            query = query.where(Ingrediente.active_at.is_(None))
         elif estado == "inactivo":
-            query = query.where(Ingrediente.deleted_at.isnot(None))
+            query = query.where(Ingrediente.active_at.isnot(None))
 
         if search:
             from sqlalchemy import or_
@@ -92,12 +96,17 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         """Busca ingrediente por ID (activo o inactivo)."""
         return super().get_by_id(entity_id)
 
-    def soft_delete(self, ingrediente: Ingrediente) -> Ingrediente:
-        """Soft-delete: setea deleted_at."""
-        ingrediente.deleted_at = datetime.now(timezone.utc)
+    def dar_de_baja(self, ingrediente: Ingrediente) -> Ingrediente:
+        """Da de baja: setea active_at (inactivo)."""
+        ingrediente.active_at = datetime.now(timezone.utc)
         return self.update(ingrediente)
 
-    def restore(self, ingrediente: Ingrediente) -> Ingrediente:
+    def restaurar(self, ingrediente: Ingrediente) -> Ingrediente:
         """Restaura un ingrediente dado de baja."""
-        ingrediente.deleted_at = None
+        ingrediente.active_at = None
+        return self.update(ingrediente)
+
+    def eliminar(self, ingrediente: Ingrediente) -> Ingrediente:
+        """Eliminación lógica irreversible."""
+        ingrediente.deleted_at = datetime.now(timezone.utc)
         return self.update(ingrediente)

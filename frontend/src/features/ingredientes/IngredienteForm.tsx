@@ -14,6 +14,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [esAlergeno, setEsAlergeno] = useState(false);
+  const [activo, setActivo] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,10 +23,12 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       setNombre(ingrediente.nombre);
       setDescripcion(ingrediente.descripcion || "");
       setEsAlergeno(ingrediente.es_alergeno);
+      setActivo(ingrediente.active_at === null);
     } else {
       setNombre("");
       setDescripcion("");
       setEsAlergeno(false);
+      setActivo(true);
     }
     setError("");
   }, [ingrediente, isOpen]);
@@ -41,7 +44,12 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     setLoading(true);
     setError("");
     try {
-      await onSave({ nombre: nombre.trim(), descripcion: descripcion.trim() || null, es_alergeno: esAlergeno }, ingrediente?.id);
+      await onSave({ 
+        nombre: nombre.trim(), 
+        descripcion: descripcion.trim() || null, 
+        es_alergeno: esAlergeno,
+        activo 
+      }, ingrediente?.id);
       onClose();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string } } };
@@ -74,10 +82,14 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <div className="flex justify-between items-end mb-1">
+              <label className="block text-sm font-medium text-gray-700">Nombre</label>
+              <span className="text-xs text-gray-400">{nombre.length}/100</span>
+            </div>
             <input
               type="text"
               value={nombre}
+              maxLength={100}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Harina de trigo"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main focus:border-transparent outline-none text-sm"
@@ -86,26 +98,52 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <div className="flex justify-between items-end mb-1">
+              <label className="block text-sm font-medium text-gray-700">Descripción</label>
+              <span className="text-xs text-gray-400">{descripcion.length}/500</span>
+            </div>
             <textarea
               value={descripcion}
+              maxLength={500}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Ej: Harina de fuerza para panes"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main focus:border-transparent outline-none text-sm resize-none h-20"
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={esAlergeno}
-                onChange={(e) => setEsAlergeno(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-green-main rounded-full peer peer-checked:bg-orange transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
-            </label>
-            <span className="text-sm text-gray-700">Es alergeno</span>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={esAlergeno}
+                  onChange={(e) => setEsAlergeno(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-green-main rounded-full peer peer-checked:bg-orange transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+              </label>
+              <span className="text-sm text-gray-700">Es alergeno</span>
+            </div>
+
+            {ingrediente && (
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={activo}
+                    onChange={(e) => setActivo(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-green-main rounded-full peer peer-checked:bg-green-main transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <div>
+                  <span className="text-sm font-medium text-gray-900 block">Estado del Ingrediente</span>
+                  <span className="text-xs text-gray-500">
+                    {activo ? "Activo y disponible" : "Dado de baja (no disponible)"}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">
