@@ -34,7 +34,8 @@ class Producto(SQLModel, table=True):
     # Auditoría
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    deleted_at: Optional[datetime] = Field(default=None)
+    active_at: Optional[datetime] = Field(default=None)        # Baja: cuando se setea, el producto está "dado de baja" (reversible)
+    deleted_at: Optional[datetime] = Field(default=None)       # Eliminación lógica: irreversible, invisible para el usuario
 
     # Relaciones
     producto_categorias: List["ProductoCategoria"] = Relationship(back_populates="producto")

@@ -1,20 +1,21 @@
 """Schemas Pydantic para Ingrediente."""
 from datetime import datetime
-from pydantic import BaseModel
-
+from typing import Annotated
+from pydantic import BaseModel, Field
 
 class IngredienteCreate(BaseModel):
     """Schema para crear un ingrediente."""
-    nombre: str
-    descripcion: str | None = None
+    nombre: Annotated[str, Field(min_length=2, max_length=100, description="Nombre del ingrediente")]
+    descripcion: str | None = Field(default=None, max_length=500, description="Descripción opcional")
     es_alergeno: bool = False
 
 
 class IngredienteUpdate(BaseModel):
     """Schema para actualizar un ingrediente."""
-    nombre: str | None = None
-    descripcion: str | None = None
+    nombre: str | None = Field(default=None, min_length=2, max_length=100)
+    descripcion: str | None = Field(default=None, max_length=500)
     es_alergeno: bool | None = None
+    activo: bool | None = None
 
 
 class IngredienteResponse(BaseModel):
@@ -25,6 +26,7 @@ class IngredienteResponse(BaseModel):
     es_alergeno: bool
     created_at: datetime
     updated_at: datetime
+    active_at: datetime | None = None
     deleted_at: datetime | None = None
 
     class Config:

@@ -179,14 +179,14 @@ export default function CategoriasGrid() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.items.map((cat) => {
-                  const isItemDeleted = cat.deleted_at !== null;
+                  const isItemDeleted = cat.active_at !== null;
                   return (
                     <tr key={cat.id} className={`hover:bg-gray-50/50 transition-colors ${isItemDeleted ? 'bg-danger-light/10' : ''}`}>
                       <td className={`px-4 py-3 font-mono ${isItemDeleted ? 'text-danger' : 'text-gray-400'}`}>#{cat.id}</td>
-                      <td className={`px-4 py-3 font-medium ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`}>
+                      <td className={`px-4 py-3 font-medium max-w-[150px] truncate ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`} title={cat.nombre}>
                         {cat.nombre}
                       </td>
-                      <td className={`px-4 py-3 ${isItemDeleted ? 'text-danger' : 'text-gray-500'}`}>
+                      <td className={`px-4 py-3 max-w-[250px] truncate ${isItemDeleted ? 'text-danger' : 'text-gray-500'}`} title={cat.descripcion || ""}>
                         {cat.descripcion || <span className="text-gray-300 italic">Sin descripción</span>}
                       </td>
                       <td className="px-4 py-3 text-right">

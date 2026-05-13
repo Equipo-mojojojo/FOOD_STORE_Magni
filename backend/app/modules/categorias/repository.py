@@ -10,25 +10,33 @@ class CategoriaRepository(BaseRepository[Categoria]):
     def __init__(self, session: Session):
         super().__init__(Categoria, session)
 
-    def soft_delete(self, categoria: Categoria) -> Categoria:
-        """Soft-delete: setea deleted_at."""
-        categoria.deleted_at = datetime.now(timezone.utc)
+    def dar_de_baja(self, categoria: Categoria) -> Categoria:
+        """Da de baja: setea active_at (inactivo)."""
+        categoria.active_at = datetime.now(timezone.utc)
         return self.update(categoria)
 
-    def restore(self, categoria: Categoria) -> Categoria:
-        """Restaura una categoría dada de baja."""
-        categoria.deleted_at = None
+    def restaurar(self, categoria: Categoria) -> Categoria:
+        """Restaura una categoría (activo)."""
+        categoria.active_at = None
+        return self.update(categoria)
+
+    def eliminar(self, categoria: Categoria) -> Categoria:
+        """Eliminación lógica: irreversible para el usuario."""
+        categoria.deleted_at = datetime.now(timezone.utc)
         return self.update(categoria)
 
     def get_tree(self, estado: str = "activo") -> List[Categoria]:
         """Retorna todas las categorías activas para armar el árbol."""
         stmt = select(Categoria)
 
-        # Estado (Soft delete)
+        # Siempre excluimos los eliminados lógicamente
+        stmt = stmt.where(Categoria.deleted_at.is_(None))
+
+        # Estado (Baja)
         if estado == "activo":
-            stmt = stmt.where(Categoria.deleted_at.is_(None))
+            stmt = stmt.where(Categoria.active_at.is_(None))
         elif estado == "inactivo":
-            stmt = stmt.where(Categoria.deleted_at.isnot(None))
+            stmt = stmt.where(Categoria.active_at.isnot(None))
 
         stmt = stmt.order_by(Categoria.nombre)
         result = self.session.exec(stmt)
@@ -54,11 +62,14 @@ class CategoriaRepository(BaseRepository[Categoria]):
         
         query = select(Categoria)
 
-        # Estado (Soft delete)
+        # Siempre excluimos los eliminados lógicamente
+        query = query.where(Categoria.deleted_at.is_(None))
+
+        # Estado (Baja)
         if estado == "activo":
-            query = query.where(Categoria.deleted_at.is_(None))
+            query = query.where(Categoria.active_at.is_(None))
         elif estado == "inactivo":
-            query = query.where(Categoria.deleted_at.isnot(None))
+            query = query.where(Categoria.active_at.isnot(None))
 
         if search:
             query = query.where(

@@ -21,6 +21,11 @@ def create_producto(uow: UnitOfWork, data: ProductoCreate) -> Producto:
         stock_cantidad=data.stock_cantidad,
         disponible=data.disponible,
     )
+
+    if data.activo is False:
+        from datetime import datetime, timezone
+        prod.active_at = datetime.now(timezone.utc)
+
     prod = uow.productos.add(prod)
 
     # Sincronizar relación N:N con categorías
@@ -121,9 +126,15 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    update_data = data.model_dump(exclude_unset=True, exclude={"categoria_ids", "ingrediente_ids"})
+    update_data = data.model_dump(exclude_unset=True, exclude={"categoria_ids", "ingrediente_ids", "activo"})
     for key, value in update_data.items():
         setattr(prod, key, value)
+
+    if data.activo is True:
+        prod.active_at = None
+    elif data.activo is False:
+        from datetime import datetime, timezone
+        prod.active_at = datetime.now(timezone.utc)
 
     # Sync categorías si se enviaron
     if data.categoria_ids is not None:
@@ -142,17 +153,29 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
     return uow.productos.update(prod)
 
 
-def delete_producto(uow: UnitOfWork, prod_id: int):
-    """Soft delete de producto."""
+def dar_de_baja_producto(uow: UnitOfWork, prod_id: int):
+    """Da de baja un producto (setea active_at). Reversible."""
     prod = uow.productos.get_by_id(prod_id)
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    uow.productos.soft_delete(prod)
+    if prod.deleted_at:
+        raise HTTPException(status_code=400, detail="El producto ya fue eliminado")
+    uow.productos.dar_de_baja(prod)
 
 
 def restore_producto(uow: UnitOfWork, prod_id: int):
-    """Restaura un producto dado de baja."""
+    """Restaura un producto dado de baja (limpia active_at)."""
     prod = uow.productos.get_by_id(prod_id)
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+    if prod.deleted_at:
+        raise HTTPException(status_code=400, detail="El producto fue eliminado y no se puede restaurar")
     uow.productos.restore(prod)
+
+
+def eliminar_producto(uow: UnitOfWork, prod_id: int):
+    """Eliminación lógica de producto (setea deleted_at). Irreversible e invisible."""
+    prod = uow.productos.get_by_id(prod_id)
+    if not prod:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    uow.productos.eliminar(prod)

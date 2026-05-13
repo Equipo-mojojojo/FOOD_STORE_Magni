@@ -18,10 +18,12 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
     precio_base: 0,
     stock_cantidad: 0,
     disponible: true,
+    activo: true,
     categoria_ids: [],
     ingrediente_ids: []
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
   const [searchCat, setSearchCat] = useState("");
   const [searchIng, setSearchIng] = useState("");
 
@@ -36,6 +38,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         precio_base: producto.precio_base,
         stock_cantidad: producto.stock_cantidad,
         disponible: producto.disponible,
+        activo: producto.active_at === null,
         categoria_ids: producto.categorias.map(c => c.id),
         ingrediente_ids: producto.ingredientes.map(i => i.id)
       });
@@ -46,10 +49,12 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         precio_base: 0,
         stock_cantidad: 0,
         disponible: true,
+        activo: true,
         categoria_ids: [],
         ingrediente_ids: []
       });
     }
+    setError("");
   }, [producto, isOpen]);
 
   if (!isOpen) return null;
@@ -60,9 +65,20 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.precio_base <= 0) {
+      setError("El precio base debe ser mayor a 0");
+      return;
+    }
     setLoading(true);
+    setError("");
     try {
-      await onSave(formData, producto?.id);
+      const dataToSend = {
+        ...formData,
+        descripcion: formData.descripcion?.trim() || null
+      };
+      await onSave(dataToSend, producto?.id);
+    } catch (err: any) {
+      setError(err.response?.data?.detail?.[0]?.msg || err.response?.data?.detail || "Error al guardar el producto");
     } finally {
       setLoading(false);
     }
@@ -80,22 +96,36 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-6">
+        {error && (
+          <div className="mx-6 mt-4 bg-danger-light text-danger-dark px-4 py-3 rounded-lg text-sm border border-danger/20">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-6 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre del Producto</label>
+              <div className="flex justify-between items-end mb-1">
+                <label className="block text-sm font-semibold text-gray-700">Nombre del Producto</label>
+                <span className="text-xs text-gray-400">{formData.nombre.length}/100</span>
+              </div>
               <input
                 type="text" required
+                maxLength={100}
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none"
                 placeholder="Ej: Hamburguesa con Queso"
               />
             </div>
-            
+
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Descripción</label>
+              <div className="flex justify-between items-end mb-1">
+                <label className="block text-sm font-semibold text-gray-700">Descripción</label>
+                <span className="text-xs text-gray-400">{(formData.descripcion || "").length}/500</span>
+              </div>
               <textarea
+                maxLength={500}
                 value={formData.descripcion || ""}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none h-20 resize-none"
@@ -124,15 +154,37 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="disponible"
-              checked={formData.disponible}
-              onChange={(e) => setFormData({ ...formData, disponible: e.target.checked })}
-              className="w-4 h-4 text-green-main focus:ring-green-main border-gray-300 rounded"
-            />
-            <label htmlFor="disponible" className="text-sm font-medium text-gray-700">Producto disponible para la venta</label>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="disponible"
+                checked={formData.disponible}
+                onChange={(e) => setFormData({ ...formData, disponible: e.target.checked })}
+                className="w-4 h-4 text-green-main focus:ring-green-main border-gray-300 rounded"
+              />
+              <label htmlFor="disponible" className="text-sm font-medium text-gray-700">Producto disponible para la venta</label>
+            </div>
+
+            {producto && (
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.activo}
+                    onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-green-main rounded-full peer peer-checked:bg-green-main transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <div>
+                  <span className="text-sm font-medium text-gray-900 block">Estado del Producto</span>
+                  <span className="text-xs text-gray-500">
+                    {formData.activo ? "Activo (visible en menú)" : "Dado de baja (oculto temporalmente)"}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -153,24 +205,23 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                 {categorias
                   ?.filter(c => {
                     const term = searchCat.trim().toLowerCase();
-                    return c.nombre.toLowerCase().includes(term) || 
-                           (c.descripcion?.toLowerCase().includes(term) ?? false);
+                    return c.nombre.toLowerCase().includes(term) ||
+                      (c.descripcion?.toLowerCase().includes(term) ?? false);
                   })
                   .map(c => (
-                  <label key={c.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors group">
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                      formData.categoria_ids.includes(c.id) ? 'bg-green-main border-green-main text-white' : 'border-gray-300 bg-white group-hover:border-green-main'
-                    }`}>
-                      {formData.categoria_ids.includes(c.id) && <Check size={14} strokeWidth={3} />}
-                    </div>
-                    <input
-                      type="checkbox" className="hidden"
-                      checked={formData.categoria_ids.includes(c.id)}
-                      onChange={() => setFormData({ ...formData, categoria_ids: toggleSelection(formData.categoria_ids, c.id) })}
-                    />
-                    <span className="text-sm text-gray-700">{c.nombre}</span>
-                  </label>
-                ))}
+                    <label key={c.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors group">
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${formData.categoria_ids.includes(c.id) ? 'bg-green-main border-green-main text-white' : 'border-gray-300 bg-white group-hover:border-green-main'
+                        }`}>
+                        {formData.categoria_ids.includes(c.id) && <Check size={14} strokeWidth={3} />}
+                      </div>
+                      <input
+                        type="checkbox" className="hidden"
+                        checked={formData.categoria_ids.includes(c.id)}
+                        onChange={() => setFormData({ ...formData, categoria_ids: toggleSelection(formData.categoria_ids, c.id) })}
+                      />
+                      <span className="text-sm text-gray-700">{c.nombre}</span>
+                    </label>
+                  ))}
               </div>
             </div>
 
@@ -191,24 +242,23 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                 {ingredientesData?.items
                   .filter(i => {
                     const term = searchIng.trim().toLowerCase();
-                    return i.nombre.toLowerCase().includes(term) || 
-                           (i.descripcion?.toLowerCase().includes(term) ?? false);
+                    return i.nombre.toLowerCase().includes(term) ||
+                      (i.descripcion?.toLowerCase().includes(term) ?? false);
                   })
                   .map(i => (
-                  <label key={i.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors group">
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                      formData.ingrediente_ids.includes(i.id) ? 'bg-green-main border-green-main text-white' : 'border-gray-300 bg-white group-hover:border-green-main'
-                    }`}>
-                      {formData.ingrediente_ids.includes(i.id) && <Check size={14} strokeWidth={3} />}
-                    </div>
-                    <input
-                      type="checkbox" className="hidden"
-                      checked={formData.ingrediente_ids.includes(i.id)}
-                      onChange={() => setFormData({ ...formData, ingrediente_ids: toggleSelection(formData.ingrediente_ids, i.id) })}
-                    />
-                    <span className="text-sm text-gray-700">{i.nombre}</span>
-                  </label>
-                ))}
+                    <label key={i.id} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors group">
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${formData.ingrediente_ids.includes(i.id) ? 'bg-green-main border-green-main text-white' : 'border-gray-300 bg-white group-hover:border-green-main'
+                        }`}>
+                        {formData.ingrediente_ids.includes(i.id) && <Check size={14} strokeWidth={3} />}
+                      </div>
+                      <input
+                        type="checkbox" className="hidden"
+                        checked={formData.ingrediente_ids.includes(i.id)}
+                        onChange={() => setFormData({ ...formData, ingrediente_ids: toggleSelection(formData.ingrediente_ids, i.id) })}
+                      />
+                      <span className="text-sm text-gray-700">{i.nombre}</span>
+                    </label>
+                  ))}
               </div>
             </div>
           </div>

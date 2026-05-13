@@ -27,6 +27,7 @@ class CategoriaRead(BaseModel):
     padre_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
+    active_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 

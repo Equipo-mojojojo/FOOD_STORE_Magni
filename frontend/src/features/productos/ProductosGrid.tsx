@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Search, Edit2, Trash2, Package, Filter, X, RotateCcw } from "lucide-react";
-import { useProductos, useEliminarProducto, useCrearProducto, useActualizarProducto, useRestaurarProducto } from "../../hooks/useProductos";
+import { Plus, Search, Edit2, Trash2, Package, Filter, X, RotateCcw, XCircle } from "lucide-react";
+import { useProductos, useDarDeBajaProducto, useEliminarProducto, useCrearProducto, useActualizarProducto, useRestaurarProducto } from "../../hooks/useProductos";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
 import Pagination from "../../components/Pagination";
 import ProductoForm from "./ProductoForm";
@@ -50,6 +50,7 @@ export default function ProductosGrid() {
 
   const crearMut = useCrearProducto();
   const actualizarMut = useActualizarProducto();
+  const darDeBajaMut = useDarDeBajaProducto();
   const eliminarMut = useEliminarProducto();
   const restaurarMut = useRestaurarProducto();
 
@@ -66,8 +67,13 @@ export default function ProductosGrid() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Dar de baja este producto?")) return;
+  const handleDarDeBaja = async (id: number) => {
+    if (!confirm("¿Dar de baja este producto? Podrás restaurarlo después.")) return;
+    await darDeBajaMut.mutateAsync(id);
+  };
+
+  const handleEliminar = async (id: number) => {
+    if (!confirm("¿ELIMINAR este producto? Esta acción es IRREVERSIBLE y el producto desaparecerá del sistema.")) return;
     await eliminarMut.mutateAsync(id);
   };
 
@@ -231,13 +237,13 @@ export default function ProductosGrid() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.items.map((prod) => {
-                  const isItemDeleted = prod.deleted_at !== null;
+                  const isItemBaja = prod.active_at !== null;
                   return (
-                    <tr key={prod.id} className={`hover:bg-gray-50/50 transition-colors ${isItemDeleted ? 'bg-danger-light/10' : ''}`}>
-                      <td className={`px-4 py-3 font-mono ${isItemDeleted ? 'text-danger' : 'text-gray-400'}`}>#{prod.id}</td>
+                    <tr key={prod.id} className={`hover:bg-gray-50/50 transition-colors ${isItemBaja ? 'bg-danger-light/10' : ''}`}>
+                      <td className={`px-4 py-3 font-mono ${isItemBaja ? 'text-danger' : 'text-gray-400'}`}>#{prod.id}</td>
                       <td className="px-4 py-3">
-                        <div className={`font-medium ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`}>{prod.nombre}</div>
-                        <div className="text-xs text-gray-500 truncate max-w-[200px]">{prod.descripcion}</div>
+                        <div title={prod.nombre} className={`font-medium truncate max-w-[200px] ${isItemBaja ? 'text-danger line-through' : 'text-gray-900'}`}>{prod.nombre}</div>
+                        <div title={prod.descripcion || ""} className="text-xs text-gray-500 truncate max-w-[200px]">{prod.descripcion}</div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
@@ -248,14 +254,14 @@ export default function ProductosGrid() {
                           ))}
                         </div>
                       </td>
-                      <td className={`px-4 py-3 font-semibold ${isItemDeleted ? 'text-danger' : 'text-gray-900'}`}>${prod.precio_base.toLocaleString()}</td>
+                      <td className={`px-4 py-3 font-semibold ${isItemBaja ? 'text-danger' : 'text-gray-900'}`}>${prod.precio_base.toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <span className={`font-medium ${prod.stock_cantidad < 5 ? 'text-danger' : 'text-gray-600'}`}>
                           {prod.stock_cantidad}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {isItemDeleted ? (
+                        {isItemBaja ? (
                           <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-danger-light text-danger">
                             Baja
                           </span>
@@ -269,14 +275,23 @@ export default function ProductosGrid() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          {isItemDeleted ? (
-                            <button
-                              onClick={() => handleRestore(prod.id)}
-                              className="p-1.5 text-green-main hover:bg-green-pale rounded transition-colors"
-                              title="Restaurar"
-                            >
-                              <RotateCcw size={16} />
-                            </button>
+                          {isItemBaja ? (
+                            <>
+                              <button
+                                onClick={() => handleRestore(prod.id)}
+                                className="p-1.5 text-green-main hover:bg-green-pale rounded transition-colors"
+                                title="Restaurar"
+                              >
+                                <RotateCcw size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleEliminar(prod.id)}
+                                className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
+                                title="Eliminar permanentemente"
+                              >
+                                <XCircle size={16} />
+                              </button>
+                            </>
                           ) : (
                             <>
                               <button
@@ -287,7 +302,7 @@ export default function ProductosGrid() {
                                 <Edit2 size={16} />
                               </button>
                               <button
-                                onClick={() => handleDelete(prod.id)}
+                                onClick={() => handleDarDeBaja(prod.id)}
                                 className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
                                 title="Dar de baja"
                               >

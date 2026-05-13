@@ -17,7 +17,10 @@ class ProductoRepository(BaseRepository[Producto]):
         """Producto con sus categorías e ingredientes cargados (selectinload)."""
         stmt = (
             select(Producto)
-            .where(Producto.id == product_id, Producto.deleted_at.is_(None))
+            .where(
+                Producto.id == product_id,
+                Producto.deleted_at.is_(None),  # Nunca mostrar eliminados
+            )
             .options(
                 selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
                 selectinload(Producto.producto_ingredientes).selectinload(ProductoIngrediente.ingrediente),
@@ -49,11 +52,14 @@ class ProductoRepository(BaseRepository[Producto]):
 
         query = select(Producto)
 
-        # Estado (Soft delete)
+        # SIEMPRE excluir eliminados lógicos (irreversible, invisible)
+        query = query.where(Producto.deleted_at.is_(None))
+
+        # Estado (Baja via active_at)
         if estado == "activo":
-            query = query.where(Producto.deleted_at.is_(None))
+            query = query.where(Producto.active_at.is_(None))
         elif estado == "inactivo":
-            query = query.where(Producto.deleted_at.isnot(None))
+            query = query.where(Producto.active_at.isnot(None))
 
         # Relaciones (Selectinload)
         query = query.options(
@@ -110,15 +116,21 @@ class ProductoRepository(BaseRepository[Producto]):
             "pages": pages,
         }
 
-    def soft_delete(self, producto: Producto) -> Producto:
-        """Soft-delete: setea deleted_at."""
+    def dar_de_baja(self, producto: Producto) -> Producto:
+        """Da de baja: setea active_at. Reversible, visible en filtro 'inactivo'."""
         from datetime import datetime, timezone
-        producto.deleted_at = datetime.now(timezone.utc)
+        producto.active_at = datetime.now(timezone.utc)
         return self.update(producto)
 
     def restore(self, producto: Producto) -> Producto:
-        """Restaura un producto dado de baja."""
-        producto.deleted_at = None
+        """Restaura un producto dado de baja (limpia active_at)."""
+        producto.active_at = None
+        return self.update(producto)
+
+    def eliminar(self, producto: Producto) -> Producto:
+        """Eliminación lógica: setea deleted_at. Irreversible, invisible para el usuario."""
+        from datetime import datetime, timezone
+        producto.deleted_at = datetime.now(timezone.utc)
         return self.update(producto)
 
 

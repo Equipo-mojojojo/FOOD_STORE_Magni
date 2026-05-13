@@ -63,10 +63,14 @@ export default function CategoriaForm({ isOpen, categoria, parentId, onClose, on
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
+            <div className="flex justify-between items-end mb-1">
+              <label className="block text-sm font-semibold text-gray-700">Nombre</label>
+              <span className="text-xs text-gray-400">{formData.nombre.length}/100</span>
+            </div>
             <input
               type="text"
               required
+              maxLength={100}
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main focus:border-transparent outline-none transition-all"
@@ -75,8 +79,12 @@ export default function CategoriaForm({ isOpen, categoria, parentId, onClose, on
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Descripción (opcional)</label>
+            <div className="flex justify-between items-end mb-1">
+              <label className="block text-sm font-semibold text-gray-700">Descripción (opcional)</label>
+              <span className="text-xs text-gray-400">{(formData.descripcion || "").length}/500</span>
+            </div>
             <textarea
+              maxLength={500}
               value={formData.descripcion || ""}
               onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main focus:border-transparent outline-none transition-all resize-none h-24"

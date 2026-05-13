@@ -59,6 +59,10 @@ export const categoriasApi = {
     await axiosClient.delete(`/categorias/${id}`);
   },
 
+  darDeBaja: async (id: number): Promise<void> => {
+    await axiosClient.patch(`/categorias/${id}/baja`);
+  },
+
   restore: async (id: number): Promise<void> => {
     await axiosClient.patch(`/categorias/${id}/restore`);
   },

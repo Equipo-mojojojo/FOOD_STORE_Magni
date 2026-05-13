@@ -11,7 +11,7 @@ export const useIngredientes = (filters: IngredientesFilters) => {
   });
 };
 
-// 2. Hooks para mutaciones (Crear, Actualizar, Eliminar, Restaurar) de ingredientes
+// 2. Hooks para mutaciones (Crear, Actualizar, Eliminar) de ingredientes
 export const useCrearIngrediente = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -37,6 +37,16 @@ export const useEliminarIngrediente = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => ingredientesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ingredientes"] });
+    },
+  });
+};
+
+export const useDarDeBajaIngrediente = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => ingredientesApi.darDeBaja(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredientes"] });
     },
