@@ -5,8 +5,9 @@ from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
 from app.core.base_repository import BaseRepository
 from app.modules.productos.model import (
-    Producto, Ingrediente, ProductoCategoria, ProductoIngrediente,
+    Producto, ProductoCategoria, ProductoIngrediente, UnidadMedida
 )
+from app.modules.ingredientes.model import Ingrediente
 
 
 class ProductoRepository(BaseRepository[Producto]):
@@ -22,8 +23,10 @@ class ProductoRepository(BaseRepository[Producto]):
                 Producto.deleted_at.is_(None),  # Nunca mostrar eliminados
             )
             .options(
-                selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-                selectinload(Producto.producto_ingredientes).selectinload(ProductoIngrediente.ingrediente),
+                selectinload(Producto.categorias).selectinload(ProductoCategoria.categoria),
+                selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente).selectinload(Ingrediente.unidad_medida),
+                selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.unidad_medida),
+                selectinload(Producto.unidad_venta),
             )
         )
         result = self.session.exec(stmt)
@@ -63,8 +66,10 @@ class ProductoRepository(BaseRepository[Producto]):
 
         # Relaciones (Selectinload)
         query = query.options(
-            selectinload(Producto.producto_categorias).selectinload(ProductoCategoria.categoria),
-            selectinload(Producto.producto_ingredientes).selectinload(ProductoIngrediente.ingrediente),
+            selectinload(Producto.categorias).selectinload(ProductoCategoria.categoria),
+            selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente).selectinload(Ingrediente.unidad_medida),
+            selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.unidad_medida),
+            selectinload(Producto.unidad_venta),
         )
 
         # Filtros específicos
@@ -96,7 +101,13 @@ class ProductoRepository(BaseRepository[Producto]):
             query = query.where(Producto.nombre.ilike(f"{starts_with}%"))
 
         # Total count (antes de paginar)
-        total = len(self.session.exec(query).all())
+        # Usamos distinct en el count para no contar duplicados por el join de categorías
+        total_stmt = select(func.count(func.distinct(Producto.id))).select_from(query.subquery())
+        try:
+            total = self.session.exec(total_stmt).one()
+        except Exception:
+            # Fallback si la subconsulta falla por alguna razón de dialecto
+            total = len(self.session.exec(query.distinct()).all())
 
         # Sort
         sort_column = getattr(Producto, sort_by, Producto.nombre)
@@ -106,7 +117,9 @@ class ProductoRepository(BaseRepository[Producto]):
         # Pagination
         pages = math.ceil(total / per_page) if total > 0 else 1
         offset = (page - 1) * per_page
-        items = self.session.exec(query.offset(offset).limit(per_page)).all()
+        
+        # Obtenemos los items con distinct para evitar duplicados
+        items = self.session.exec(query.distinct().offset(offset).limit(per_page)).all()
 
         return {
             "items": items,
@@ -178,3 +191,8 @@ class ProductoIngredienteRepository(BaseRepository[ProductoIngrediente]):
         )
         result = self.session.exec(stmt)
         return list(result.all())
+
+
+class UnidadMedidaRepository(BaseRepository[UnidadMedida]):
+    def __init__(self, session: Session):
+        super().__init__(UnidadMedida, session)

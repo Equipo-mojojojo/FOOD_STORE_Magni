@@ -5,7 +5,7 @@ import { ingredientesApi } from "../../api/ingredientesApi";
 import Pagination from "../../components/Pagination";
 import IngredienteForm from "./IngredienteForm";
 import type { Ingrediente, IngredientesFilters, IngredienteCreate } from "../../types";
-import { useIngredientes, useCrearIngrediente, useActualizarIngrediente, useEliminarIngrediente, useRestaurarIngrediente } from "../../hooks/useIngredientes";
+import { useIngredientes, useCrearIngrediente, useActualizarIngrediente, useEliminarIngrediente, useRestaurarIngrediente, useDarDeBajaIngrediente } from "../../hooks/useIngredientes";
 
 const ARGENTINA_TIME_ZONE = "America/Argentina/Buenos_Aires";
 
@@ -44,6 +44,7 @@ export default function IngredientesGrid() {
   const crearMut = useCrearIngrediente();
   const actualizarMut = useActualizarIngrediente();
   const eliminarMut = useEliminarIngrediente();
+  const darDeBajaMut = useDarDeBajaIngrediente();
   const restaurarMut = useRestaurarIngrediente();
 
   // Buscar mientras se escribe, con debounce para no disparar una request por tecla.
@@ -86,8 +87,13 @@ export default function IngredientesGrid() {
   };
 
   const handleEliminar = async (id: number) => {
-    if (!confirm("¿ELIMINAR este ingrediente? Esta acción es IRREVERSIBLE.")) return;
+    if (!confirm("¿ELIMINAR este ingrediente? Esta acción es IRREVERSIBLE y el ingrediente desaparecerá del sistema.")) return;
     await eliminarMut.mutateAsync(id);
+  };
+
+  const handleDarDeBaja = async (id: number) => {
+    if (!confirm("¿Dar de baja este ingrediente? Podrás restaurarlo después.")) return;
+    await darDeBajaMut.mutateAsync(id);
   };
 
   const handleExportCsv = async () => {
@@ -264,8 +270,14 @@ export default function IngredientesGrid() {
                       <ArrowUpDown size={14} />
                     </div>
                   </th>
+                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Costo
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Descripción
+                    Stock
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Tipo
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Alergeno
@@ -298,8 +310,23 @@ export default function IngredientesGrid() {
                     <td className={`px-4 py-3 text-sm font-medium max-w-[150px] truncate ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`} title={item.nombre}>
                       {item.nombre}
                     </td>
-                    <td className={`px-4 py-3 text-sm max-w-[250px] truncate ${isItemDeleted ? 'text-danger' : 'text-gray-500'}`} title={item.descripcion || ""}>
-                      {item.descripcion || <span className="text-gray-300 italic">Sin descripción</span>}
+                    <td className={`px-4 py-3 text-sm font-bold ${isItemDeleted ? 'text-danger' : 'text-gray-900'}`}>
+                      ${item.precio_costo?.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex flex-col">
+                        <span className={`font-bold ${item.stock_actual <= (item.stock_minimo || 0) ? 'text-danger' : 'text-gray-700'}`}>
+                          {item.stock_actual}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-medium">Mín: {item.stock_minimo || 0}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.es_producto_terminado ? (
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase border border-blue-100">Venta</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-gray-50 text-gray-500 text-[10px] font-bold uppercase border border-gray-100">Insumo</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {item.es_alergeno ? (
@@ -319,29 +346,40 @@ export default function IngredientesGrid() {
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {isItemDeleted ? (
-                          <button
-                            onClick={() => restaurarMut.mutateAsync(item.id)}
-                            className="p-2 text-green-main hover:bg-green-pale rounded-lg transition-colors"
-                            title="Restaurar"
-                          >
-                            <RotateCcw size={16} />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => restaurarMut.mutateAsync(item.id)}
+                              className="p-2 text-green-main hover:bg-green-pale rounded-lg transition-colors"
+                              title="Restaurar"
+                            >
+                              <RotateCcw size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleEliminar(item.id)}
+                              className="p-2 text-gray-400 hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
+                              title="Eliminar permanentemente"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
                         ) : (
-                          <button
-                            onClick={() => { setEditingItem(item); setModalOpen(true); }}
-                            className="p-2 text-gray-500 hover:text-green-main hover:bg-green-pale rounded-lg transition-colors"
-                            title="Editar"
-                          >
-                            <Edit2 size={16} />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => { setEditingItem(item); setModalOpen(true); }}
+                              className="p-2 text-gray-500 hover:text-green-main hover:bg-green-pale rounded-lg transition-colors"
+                              title="Editar"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDarDeBaja(item.id)}
+                              className="p-2 text-gray-500 hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
+                              title="Dar de baja"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
                         )}
-                        <button
-                          onClick={() => handleEliminar(item.id)}
-                          className="p-2 text-gray-500 hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
-                          title="Eliminar lógicamente"
-                        >
-                          <Trash2 size={16} />
-                        </button>
                       </div>
                     </td>
                   </tr>

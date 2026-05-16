@@ -35,7 +35,8 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         starts_with: str | None = None,
     ) -> dict:
         """Lista ingredientes activos o inactivos. Eliminados lógicos NUNCA aparecen."""
-        query = select(Ingrediente)
+        from sqlalchemy.orm import selectinload
+        query = select(Ingrediente).options(selectinload(Ingrediente.unidad_medida))
 
         # SIEMPRE excluir eliminados lógicos (irreversible, invisible)
         query = query.where(Ingrediente.deleted_at.is_(None))
@@ -93,8 +94,12 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         }
 
     def get_by_id(self, entity_id: int) -> Ingrediente | None:
-        """Busca ingrediente por ID (activo o inactivo)."""
-        return super().get_by_id(entity_id)
+        """Busca ingrediente por ID con sus relaciones cargadas."""
+        from sqlalchemy.orm import selectinload
+        stmt = select(Ingrediente).where(Ingrediente.id == entity_id).options(
+            selectinload(Ingrediente.unidad_medida)
+        )
+        return self.session.exec(stmt).first()
 
     def dar_de_baja(self, ingrediente: Ingrediente) -> Ingrediente:
         """Da de baja: setea active_at (inactivo)."""
