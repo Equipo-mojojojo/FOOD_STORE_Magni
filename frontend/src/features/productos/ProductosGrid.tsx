@@ -248,17 +248,29 @@ export default function ProductosGrid() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {prod.categorias?.map(c => (
-                            <span key={c.id} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium">
-                              {c.nombre}
+                            <span key={c.categoria.id} className={`px-2 py-0.5 rounded text-[10px] font-medium ${c.es_principal ? 'bg-green-pale text-green-dark border border-green-main/20' : 'bg-gray-100 text-gray-600'}`}>
+                              {c.categoria.nombre}
                             </span>
                           ))}
                         </div>
                       </td>
                       <td className={`px-4 py-3 font-semibold ${isItemBaja ? 'text-danger' : 'text-gray-900'}`}>${prod.precio_base.toLocaleString()}</td>
                       <td className="px-4 py-3">
-                        <span className={`font-medium ${prod.stock_cantidad < 5 ? 'text-danger' : 'text-gray-600'}`}>
-                          {prod.stock_cantidad}
-                        </span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`font-bold ${prod.stock_cantidad < 5 ? 'text-danger' : 'text-gray-700'}`}>
+                              {prod.stock_cantidad}
+                            </span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">Físico</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`font-medium ${prod.stock_disponible < 5 ? 'text-orange' : 'text-green-main'}`}>
+                              {prod.stock_disponible}
+                            </span>
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">Elaborable</span>
+                          </div>
+                          <span className="text-[10px] text-gray-400 mt-0.5">{prod.unidad_venta?.simbolo || 'u'}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         {isItemBaja ? (

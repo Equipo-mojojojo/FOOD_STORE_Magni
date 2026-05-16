@@ -32,16 +32,27 @@ export interface Ingrediente {
   nombre: string;
   descripcion: string | null;
   es_alergeno: boolean;
+  es_producto_terminado: boolean;
+  precio_costo: number;
+  stock_actual: number;
+  stock_minimo: number;
+  unidad_medida_id: number | null;
+  unidad_medida: UnidadMedidaSimple | null;
   created_at: string;
   updated_at: string;
   active_at: string | null;
-  deleted_at: string | null;  // eliminación lógica (solo para backend, nunca visible)
+  deleted_at: string | null;
 }
 
 export interface IngredienteCreate {
   nombre: string;
   descripcion: string | null;
   es_alergeno: boolean;
+  es_producto_terminado: boolean;
+  precio_costo: number;
+  stock_actual: number;
+  stock_minimo: number;
+  unidad_medida_id: number | null;
   activo?: boolean;
 }
 
@@ -49,6 +60,11 @@ export interface IngredienteUpdate {
   nombre?: string;
   descripcion?: string | null;
   es_alergeno?: boolean;
+  es_producto_terminado?: boolean;
+  precio_costo?: number;
+  stock_actual?: number;
+  stock_minimo?: number;
+  unidad_medida_id?: number | null;
   activo?: boolean;
 }
 
@@ -108,19 +124,57 @@ export interface CategoriaUpdate {
   activo?: boolean;
 }
 
+// --- UNIDADES DE MEDIDA ---
+export interface UnidadMedidaSimple {
+  id: number;
+  nombre: string;
+  simbolo: string;
+  tipo: string;
+  factor_conversion: number;
+}
+
 // --- PRODUCTOS ---
+export interface ProductoCategoriaDetail {
+  categoria: { id: number; nombre: string };
+  es_principal: boolean;
+}
+
+export interface ProductoIngredienteDetail {
+  ingrediente: { id: number; nombre: string; es_alergeno: boolean };
+  cantidad: number;
+  unidad_medida: UnidadMedidaSimple | null;
+  es_removible: boolean;
+}
+
+export interface ProductoCategoriaCreate {
+  categoria_id: number;
+  es_principal: boolean;
+}
+
+export interface ProductoIngredienteCreate {
+  ingrediente_id: number;
+  cantidad: number;
+  unidad_medida_id: number;
+  es_removible: boolean;
+}
+
 export interface Producto {
   id: number;
   nombre: string;
   descripcion: string | null;
   precio_base: number;
+  costo_total: number;
   stock_cantidad: number;
+  stock_disponible: number;
+  margen_ganancia: number;
+  precio_sugerido: number;
   disponible: boolean;
-  categorias: Categoria[];
-  ingredientes: Ingrediente[];
+  categorias: ProductoCategoriaDetail[];
+  ingredientes: ProductoIngredienteDetail[];
+  unidad_venta: UnidadMedidaSimple | null;
   created_at: string;
   updated_at: string;
-  active_at: string | null;   // baja (reversible, visible en filtro)
+  active_at: string | null;
 }
 
 export interface ProductoCreate {
@@ -128,14 +182,18 @@ export interface ProductoCreate {
   descripcion: string | null;
   precio_base: number;
   stock_cantidad: number;
+  margen_ganancia: number;
   disponible: boolean;
   activo?: boolean;
-  categoria_ids: number[];
-  ingrediente_ids: number[];
+  unidad_venta_id?: number | null;
+  categorias: ProductoCategoriaCreate[];
+  ingredientes: ProductoIngredienteCreate[];
 }
 
-export interface ProductoUpdate extends Partial<ProductoCreate> {
+export interface ProductoUpdate extends Partial<Omit<ProductoCreate, 'categorias' | 'ingredientes'>> {
   activo?: boolean;
+  categorias?: ProductoCategoriaCreate[];
+  ingredientes?: ProductoIngredienteCreate[];
 }
 
 export interface ProductosFilters extends BaseFilters {

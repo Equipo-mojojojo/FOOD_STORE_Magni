@@ -21,7 +21,7 @@ from app.core.database import engine
 from app.modules.usuarios.repository import UsuarioRepository
 from app.modules.ingredientes.repository import IngredienteRepository
 from app.modules.productos.repository import (
-    ProductoRepository, ProductoCategoriaRepository, ProductoIngredienteRepository
+    ProductoRepository, ProductoCategoriaRepository, ProductoIngredienteRepository, UnidadMedidaRepository
 )
 from app.modules.categorias.repository import CategoriaRepository
 
@@ -46,6 +46,7 @@ class UnitOfWork:
         self.categorias = CategoriaRepository(self.session)
         self.producto_categorias = ProductoCategoriaRepository(self.session)
         self.producto_ingredientes = ProductoIngredienteRepository(self.session)
+        self.unidades_medida = UnidadMedidaRepository(self.session)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

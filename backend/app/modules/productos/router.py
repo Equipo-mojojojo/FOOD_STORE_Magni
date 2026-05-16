@@ -5,10 +5,18 @@ from app.core.deps import require_role
 from app.core.uow import UnitOfWork
 from app.modules.productos import service
 from app.modules.productos.schemas import (
-    ProductoCreate, ProductoUpdate, ProductoRead, ProductoDetail, PaginatedResponse
+    ProductoCreate, ProductoUpdate, ProductoRead, ProductoDetail, PaginatedResponse, UnidadMedidaSimple
 )
 
 router = APIRouter(prefix="/api/v1/productos", tags=["Productos"])
+
+# ── Unidades de Medida ────────────────────────────────────────────────────────
+
+@router.get("/unidades-medida", response_model=List[UnidadMedidaSimple])
+def list_unidades_medida():
+    """Obtiene el catálogo de unidades de medida (kg, L, etc.)."""
+    with UnitOfWork() as uow:
+        return service.get_unidades_medida(uow)
 
 # ── Productos ────────────────────────────────────────────────────────────────
 
@@ -32,9 +40,20 @@ def list_productos(
     """Catálogo de productos con filtros avanzados, ordenamiento y paginación."""
     with UnitOfWork() as uow:
         return service.list_productos(
-            uow, page, per_page, categoria, search, disponible, estado, 
-            sort_by, sort_order, created_from, created_to, 
-            updated_from, updated_to, starts_with
+            uow=uow,
+            page=page,
+            per_page=per_page,
+            categoria_id=categoria,
+            search=search,
+            disponible=disponible,
+            estado=estado,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            created_from=created_from,
+            created_to=created_to,
+            updated_from=updated_from,
+            updated_to=updated_to,
+            starts_with=starts_with
         )
 
 
@@ -61,7 +80,8 @@ def create_producto(data: ProductoCreate):
     """Crear un nuevo producto con categorías e ingredientes asociados."""
     with UnitOfWork() as uow:
         prod = service.create_producto(uow, data)
-        return ProductoRead.model_validate(prod)
+        uow.commit() # Commit explícito para asegurar que el ID esté disponible
+        return service.get_producto_detail(uow, prod.id)
 
 
 @router.put(
@@ -77,7 +97,8 @@ def update_producto(
     """Actualizar un producto. Si se envían categoria_ids o ingrediente_ids, se sincronizan."""
     with UnitOfWork() as uow:
         prod = service.update_producto(uow, prod_id, data)
-        return ProductoRead.model_validate(prod)
+        uow.commit()
+        return service.get_producto_detail(uow, prod_id)
 
 
 @router.patch(

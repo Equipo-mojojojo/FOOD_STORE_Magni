@@ -1,52 +1,118 @@
 """Servicio de Productos. Lógica de negocio con manejo de relaciones N:N."""
 from fastapi import HTTPException, status
+from decimal import Decimal
 from app.core.uow import UnitOfWork
 from app.modules.productos.model import Producto, ProductoCategoria, ProductoIngrediente
 from app.modules.productos.schemas import (
-    ProductoCreate, ProductoUpdate, ProductoDetail,
-    CategoriaSimple, IngredienteSimple,
+    ProductoRead, ProductoCreate, ProductoUpdate,
+    CategoriaSimple, IngredienteSimple, UnidadMedidaSimple,
+    ProductoCategoriaDetail, ProductoIngredienteDetail
 )
-from math import ceil
+from datetime import datetime, timezone
 
 
-# ── Productos ────────────────────────────────────────────────────────────────
+def _build_producto_response(prod: Producto) -> ProductoRead:
+    """Calcula costos, stock y sugeridos para un producto dado (Helper)."""
+    
+    # Categorías simplificadas
+    categorias = [
+        ProductoCategoriaDetail(
+            categoria=CategoriaSimple(id=pc.categoria.id, nombre=pc.categoria.nombre),
+            es_principal=pc.es_principal
+        )
+        for pc in prod.categorias
+        if pc.categoria
+    ]
+    
+    costo_total = Decimal("0.0")
+    ingredientes_detail = []
+    unidades_posibles = []
+    
+    for pi in prod.ingredientes:
+        if pi.ingrediente:
+            # Factores de conversión (Normalizando a unidad base: g, mL, u)
+            f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
+            f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
+            
+            # 1. Cantidad de receta llevada a unidad base
+            qty_base = pi.cantidad * Decimal(str(f_receta))
+            # 2. Precio de ingrediente por unidad base
+            price_base = pi.ingrediente.precio_costo / Decimal(str(f_ing))
+            
+            costo_ingrediente = qty_base * price_base
+            costo_total += costo_ingrediente
+            
+            # 3. Stock Elaborable (Normalizado)
+            if qty_base > 0:
+                stock_base = pi.ingrediente.stock_actual * Decimal(str(f_ing))
+                unidades = stock_base / qty_base
+                unidades_posibles.append(float(unidades))
+            
+            ingredientes_detail.append(
+                ProductoIngredienteDetail(
+                    ingrediente=IngredienteSimple(
+                        id=pi.ingrediente.id,
+                        nombre=pi.ingrediente.nombre,
+                        es_alergeno=pi.ingrediente.es_alergeno,
+                        precio_costo=pi.ingrediente.precio_costo,
+                    ),
+                    cantidad=pi.cantidad,
+                    unidad_medida=UnidadMedidaSimple(
+                        id=pi.unidad_medida.id,
+                        nombre=pi.unidad_medida.nombre,
+                        simbolo=pi.unidad_medida.simbolo,
+                        tipo=pi.unidad_medida.tipo,
+                        factor_conversion=pi.unidad_medida.factor_conversion
+                    ) if pi.unidad_medida else None,
+                    es_removible=pi.es_removible
+                )
+            )
+            
+    # El stock real es el mínimo que permite el ingrediente más escaso
+    if ingredientes_detail:
+        stock_disponible = int(min(unidades_posibles)) if unidades_posibles else 0
+    else:
+        # Si no tiene ingredientes, usamos su stock físico cargado
+        stock_disponible = prod.stock_cantidad
 
-def create_producto(uow: UnitOfWork, data: ProductoCreate) -> Producto:
-    """Crea un producto y sincroniza relaciones N:N con categorías e ingredientes."""
-    prod = Producto(
-        nombre=data.nombre,
-        descripcion=data.descripcion,
-        imagen_url=data.imagen_url,
-        precio_base=data.precio_base,
-        stock_cantidad=data.stock_cantidad,
-        disponible=data.disponible,
+    # Precio Sugerido = Costo Total * (1 + Margen)
+    precio_sugerido = costo_total * (Decimal("1.0") + prod.margen_ganancia)
+
+    unidad_venta_detail = UnidadMedidaSimple(
+        id=prod.unidad_venta.id,
+        nombre=prod.unidad_venta.nombre,
+        simbolo=prod.unidad_venta.simbolo,
+        tipo=prod.unidad_venta.tipo,
+        factor_conversion=prod.unidad_venta.factor_conversion
+    ) if prod.unidad_venta else None
+
+    return ProductoRead(
+        id=prod.id,
+        nombre=prod.nombre,
+        descripcion=prod.descripcion,
+        imagen_url=prod.imagen_url,
+        precio_base=prod.precio_base,
+        costo_total=costo_total,
+        stock_cantidad=prod.stock_cantidad,
+        stock_disponible=stock_disponible,
+        margen_ganancia=prod.margen_ganancia,
+        precio_sugerido=precio_sugerido,
+        disponible=prod.disponible,
+        unidad_venta=unidad_venta_detail,
+        categorias=categorias,
+        ingredientes=ingredientes_detail,
+        created_at=prod.created_at,
+        updated_at=prod.updated_at,
+        active_at=prod.active_at
     )
-
-    if data.activo is False:
-        from datetime import datetime, timezone
-        prod.active_at = datetime.now(timezone.utc)
-
-    prod = uow.productos.add(prod)
-
-    # Sincronizar relación N:N con categorías
-    for cat_id in data.categoria_ids:
-        pc = ProductoCategoria(producto_id=prod.id, categoria_id=cat_id)
-        uow.producto_categorias.add(pc)
-
-    # Sincronizar relación N:N con ingredientes
-    for ing_id in data.ingrediente_ids:
-        pi = ProductoIngrediente(producto_id=prod.id, ingrediente_id=ing_id)
-        uow.producto_ingredientes.add(pi)
-
-    return prod
 
 
 def list_productos(
-    uow: UnitOfWork, 
-    page: int = 1, 
-    per_page: int = 20,
-    categoria_id: int | None = None,
+    uow: UnitOfWork,
+    page: int = 1,
+    per_page: int = 10,
     search: str | None = None,
+    categoria_id: int | None = None,
     disponible: bool | None = None,
     estado: str = "activo",
     sort_by: str = "nombre",
@@ -57,16 +123,13 @@ def list_productos(
     updated_to: str | None = None,
     starts_with: str | None = None,
 ):
-    """Listado paginado de productos con filtros avanzados."""
-    from datetime import datetime
-    
-    # Parse dates if provided
+    """Listado paginado de productos con cálculos de costo y stock dinámicos."""
     d_created_from = datetime.strptime(created_from, "%Y-%m-%d").date() if created_from else None
     d_created_to = datetime.strptime(created_to, "%Y-%m-%d").date() if created_to else None
     d_updated_from = datetime.strptime(updated_from, "%Y-%m-%d").date() if updated_from else None
     d_updated_to = datetime.strptime(updated_to, "%Y-%m-%d").date() if updated_to else None
 
-    return uow.productos.get_paginated(
+    result = uow.productos.get_paginated(
         page=page,
         per_page=per_page,
         search=search,
@@ -81,101 +144,111 @@ def list_productos(
         updated_to=d_updated_to,
         starts_with=starts_with
     )
+    
+    # Procesar cada producto para calcular stock y costos antes de enviar al frontend
+    result["items"] = [_build_producto_response(p) for p in result["items"]]
+    return result
 
 
-def get_producto_detail(uow: UnitOfWork, prod_id: int) -> ProductoDetail:
-    """Obtiene detalle de producto con categorías e ingredientes relacionados."""
+def get_producto_detail(uow: UnitOfWork, prod_id: int) -> ProductoRead:
+    """Obtiene detalle de producto con todos los cálculos procesados."""
     prod = uow.productos.get_by_id_with_relations(prod_id)
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+    
+    return _build_producto_response(prod)
 
-    # Construir respuesta con relaciones
-    categorias = [
-        CategoriaSimple(id=pc.categoria.id, nombre=pc.categoria.nombre)
-        for pc in prod.producto_categorias
-        if pc.categoria
-    ]
-    ingredientes = [
-        IngredienteSimple(
-            id=pi.ingrediente.id,
-            nombre=pi.ingrediente.nombre,
-            es_alergeno=pi.ingrediente.es_alergeno,
-        )
-        for pi in prod.producto_ingredientes
-        if pi.ingrediente
-    ]
 
-    return ProductoDetail(
-        id=prod.id,
-        nombre=prod.nombre,
-        descripcion=prod.descripcion,
-        imagen_url=prod.imagen_url,
-        precio_base=prod.precio_base,
-        stock_cantidad=prod.stock_cantidad,
-        disponible=prod.disponible,
-        created_at=prod.created_at,
-        updated_at=prod.updated_at,
-        categorias=categorias,
-        ingredientes=ingredientes,
+def create_producto(uow: UnitOfWork, data: ProductoCreate) -> Producto:
+    """Crea un producto y sincroniza relaciones N:N con categorías e ingredientes."""
+    prod = Producto(
+        nombre=data.nombre,
+        descripcion=data.descripcion,
+        imagen_url=data.imagen_url,
+        precio_base=data.precio_base,
+        stock_cantidad=data.stock_cantidad,
+        disponible=data.disponible,
+        unidad_venta_id=data.unidad_venta_id,
+        margen_ganancia=data.margen_ganancia
     )
+    uow.productos.add(prod)
+    uow.session.flush()
+
+    # Agregar categorías
+    for cat in data.categorias:
+        pc = ProductoCategoria(producto_id=prod.id, categoria_id=cat.categoria_id, es_principal=cat.es_principal)
+        uow.producto_categorias.add(pc)
+
+    # Agregar ingredientes
+    for ing in data.ingredientes:
+        pi = ProductoIngrediente(
+            producto_id=prod.id, 
+            ingrediente_id=ing.ingrediente_id,
+            cantidad=ing.cantidad,
+            unidad_medida_id=ing.unidad_medida_id,
+            es_removible=ing.es_removible
+        )
+        uow.producto_ingredientes.add(pi)
+
+    return prod
 
 
 def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Producto:
-    """Actualiza producto y sincroniza relaciones N:N si se proporcionan."""
+    """Actualiza producto y sincroniza relaciones N:N."""
     prod = uow.productos.get_by_id(prod_id)
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    update_data = data.model_dump(exclude_unset=True, exclude={"categoria_ids", "ingrediente_ids", "activo"})
+    update_data = data.model_dump(exclude_unset=True, exclude={"categorias", "ingredientes", "activo"})
     for key, value in update_data.items():
         setattr(prod, key, value)
 
     if data.activo is True:
         prod.active_at = None
     elif data.activo is False:
-        from datetime import datetime, timezone
         prod.active_at = datetime.now(timezone.utc)
 
-    # Sync categorías si se enviaron
-    if data.categoria_ids is not None:
+    if data.categorias is not None:
         uow.producto_categorias.delete_by_producto(prod_id)
-        for cat_id in data.categoria_ids:
-            pc = ProductoCategoria(producto_id=prod_id, categoria_id=cat_id)
+        for cat in data.categorias:
+            pc = ProductoCategoria(producto_id=prod_id, categoria_id=cat.categoria_id, es_principal=cat.es_principal)
             uow.producto_categorias.add(pc)
 
-    # Sync ingredientes si se enviaron
-    if data.ingrediente_ids is not None:
+    if data.ingredientes is not None:
         uow.producto_ingredientes.delete_by_producto(prod_id)
-        for ing_id in data.ingrediente_ids:
-            pi = ProductoIngrediente(producto_id=prod_id, ingrediente_id=ing_id)
+        for ing in data.ingredientes:
+            pi = ProductoIngrediente(
+                producto_id=prod_id, 
+                ingrediente_id=ing.ingrediente_id,
+                cantidad=ing.cantidad,
+                unidad_medida_id=ing.unidad_medida_id,
+                es_removible=ing.es_removible
+            )
             uow.producto_ingredientes.add(pi)
 
     return uow.productos.update(prod)
 
 
 def dar_de_baja_producto(uow: UnitOfWork, prod_id: int):
-    """Da de baja un producto (setea active_at). Reversible."""
     prod = uow.productos.get_by_id(prod_id)
-    if not prod:
+    if not prod or prod.deleted_at:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    if prod.deleted_at:
-        raise HTTPException(status_code=400, detail="El producto ya fue eliminado")
     uow.productos.dar_de_baja(prod)
 
 
 def restore_producto(uow: UnitOfWork, prod_id: int):
-    """Restaura un producto dado de baja (limpia active_at)."""
     prod = uow.productos.get_by_id(prod_id)
-    if not prod:
+    if not prod or prod.deleted_at:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    if prod.deleted_at:
-        raise HTTPException(status_code=400, detail="El producto fue eliminado y no se puede restaurar")
     uow.productos.restore(prod)
 
 
 def eliminar_producto(uow: UnitOfWork, prod_id: int):
-    """Eliminación lógica de producto (setea deleted_at). Irreversible e invisible."""
     prod = uow.productos.get_by_id(prod_id)
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     uow.productos.eliminar(prod)
+
+
+def get_unidades_medida(uow: UnitOfWork):
+    return uow.unidades_medida.get_all()

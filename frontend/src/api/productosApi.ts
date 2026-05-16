@@ -6,6 +6,7 @@ import type {
   ProductoUpdate,
   PaginatedResponse,
   ProductosFilters,
+  UnidadMedidaSimple,
 } from "../types";
 
 export const productosApi = {
@@ -55,5 +56,10 @@ export const productosApi = {
 
   delete: async (id: number): Promise<void> => {
     await axiosClient.delete(`/productos/${id}`);
+  },
+
+  getUnidadesMedida: async (): Promise<UnidadMedidaSimple[]> => {
+    const res = await axiosClient.get<UnidadMedidaSimple[]>("/productos/unidades-medida");
+    return res.data;
   },
 };

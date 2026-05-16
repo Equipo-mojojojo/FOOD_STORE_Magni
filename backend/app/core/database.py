@@ -27,7 +27,7 @@ def create_all_tables() -> None:
     Los imports registran cada modelo en el metadata de SQLModel.
     """
     import app.modules.usuarios.model       # noqa: F401
+    import app.modules.productos.model      # noqa: F401
     import app.modules.ingredientes.model   # noqa: F401
     import app.modules.categorias.model     # noqa: F401
-    import app.modules.productos.model      # noqa: F401
     SQLModel.metadata.create_all(engine)

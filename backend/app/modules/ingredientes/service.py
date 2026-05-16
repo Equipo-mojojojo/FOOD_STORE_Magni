@@ -116,11 +116,17 @@ class IngredienteService:
         """Crea un nuevo ingrediente."""
         from sqlalchemy.exc import IntegrityError
         with self.uow:
-            ingrediente = Ingrediente(nombre=data.nombre, descripcion=data.descripcion, es_alergeno=data.es_alergeno)
+            # Usamos model_dump para incluir todos los campos nuevos (stock, costo, etc)
+            create_data = data.model_dump(exclude={"activo"})
+            ingrediente = Ingrediente(**create_data)
+            
             try:
                 self.uow.ingredientes.add(ingrediente)
-                self.uow.session.flush()  
+                self.uow.session.flush()
                 self.uow.session.refresh(ingrediente)
+                # Forzar carga de relación para el schema
+                if ingrediente.unidad_medida_id:
+                    _ = ingrediente.unidad_medida
             except IntegrityError:
                 self.uow.rollback()
                 raise HTTPException(
@@ -153,6 +159,9 @@ class IngredienteService:
             try:
                 self.uow.ingredientes.update(ingrediente)
                 self.uow.session.flush()
+                # Forzar carga de relación para el schema
+                if ingrediente.unidad_medida_id:
+                    _ = ingrediente.unidad_medida
             except IntegrityError:
                 self.uow.rollback()
                 raise HTTPException(

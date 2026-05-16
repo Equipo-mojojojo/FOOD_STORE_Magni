@@ -9,6 +9,17 @@ from datetime import datetime
 
 
 # ── Productos ────────────────────────────────────────────────────────────────
+class ProductoCategoriaCreate(BaseModel):
+    categoria_id: int
+    es_principal: bool = False
+
+
+class ProductoIngredienteCreate(BaseModel):
+    ingrediente_id: int
+    cantidad: Decimal = Field(gt=0)
+    unidad_medida_id: int
+    es_removible: bool = False
+
 
 class ProductoCreate(BaseModel):
     """Schema de entrada para crear un producto con relaciones N:N."""
@@ -19,8 +30,10 @@ class ProductoCreate(BaseModel):
     stock_cantidad: Annotated[int, Field(ge=0, description="Cantidad en stock (>=0)")] = 0
     disponible: bool = True
     activo: Optional[bool] = True
-    categoria_ids: List[int] = Field(default=[], description="IDs de categorías asociadas (N:N)")
-    ingrediente_ids: List[int] = Field(default=[], description="IDs de ingredientes asociados (N:N)")
+    unidad_venta_id: Optional[int] = Field(default=None, description="ID de la unidad de medida de venta")
+    margen_ganancia: Decimal = Field(default=0.0, description="Margen de ganancia (ej: 1.0 para 100%)")
+    categorias: List[ProductoCategoriaCreate] = Field(default=[], description="Categorías asociadas (N:N)")
+    ingredientes: List[ProductoIngredienteCreate] = Field(default=[], description="Ingredientes asociados (N:N)")
 
     @field_validator("precio_base")
     @classmethod
@@ -46,8 +59,10 @@ class ProductoUpdate(BaseModel):
     stock_cantidad: Optional[int] = Field(default=None, ge=0)
     disponible: Optional[bool] = None
     activo: Optional[bool] = None
-    categoria_ids: Optional[List[int]] = None
-    ingrediente_ids: Optional[List[int]] = None
+    unidad_venta_id: Optional[int] = None
+    margen_ganancia: Optional[Decimal] = None
+    categorias: Optional[List[ProductoCategoriaCreate]] = None
+    ingredientes: Optional[List[ProductoIngredienteCreate]] = None
 
 
 class CategoriaSimple(BaseModel):
@@ -57,11 +72,35 @@ class CategoriaSimple(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ProductoCategoriaDetail(BaseModel):
+    categoria: CategoriaSimple
+    es_principal: bool
+    model_config = {"from_attributes": True}
+
+
 class IngredienteSimple(BaseModel):
     """Ingrediente simplificado para incluir en detalle de producto."""
     id: int
     nombre: str
     es_alergeno: bool
+    precio_costo: Decimal
+    model_config = {"from_attributes": True}
+
+
+class UnidadMedidaSimple(BaseModel):
+    id: int
+    nombre: str
+    simbolo: str
+    tipo: str
+    factor_conversion: float
+    model_config = {"from_attributes": True}
+
+
+class ProductoIngredienteDetail(BaseModel):
+    ingrediente: IngredienteSimple
+    cantidad: Decimal
+    unidad_medida: UnidadMedidaSimple
+    es_removible: bool
     model_config = {"from_attributes": True}
 
 
@@ -72,10 +111,15 @@ class ProductoRead(BaseModel):
     descripcion: Optional[str] = None
     imagen_url: Optional[str] = None
     precio_base: Decimal
+    costo_total: Decimal = Field(default=0.0)
     stock_cantidad: int
+    stock_disponible: int = Field(default=0)
+    margen_ganancia: Decimal = Field(default=0.0)
+    precio_sugerido: Decimal = Field(default=0.0)
     disponible: bool
-    categorias: List[CategoriaSimple] = []
-    ingredientes: List[IngredienteSimple] = []
+    unidad_venta: Optional[UnidadMedidaSimple] = None
+    categorias: List[ProductoCategoriaDetail] = []
+    ingredientes: List[ProductoIngredienteDetail] = []
     created_at: datetime
     updated_at: datetime
     active_at: Optional[datetime] = None
