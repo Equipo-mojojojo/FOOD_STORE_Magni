@@ -16,10 +16,12 @@ class Usuario(SQLModel, table=True):
     __tablename__ = "usuarios"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    nombre: str = Field(max_length=100)
+    username:        str        = Field(index=True, unique=True)
+    full_name:       str
     email: str = Field(max_length=254, unique=True)
     password_hash: str = Field(max_length=60)
-    rol: str = Field(default="CLIENT", max_length=20)
+    role: str = Field(default="user", max_length=20)
+    disabled: bool = Field(default=False)
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
