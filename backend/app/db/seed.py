@@ -8,8 +8,9 @@ Uso:
 Requiere PostgreSQL corriendo con las variables de .env configuradas.
 
 Crea:
-  - Administrador / admin  (rol=ADMIN)
+  - Administrador / admin  (rol=admin)
   - 10 ingredientes básicos
+  - 7 unidades de medida
 """
 
 from sqlmodel import Session, select
@@ -22,10 +23,11 @@ from app.modules.productos.model import UnidadMedida
 
 USUARIOS_INICIALES = [
     {
-        "nombre": "Administrador",
+        "username": "admin",
+        "full_name": "Administrador",
         "email": "admin@foodstore.com",
         "password": "admin",
-        "rol": "ADMIN",
+        "role": "admin",
     },
 ]
 
@@ -58,31 +60,46 @@ def run() -> None:
     create_all_tables()
 
     with Session(engine) as session:
-        # Seed Usuarios
+        # 1. Seed Usuarios — primero porque no depende de nada
         print("Sedeando usuarios...")
         for u_data in USUARIOS_INICIALES:
             existing = session.exec(select(Usuario).where(Usuario.email == u_data["email"])).first()
             if not existing:
                 u = Usuario(
-                    nombre=u_data["nombre"],
+                    username=u_data["username"],
+                    full_name=u_data["full_name"],
                     email=u_data["email"],
                     password_hash=hash_password(u_data["password"]),
-                    rol=u_data["rol"]
+                    role=u_data["role"],
                 )
                 session.add(u)
                 print(f"  [+] Usuario creado: {u.email}")
             else:
                 print(f"  [=] Usuario ya existe: {u_data['email']}")
 
-        # Seed Ingredientes
+        # 2. Seed Unidades de Medida — ANTES que ingredientes (FK)
+        print("Sedeando unidades de medida...")
+        for u_data in UNIDADES_MEDIDA_INICIALES:
+            existing = session.exec(select(UnidadMedida).where(UnidadMedida.nombre == u_data["nombre"])).first()
+            if not existing:
+                u = UnidadMedida(**u_data)
+                session.add(u)
+                print(f"  [+] Unidad de Medida creada: {u.nombre}")
+            else:
+                print(f"  [=] Unidad de Medida ya existe: {u_data['nombre']}")
+
+        # Flush para que las unidades tengan ID antes de usarlas en ingredientes
+        session.flush()
+
+        # 3. Seed Ingredientes — depende de UnidadMedida
         print("Sedeando ingredientes...")
         for i_data in INGREDIENTES_INICIALES:
             existing = session.exec(select(Ingrediente).where(Ingrediente.nombre == i_data["nombre"])).first()
-            
+
             # Buscar ID de unidad por nombre
             unidad_obj = session.exec(select(UnidadMedida).where(UnidadMedida.nombre == i_data["unidad"])).first()
             unidad_id = unidad_obj.id if unidad_obj else None
-            
+
             if not existing:
                 i = Ingrediente(
                     nombre=i_data["nombre"],
@@ -101,17 +118,6 @@ def run() -> None:
                 existing.precio_costo = i_data["precio"]
                 session.add(existing)
                 print(f"  [=] Ingrediente actualizado: {existing.nombre}")
-
-        # Seed Unidades de Medida
-        print("Sedeando unidades de medida...")
-        for u_data in UNIDADES_MEDIDA_INICIALES:
-            existing = session.exec(select(UnidadMedida).where(UnidadMedida.nombre == u_data["nombre"])).first()
-            if not existing:
-                u = UnidadMedida(**u_data)
-                session.add(u)
-                print(f"  [+] Unidad de Medida creada: {u.nombre}")
-            else:
-                print(f"  [=] Unidad de Medida ya existe: {u_data['nombre']}")
 
         session.commit()
     print("=== Seed completado exitosamente ===")

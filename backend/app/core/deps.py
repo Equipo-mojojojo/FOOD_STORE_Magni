@@ -3,7 +3,7 @@ Dependencias de autenticación y autorización para inyectar vía Depends().
 
 Flujo de resolución:
     Request
-      → oauth2_scheme extrae el Bearer token del header Authorization
+      → oauth2_scheme extrae el Bearer token de la cookie HttpOnly
       → get_current_user abre un UoW, decodifica el JWT, carga el usuario
       → require_role([...]) verifica que el rol del usuario esté permitido
 
@@ -17,16 +17,42 @@ Conoce a: UoW, Security, Model
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.security import decode_access_token
 from app.core.uow import UnitOfWork, get_uow
 from app.modules.usuarios.model import Usuario
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
+class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> str | None:
+        # 1. Obtener el token EXCLUSIVAMENTE de la cookie (HttpOnly)
+        token = request.cookies.get("access_token")
+        
+        # 2. El soporte para el header Authorization fue deshabilitado.
+        # ¿Por qué? Para maximizar la seguridad y forzar el uso de cookies HttpOnly.
+        # Las cookies HttpOnly no pueden ser leídas por JavaScript (mitigando ataques XSS).
+        # Si permitiéramos usar el token vía header, el frontend tendría que manipular
+        # el token en texto plano, arruinando el propósito de la cookie HttpOnly.
+                
+        if not token:
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="No autenticado",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            else:
+                return None
+        return token
+
+# Define el esquema OAuth2 que extrae el token de la cookie
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/v1/auth/login")
+
+
+    
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     uow: Annotated[UnitOfWork, Depends(get_uow)],
@@ -60,16 +86,16 @@ def require_role(allowed_roles: list[str]):
     Factory de dependencias para control de acceso basado en roles (RBAC).
 
     Uso:
-        @router.get("/admin/...", dependencies=[Depends(require_role(["ADMIN"]))])
+        @router.get("/admin/...", dependencies=[Depends(require_role(["admin"]))])
     """
     async def role_checker(
         current_user: Annotated[Usuario, Depends(get_current_user)],
     ) -> Usuario:
-        if current_user.rol not in allowed_roles:
+        if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(
-                    f"Permisos insuficientes. Tu rol es '{current_user.rol}'. "
+                    f"Permisos insuficientes. Tu rol es '{current_user.role}'. "
                     f"Se requiere uno de: {allowed_roles}"
                 ),
             )

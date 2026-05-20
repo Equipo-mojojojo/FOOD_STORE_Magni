@@ -17,6 +17,15 @@ class UsuarioRepository(BaseRepository[Usuario]):
     def __init__(self, session: Session):
         super().__init__(Usuario, session)
 
+    def get_by_username(self, username: str) -> Usuario | None:
+        """Busca un usuario activo por username."""
+        return self.session.exec(
+            select(Usuario).where(
+                Usuario.username == username,
+                Usuario.deleted_at.is_(None)
+            )
+        ).first()
+
     def get_by_email(self, email: str) -> Usuario | None:
         """Busca un usuario activo por email."""
         return self.session.exec(
