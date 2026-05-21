@@ -23,7 +23,8 @@ class UserPublic(BaseModel):
     email:     str
     role:      str
     disabled:  bool
-
+    # Permite leer atributos directamente desde objetos SQLModel
+    model_config = {"from_attributes": True}
 #queda este el nuestro
 class TokenResponse(BaseModel):
     """Respuesta del endpoint /token.."""

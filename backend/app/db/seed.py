@@ -19,6 +19,7 @@ from app.core.security import hash_password
 from app.modules.usuarios.model import Usuario
 from app.modules.ingredientes.model import Ingrediente
 from app.modules.productos.model import UnidadMedida
+from app.modules.pedidos.model import EstadoPedido, FormaPago
 
 
 USUARIOS_INICIALES = [
@@ -27,7 +28,7 @@ USUARIOS_INICIALES = [
         "full_name": "Administrador",
         "email": "admin@foodstore.com",
         "password": "admin",
-        "role": "admin",
+        "role": "ADMIN",
     },
 ]
 
@@ -54,6 +55,20 @@ UNIDADES_MEDIDA_INICIALES = [
     {"nombre": "metro cuadrado", "simbolo": "m²", "tipo": "area", "factor_conversion": 1.0},
 ]
 
+ESTADOS_PEDIDO_INICIALES = [
+    {"codigo": "PENDIENTE",   "descripcion": "Pedido recibido, esperando confirmación", "orden": 1, "es_terminal": False},
+    {"codigo": "CONFIRMADO",  "descripcion": "Pago confirmado, listo para preparar",    "orden": 2, "es_terminal": False},
+    {"codigo": "EN_PREP",     "descripcion": "En preparación en cocina",                "orden": 3, "es_terminal": False},
+    {"codigo": "EN_CAMINO",   "descripcion": "En camino al cliente",                    "orden": 4, "es_terminal": False},
+    {"codigo": "ENTREGADO",   "descripcion": "Entregado al cliente",                    "orden": 5, "es_terminal": True},
+    {"codigo": "CANCELADO",   "descripcion": "Pedido cancelado",                        "orden": 6, "es_terminal": True},
+]
+
+FORMAS_PAGO_INICIALES = [
+    {"codigo": "MERCADOPAGO",   "descripcion": "Pago online con MercadoPago", "habilitado": True},
+    {"codigo": "EFECTIVO",      "descripcion": "Efectivo al retirar en local", "habilitado": True},
+    {"codigo": "TRANSFERENCIA", "descripcion": "Transferencia bancaria",       "habilitado": True},
+]
 
 def run() -> None:
     print("=== Seed — Food Store (PostgreSQL + SQLModel) ===")
@@ -90,7 +105,7 @@ def run() -> None:
 
         # Flush para que las unidades tengan ID antes de usarlas en ingredientes
         session.flush()
-
+        
         # 3. Seed Ingredientes — depende de UnidadMedida
         print("Sedeando ingredientes...")
         for i_data in INGREDIENTES_INICIALES:
@@ -118,7 +133,26 @@ def run() -> None:
                 existing.precio_costo = i_data["precio"]
                 session.add(existing)
                 print(f"  [=] Ingrediente actualizado: {existing.nombre}")
+                
+        # 4. Seed EstadoPedido
+        print("Sedeando estados de pedido...")
+        for e_data in ESTADOS_PEDIDO_INICIALES:
+            existing = session.exec(select(EstadoPedido).where(EstadoPedido.codigo == e_data["codigo"])).first()
+            if not existing:
+                session.add(EstadoPedido(**e_data))
+                print(f"  [+] Estado creado: {e_data['codigo']}")
+            else:
+                print(f"  [=] Ya existe: {e_data['codigo']}")
 
+        # 5. Seed FormaPago
+        print("Sedeando formas de pago...")
+        for f_data in FORMAS_PAGO_INICIALES:
+            existing = session.exec(select(FormaPago).where(FormaPago.codigo == f_data["codigo"])).first()
+            if not existing:
+                session.add(FormaPago(**f_data))
+                print(f"  [+] Forma de pago creada: {f_data['codigo']}")
+            else:
+                print(f"  [=] Ya existe: {f_data['codigo']}")
         session.commit()
     print("=== Seed completado exitosamente ===")
 
