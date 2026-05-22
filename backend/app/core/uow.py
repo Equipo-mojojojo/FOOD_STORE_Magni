@@ -26,7 +26,11 @@ from app.modules.productos.repository import (
     ProductoRepository, ProductoCategoriaRepository, ProductoIngredienteRepository, UnidadMedidaRepository
 )
 from app.modules.categorias.repository import CategoriaRepository
-
+from app.modules.pedidos.repository import (
+    PedidoRepository,DetallePedidoRepository,HistorialEstadoRepository,
+    EstadoPedidoRepository,
+    FormaPagoRepository,
+)
 
 class UnitOfWork:
     """
@@ -57,6 +61,11 @@ class UnitOfWork:
         self.producto_categorias = ProductoCategoriaRepository(self.session)
         self.producto_ingredientes = ProductoIngredienteRepository(self.session)
         self.unidades_medida = UnidadMedidaRepository(self.session)
+        self.pedidos            = PedidoRepository(self.session)
+        self.detalles_pedido    = DetallePedidoRepository(self.session)
+        self.historial_estados  = HistorialEstadoRepository(self.session)
+        self.estados_pedido     = EstadoPedidoRepository(self.session)
+        self.formas_pago        = FormaPagoRepository(self.session)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

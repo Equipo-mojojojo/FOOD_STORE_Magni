@@ -122,6 +122,8 @@ def register_user(uow: UnitOfWork, data: UserCreate) -> UserPublic:
             email=data.email,
             celular=data.celular,
             password_hash=hash_password(data.password),
+            roles="CLIENT",
+
         )
         uow.usuarios.add(user)
 

@@ -18,6 +18,7 @@ class UserCreate(BaseModel):
 
 
 class UserPublic(BaseModel):
+
     """Vista pública del usuario — excluye password_hash."""
     id: int
     nombre: str
