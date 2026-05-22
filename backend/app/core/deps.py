@@ -5,7 +5,7 @@ Flujo de resolución:
     Request
       → oauth2_scheme extrae el Bearer token de la cookie HttpOnly
       → get_current_user abre un UoW, decodifica el JWT, carga el usuario
-      → require_role([...]) verifica que el rol del usuario esté permitido
+      → require_role([...]) verifica que algún rol del usuario esté permitido
 
 Separación semántica de errores HTTP:
     401 = no autenticado (sin token / token inválido / expirado)
@@ -32,10 +32,7 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
         token = request.cookies.get("access_token")
         
         # 2. El soporte para el header Authorization fue deshabilitado.
-        # ¿Por qué? Para maximizar la seguridad y forzar el uso de cookies HttpOnly.
         # Las cookies HttpOnly no pueden ser leídas por JavaScript (mitigando ataques XSS).
-        # Si permitiéramos usar el token vía header, el frontend tendría que manipular
-        # el token en texto plano, arruinando el propósito de la cookie HttpOnly.
                 
         if not token:
             if self.auto_error:
@@ -85,17 +82,25 @@ def require_role(allowed_roles: list[str]):
     """
     Factory de dependencias para control de acceso basado en roles (RBAC).
 
+    Ahora los roles vienen del JWT payload como lista.
+    Verifica que haya INTERSECCIÓN entre los roles del usuario y los permitidos.
+
     Uso:
-        @router.get("/admin/...", dependencies=[Depends(require_role(["admin"]))])
+        @router.get("/admin/...", dependencies=[Depends(require_role(["ADMIN"]))])
     """
     async def role_checker(
+        token: Annotated[str, Depends(oauth2_scheme)],
         current_user: Annotated[Usuario, Depends(get_current_user)],
     ) -> Usuario:
-        if current_user.role not in allowed_roles:
+        payload = decode_access_token(token)
+        user_roles: list[str] = payload.get("roles", []) if payload else []
+
+        # ¿Hay al menos un rol en común?
+        if not any(r in user_roles for r in allowed_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(
-                    f"Permisos insuficientes. Tu rol es '{current_user.role}'. "
+                    f"Permisos insuficientes. Tus roles son {user_roles}. "
                     f"Se requiere uno de: {allowed_roles}"
                 ),
             )

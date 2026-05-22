@@ -1,6 +1,6 @@
 /** Formulario de login. */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../../api/authApi";
 import { useAuthStore } from "../../store/authStore";
 
@@ -18,7 +18,16 @@ export default function LoginForm() {
     setLoading(true);
     try {
       await login({ email, password });
-      navigate("/");
+      
+      const state = useAuthStore.getState();
+      // Chequear si tiene rol ADMIN (sea string o objeto con rol_codigo)
+      const isAdmin = state.usuario?.roles?.some((r: any) => r === 'ADMIN' || r?.rol_codigo === 'ADMIN');
+      
+      if (isAdmin) {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
@@ -92,9 +101,14 @@ export default function LoginForm() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          admin@foodstore.com / admin
-        </p>
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-500">
+            ¿No tenés cuenta?{" "}
+            <Link to="/register" className="text-green-main hover:text-green-dark font-medium transition-colors">
+              Registrate acá
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

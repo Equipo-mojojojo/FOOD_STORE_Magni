@@ -10,6 +10,9 @@ import HomePage from "./pages/HomePage";
 import IngredientesPage from "./pages/IngredientesPage";
 import CategoriasPage from "./pages/CategoriasPage";
 import ProductosPage from "./pages/ProductosPage";
+import RegisterPage from "./pages/RegisterPage";
+import DashboardPage from "./pages/DashboardPage";
+import NavbarUsuario from "./components/NavbarUsuario";
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
@@ -23,11 +26,11 @@ function AppLayout() {
         <Navbar />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/ingredientes" element={<IngredientesPage />} />
             <Route path="/categorias" element={<CategoriasPage />} />
             <Route path="/productos" element={<ProductosPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
       </div>
@@ -45,6 +48,17 @@ export default function App() {
           path="/login"
           element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
         />
+        <Route
+          path="/register"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
+        />
+        
+        {/* Ruta Pública - Storefront */}
+        <Route element={<NavbarUsuario />}>
+          <Route path="/" element={<HomePage />} />
+        </Route>
+
+        {/* Rutas Privadas - Admin Dashboard */}
         <Route
           path="/*"
           element={

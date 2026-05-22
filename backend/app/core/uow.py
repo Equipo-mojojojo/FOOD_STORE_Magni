@@ -18,7 +18,9 @@ Uso en Service:
 from sqlmodel import Session
 
 from app.core.database import engine
-from app.modules.usuarios.repository import UsuarioRepository
+from app.modules.usuarios.repository import (
+    UsuarioRepository, RolRepository, UsuarioRolRepository, RefreshTokenRepository,
+)
 from app.modules.ingredientes.repository import IngredienteRepository
 from app.modules.productos.repository import (
     ProductoRepository, ProductoCategoriaRepository, ProductoIngredienteRepository, UnidadMedidaRepository
@@ -35,8 +37,11 @@ class UnitOfWork:
     Context manager que encapsula una transacción de BD.
 
     Atributos:
-        usuarios:      UsuarioRepository
-        ingredientes:  IngredienteRepository
+        usuarios:          UsuarioRepository
+        roles:             RolRepository
+        usuario_roles:     UsuarioRolRepository
+        refresh_tokens:    RefreshTokenRepository
+        ingredientes:      IngredienteRepository
     """
 
     def __init__(self):
@@ -44,7 +49,12 @@ class UnitOfWork:
 
     def __enter__(self):
         self.session = Session(engine, expire_on_commit=False)
+        # Dominio 1: Identidad & Acceso
         self.usuarios = UsuarioRepository(self.session)
+        self.roles = RolRepository(self.session)
+        self.usuario_roles = UsuarioRolRepository(self.session)
+        self.refresh_tokens = RefreshTokenRepository(self.session)
+        # Dominio 2: Productos
         self.ingredientes = IngredienteRepository(self.session)
         self.productos = ProductoRepository(self.session)
         self.categorias = CategoriaRepository(self.session)

@@ -8,7 +8,7 @@ interface Props {
 }
 
 const links = [
-  { to: "/", label: "Home", icon: Home },
+  { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/productos", label: "Productos", icon: ShoppingBag },
   { to: "/categorias", label: "Categorías", icon: Layers },
   { to: "/ingredientes", label: "Ingrediente", icon: Package },
