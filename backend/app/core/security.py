@@ -1,12 +1,15 @@
 """
-Utilidades de seguridad: hashing de contraseñas y manejo de JWT.
+Utilidades de seguridad: hashing de contraseñas, JWT y refresh tokens.
 
 - hash_password / verify_password: bcrypt vía passlib.
 - create_access_token / decode_access_token: JWT con python-jose (HS256).
+- create_refresh_token / hash_token: generación y hash SHA-256 de refresh tokens.
 
 Separado del router para poder reutilizarse en seeds, tests, etc.
 """
 
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
@@ -28,13 +31,13 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-# ─── JWT ──────────────────────────────────────────────────────────────────────
+# ─── JWT (Access Token) ──────────────────────────────────────────────────────
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
     Crea un JWT firmado con HS256.
 
-    Payload mínimo esperado:
-        { "sub": user_id }
+    Payload esperado:
+        { "sub": user_id, "roles": ["ADMIN", "CLIENT"] }
 
     Se agrega automáticamente:
         "type": "access"
@@ -62,3 +65,18 @@ def decode_access_token(token: str) -> dict | None:
         return payload
     except JWTError:
         return None
+
+
+# ─── Refresh Token ────────────────────────────────────────────────────────────
+def create_refresh_token() -> str:
+    """
+    Genera un refresh token opaco (64 bytes hex = 128 caracteres).
+
+    Este token se envía al cliente. En BD se guarda su hash SHA-256.
+    """
+    return secrets.token_hex(64)
+
+
+def hash_token(token: str) -> str:
+    """Genera el hash SHA-256 de un token (para guardar en BD)."""
+    return hashlib.sha256(token.encode()).hexdigest()
