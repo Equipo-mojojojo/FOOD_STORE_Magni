@@ -10,6 +10,7 @@ import HomePage from "./pages/HomePage";
 import IngredientesPage from "./pages/IngredientesPage";
 import CategoriasPage from "./pages/CategoriasPage";
 import ProductosPage from "./pages/ProductosPage";
+import RegisterPage from "./pages/RegisterPage";
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
@@ -44,6 +45,10 @@ export default function App() {
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        />
+        <Route
+          path="/register"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
         />
         <Route
           path="/*"

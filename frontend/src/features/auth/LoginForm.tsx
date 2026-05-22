@@ -1,6 +1,6 @@
 /** Formulario de login. */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../../api/authApi";
 import { useAuthStore } from "../../store/authStore";
 
@@ -92,9 +92,14 @@ export default function LoginForm() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          admin@foodstore.com / admin
-        </p>
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-500">
+            ¿No tenés cuenta?{" "}
+            <Link to="/register" className="text-green-main hover:text-green-dark font-medium transition-colors">
+              Registrate acá
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
