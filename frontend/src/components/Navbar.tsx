@@ -1,7 +1,7 @@
 /** Navbar superior. */
 import { Menu, LogOut } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useUiStore } from "../store/uiStore";
 
 export default function Navbar() {
@@ -12,7 +12,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -30,6 +30,12 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
+        <Link 
+          to="/" 
+          className="text-sm font-medium text-green-dark hover:text-green-main transition-colors mr-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 hidden md:block"
+        >
+          Home usuario
+        </Link>
         <span className="text-sm text-gray-600 hidden sm:block">
           Hola, <strong className="text-green-dark">{usuario?.nombre || 'Usuario'}</strong>
         </span>

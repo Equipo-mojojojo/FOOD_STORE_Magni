@@ -18,7 +18,16 @@ export default function LoginForm() {
     setLoading(true);
     try {
       await login({ email, password });
-      navigate("/");
+      
+      const state = useAuthStore.getState();
+      // Chequear si tiene rol ADMIN (sea string o objeto con rol_codigo)
+      const isAdmin = state.usuario?.roles?.some((r: any) => r === 'ADMIN' || r?.rol_codigo === 'ADMIN');
+      
+      if (isAdmin) {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };

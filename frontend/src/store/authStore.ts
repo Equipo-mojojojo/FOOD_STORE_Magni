@@ -23,21 +23,35 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (credentials) => {
-        // 1. Obtenemos el token Y los datos del usuario desde tu API actual
+        // 1. Obtenemos el token desde la API
         const tokenResponse = await authApi.login(credentials) as any;
         
         // 2. Guardamos el token
-        set({ accessToken: tokenResponse.access_token });
+        const token = tokenResponse.access_token;
+        set({ accessToken: token });
 
-        // 3. Reconstruimos el objeto usuario a partir de la respuesta del login
+        // 3. Decodificamos el JWT payload para sacar los roles y el ID (sub)
+        let roles = [];
+        let userId = 0;
+        try {
+          const payloadBase64 = token.split('.')[1];
+          const payloadDecoded = JSON.parse(atob(payloadBase64));
+          roles = payloadDecoded.roles || [];
+          userId = parseInt(payloadDecoded.sub, 10);
+        } catch (e) {
+          console.error("Error decodificando JWT:", e);
+        }
+
+        // 4. Reconstruimos el objeto usuario a partir del token y del objeto 'user' que manda la API
+        const userData = tokenResponse.user || {};
         const usuario = {
-          id: tokenResponse.user_id,
-          nombre: tokenResponse.nombre,
-          email: tokenResponse.email,
-          roles: [tokenResponse.rol]
+          id: userData.id || userId,
+          nombre: userData.nombre || 'Usuario',
+          email: userData.email || credentials.email,
+          roles: userData.roles || roles
         };
         
-        // 4. Actualizamos el estado global
+        // 5. Actualizamos el estado global
         set({
           usuario: usuario as any,
           isAuthenticated: true,
