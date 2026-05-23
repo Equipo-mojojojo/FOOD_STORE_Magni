@@ -94,22 +94,6 @@ class PedidoResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
-
-class PedidoResponse(BaseModel):
-    id: int
-    usuario_id: int
-    estado_codigo: str
-    forma_pago_codigo: str
-    subtotal: Decimal
-    descuento: Decimal
-    costo_envio: Decimal
-    total: Decimal
-    notas: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
- 
-    model_config = {"from_attributes": True}
- 
  
 class PedidoDetail(PedidoResponse):
     """Respuesta detallada con ítems e historial completo."""

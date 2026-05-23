@@ -33,8 +33,13 @@ class PedidoRepository(BaseRepository[Pedido]):
         usuario_id: Optional[int] = None,
         estado_codigo: Optional[str] = None,
         sort_order: str = "desc",
+        pedido_id: Optional[int] = None,
+        fecha_desde: Optional[str] = None,
+        fecha_hasta: Optional[str] = None,
+        forma_pago_codigo: Optional[str] = None,
     ) -> dict:
         """Lista pedidos con filtros. usuario_id=None devuelve todos (ADMIN/PEDIDOS)."""
+        from datetime import timedelta
         query = (
             select(Pedido)
             .options(
@@ -48,8 +53,22 @@ class PedidoRepository(BaseRepository[Pedido]):
         if usuario_id is not None:
             query = query.where(Pedido.usuario_id == usuario_id)
 
+        if pedido_id is not None:
+            query = query.where(Pedido.id == pedido_id)
+
         if estado_codigo:
             query = query.where(Pedido.estado_codigo == estado_codigo)
+
+        if fecha_desde:
+            query = query.where(Pedido.created_at >= datetime.fromisoformat(fecha_desde))
+
+        if fecha_hasta:
+            query = query.where(
+                Pedido.created_at < datetime.fromisoformat(fecha_hasta) + timedelta(days=1)
+            )
+
+        if forma_pago_codigo:
+            query = query.where(Pedido.forma_pago_codigo == forma_pago_codigo)
 
         total = len(self.session.exec(query).all())
 

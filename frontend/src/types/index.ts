@@ -92,7 +92,6 @@ export interface BaseFilters {
 
 export interface IngredientesFilters extends BaseFilters {
   es_alergeno: string;      // "true" | "false" | ""
-  estado?: string;
 }
 
 // --- CATEGORIAS ---
@@ -202,4 +201,117 @@ export interface ProductosFilters extends BaseFilters {
 }
 
 export interface CategoriasFilters extends BaseFilters {}
+
+// --- AUTH ---
+export interface UserResponse {
+  id: number;
+  nombre: string;
+  email: string;
+  roles: string[];
+}
+
+// --- PEDIDOS ---
+export interface EstadoPedido {
+  codigo: string;
+  descripcion: string;
+  orden: number;
+  es_terminal: boolean;
+}
+
+export interface FormaPago {
+  codigo: string;
+  descripcion: string;
+  habilitado: boolean;
+}
+
+export interface ItemPedidoRequest {
+  producto_id: number;
+  cantidad: number;
+  personalizacion?: number[];
+}
+
+export interface PedidoCreate {
+  items: ItemPedidoRequest[];
+  forma_pago_codigo: string;
+  notas?: string;
+}
+
+export interface AvanzarEstadoRequest {
+  estado_hacia: string;
+  motivo?: string;
+}
+
+export interface DetallePedido {
+  producto_id: number;
+  cantidad: number;
+  nombre_snapshot: string;
+  precio_snapshot: number;
+  subtotal_snap: number;
+  personalizacion: number[] | null;
+  created_at: string;
+}
+
+export interface HistorialEstado {
+  id: number;
+  pedido_id: number;
+  estado_desde: string | null;
+  estado_hacia: string;
+  usuario_id: number | null;
+  motivo: string | null;
+  created_at: string;
+}
+
+export interface PedidoResponse {
+  id: number;
+  usuario_id: number;
+  estado_codigo: string;
+  forma_pago_codigo: string;
+  subtotal: number;
+  descuento: number;
+  costo_envio: number;
+  total: number;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PedidoDetail extends PedidoResponse {
+  detalles: DetallePedido[];
+  historial: HistorialEstado[];
+  estado: EstadoPedido | null;
+  forma_pago: FormaPago | null;
+}
+
+export interface PaginatedPedidos {
+  items: PedidoResponse[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+}
+
+export interface PedidosFilters {
+  page: number;
+  per_page: number;
+  estado?: string;
+  id?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  forma_pago?: string;
+}
+
+export interface UsuarioAdmin {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  celular: string;
+  created_at: string;
+}
+
+// --- CARRITO ---
+export interface CartItem {
+  producto: Producto;
+  cantidad: number;
+}
 

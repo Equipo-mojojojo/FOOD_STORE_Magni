@@ -9,12 +9,18 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ producto }: ProductCardProps) {
-  const { addItem } = useCartStore();
+  const { addItem, items } = useCartStore();
   const { openCart } = useUiStore();
+
+  const inCart = items.find((i) => i.producto.id === producto.id);
+  const sinStock = producto.stock_cantidad === 0;
+  const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_cantidad;
+  const bloqueado = sinStock || stockAgotado;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (bloqueado) return;
     addItem(producto, 1);
     openCart();
   };
@@ -71,8 +77,13 @@ export default function ProductCard({ producto }: ProductCardProps) {
 
           <button
             onClick={handleAddToCart}
-            className="w-12 h-12 bg-green-50 text-green-main rounded-2xl flex items-center justify-center hover:bg-green-main hover:text-white transition-all shadow-sm hover:shadow-md transform active:scale-95 z-10"
-            title="Agregar al carrito"
+            disabled={bloqueado}
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm z-10 ${
+              bloqueado
+                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                : "bg-green-50 text-green-main hover:bg-green-main hover:text-white hover:shadow-md active:scale-95"
+            }`}
+            title={sinStock ? "Sin stock" : stockAgotado ? "Stock máximo alcanzado" : "Agregar al carrito"}
           >
             <ShoppingCart size={20} className="fill-current" />
           </button>

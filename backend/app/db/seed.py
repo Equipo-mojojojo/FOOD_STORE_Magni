@@ -12,6 +12,8 @@ Crea:
   - Administrador (rol=ADMIN)
   - 10 ingredientes básicos
   - 7 unidades de medida
+  - 5 estados de pedido
+  - 2 formas de pago
 """
 
 from sqlmodel import Session, select
@@ -21,6 +23,7 @@ from app.modules.usuarios.model import Usuario
 from app.modules.usuarios.rol_model import Rol, UsuarioRol
 from app.modules.ingredientes.model import Ingrediente
 from app.modules.productos.model import UnidadMedida
+from app.modules.pedidos.model import EstadoPedido, FormaPago
 
 
 ROLES_INICIALES = [
@@ -61,6 +64,20 @@ UNIDADES_MEDIDA_INICIALES = [
     {"nombre": "pieza", "simbolo": "u", "tipo": "unidad", "factor_conversion": 1.0},
     {"nombre": "docena", "simbolo": "doc", "tipo": "unidad", "factor_conversion": 12.0},
     {"nombre": "metro cuadrado", "simbolo": "m²", "tipo": "area", "factor_conversion": 1.0},
+]
+
+ESTADOS_PEDIDO_INICIALES = [
+    {"codigo": "PENDIENTE",   "descripcion": "Pedido recibido, esperando confirmación", "orden": 1, "es_terminal": False},
+    {"codigo": "CONFIRMADO",  "descripcion": "Pago confirmado, listo para preparar",    "orden": 2, "es_terminal": False},
+    {"codigo": "EN_PREP",     "descripcion": "En preparación en cocina",                "orden": 3, "es_terminal": False},
+    {"codigo": "EN_CAMINO",   "descripcion": "En camino al cliente",                    "orden": 4, "es_terminal": False},
+    {"codigo": "ENTREGADO",   "descripcion": "Entregado al cliente",                    "orden": 5, "es_terminal": True},
+    {"codigo": "CANCELADO",   "descripcion": "Pedido cancelado",                        "orden": 6, "es_terminal": True},
+]
+
+FORMAS_PAGO_INICIALES = [
+    {"codigo": "EFECTIVO",      "descripcion": "Efectivo al retirar en local", "habilitado": True},
+    {"codigo": "TRANSFERENCIA", "descripcion": "Transferencia bancaria",       "habilitado": True},
 ]
 
 
@@ -142,6 +159,26 @@ def run() -> None:
                 existing.precio_costo = i_data["precio"]
                 session.add(existing)
                 print(f"  [=] Ingrediente actualizado: {existing.nombre}")
+
+        # 5. Seed Estados de Pedido
+        print("Sedeando estados de pedido...")
+        for e_data in ESTADOS_PEDIDO_INICIALES:
+            existing = session.exec(select(EstadoPedido).where(EstadoPedido.codigo == e_data["codigo"])).first()
+            if not existing:
+                session.add(EstadoPedido(**e_data))
+                print(f"  [+] Estado creado: {e_data['codigo']}")
+            else:
+                print(f"  [=] Estado ya existe: {e_data['codigo']}")
+
+        # 6. Seed Formas de Pago
+        print("Sedeando formas de pago...")
+        for f_data in FORMAS_PAGO_INICIALES:
+            existing = session.exec(select(FormaPago).where(FormaPago.codigo == f_data["codigo"])).first()
+            if not existing:
+                session.add(FormaPago(**f_data))
+                print(f"  [+] Forma de pago creada: {f_data['codigo']}")
+            else:
+                print(f"  [=] Forma de pago ya existe: {f_data['codigo']}")
 
         session.commit()
     print("=== Seed completado exitosamente ===")

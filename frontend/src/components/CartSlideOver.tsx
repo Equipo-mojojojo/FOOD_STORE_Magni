@@ -1,10 +1,12 @@
 import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useUiStore } from '../store/uiStore';
 import { useCartStore } from '../store/cartStore';
 
 export default function CartSlideOver() {
   const { cartOpen, closeCart } = useUiStore();
   const { items = [], removeItem, updateQuantity, clearCart } = useCartStore();
+  const navigate = useNavigate();
 
   const totalItems = items.reduce((total, item) => total + (item.cantidad || 0), 0);
   const totalPrice = items.reduce((total, item) => total + ((item.producto?.precio_base || 0) * (item.cantidad || 0)), 0);
@@ -101,9 +103,10 @@ export default function CartSlideOver() {
                         <span className="w-8 text-center text-sm font-bold text-gray-800">
                           {item.cantidad}
                         </span>
-                        <button 
+                        <button
                           onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
-                          className="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-green-main transition-colors"
+                          disabled={item.cantidad >= item.producto.stock_cantidad}
+                          className="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-green-main transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Plus size={14} />
                         </button>
@@ -126,7 +129,10 @@ export default function CartSlideOver() {
               </span>
             </div>
             
-            <button className="w-full bg-green-main text-white font-bold text-lg py-4 rounded-xl hover:bg-green-dark transition-colors shadow-lg shadow-green-main/30 active:scale-95">
+            <button
+              onClick={() => { closeCart(); navigate("/carrito"); }}
+              className="w-full bg-green-main text-white font-bold text-lg py-4 rounded-xl hover:bg-green-dark transition-colors shadow-lg shadow-green-main/30 active:scale-95"
+            >
               Continuar Compra
             </button>
             

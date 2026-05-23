@@ -41,10 +41,23 @@ def listar_pedidos(
     page: Annotated[int, Query(ge=1)] = 1,
     per_page: Annotated[int, Query(ge=1, le=100)] = 10,
     estado: Annotated[Optional[str], Query(description="Filtrar por estado")] = None,
+    pedido_id: Annotated[Optional[int], Query(description="Filtrar por ID de pedido")] = None,
+    fecha_desde: Annotated[Optional[str], Query(description="Fecha desde YYYY-MM-DD")] = None,
+    fecha_hasta: Annotated[Optional[str], Query(description="Fecha hasta YYYY-MM-DD")] = None,
+    forma_pago: Annotated[Optional[str], Query(description="Filtrar por forma de pago")] = None,
     uow: Annotated[UnitOfWork, Depends(get_uow)] = None,
     current_user: Annotated[Usuario, Depends(get_current_user)] = None,
 ):
-    return PedidoService(uow).listar_pedidos(page=page, per_page=per_page, estado_codigo=estado, usuario=current_user)
+    return PedidoService(uow).listar_pedidos(
+        page=page,
+        per_page=per_page,
+        estado_codigo=estado,
+        usuario=current_user,
+        pedido_id=pedido_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        forma_pago_codigo=forma_pago,
+    )
 
 
 @router.post(

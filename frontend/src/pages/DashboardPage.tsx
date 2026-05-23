@@ -1,4 +1,4 @@
-import { Package, PackageX, ShieldCheck, Tags, ShoppingBag, LayoutDashboard } from "lucide-react";
+import { Package, ShieldCheck, Tags, ShoppingBag, ClipboardList } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
@@ -26,6 +26,13 @@ export default function DashboardPage() {
       icon: Package,
       to: "/ingredientes",
       color: "bg-green-main",
+    },
+    {
+      title: "Pedidos",
+      description: "Gestión y seguimiento de pedidos con avance de estado",
+      icon: ClipboardList,
+      to: "/pedidos",
+      color: "bg-purple-500",
     },
   ];
 

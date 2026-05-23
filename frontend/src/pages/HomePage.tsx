@@ -1,96 +1,131 @@
-import { ArrowRight, Loader } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { categoriasApi } from "../api/categoriasApi";
-import CategoryCarousel from "../components/CategoryCarousel";
+/** Home pública — catálogo de productos disponibles con carrito. */
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ShoppingCart, Plus } from "lucide-react";
+import { useProductos } from "../hooks/useProductos";
+import { useCartStore } from "../store/cartStore";
+import type { Producto, ProductosFilters } from "../types";
 
-export default function HomePage() {
-  // Obtenemos las categorías principales para renderizar un carrusel por cada una
-  const { data: categorias, isLoading, isError } = useQuery({
-    queryKey: ['categorias-tree', 'activo'],
-    queryFn: () => categoriasApi.listTree('activo'),
-    staleTime: 1000 * 60 * 5, // 5 minutos de caché
-  });
+const DEFAULT_FILTERS: ProductosFilters = {
+  page: 1,
+  per_page: 12,
+  search: "",
+  estado: "activo",
+  sort_by: "",
+  sort_order: "desc",
+  created_from: "",
+  created_to: "",
+  updated_from: "",
+  updated_to: "",
+  starts_with: "",
+  disponible: "true",
+};
+
+interface ProductCardProps {
+  producto: Producto;
+}
+
+function ProductCard({ producto }: ProductCardProps) {
+  const addItem = useCartStore((s) => s.addItem);
+  const items = useCartStore((s) => s.items);
+  const inCart = items.find((i) => i.producto.id === producto.id);
+  const sinStock = producto.stock_cantidad === 0;
+  const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_cantidad;
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Hero Section (Ajustado para ser más compacto) */}
-      <section className="bg-gradient-to-r from-green-main to-green-dark rounded-3xl p-6 md:p-10 text-center text-white shadow-lg relative overflow-hidden mt-4 mx-4 sm:mx-0">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+      <div className="h-40 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+        <span className="text-5xl">🍽️</span>
+      </div>
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="font-semibold text-gray-900 mb-1 truncate">{producto.nombre}</h3>
+        {producto.descripcion && (
+          <p className="text-gray-500 text-sm mb-3 line-clamp-2 flex-1">
+            {producto.descripcion}
+          </p>
+        )}
+        <div className="mt-auto pt-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-green-dark font-bold text-lg">
+              ${Number(producto.precio_base).toLocaleString("es-AR")}
+            </span>
+            {inCart && (
+              <span className="text-xs text-green-dark font-medium">
+                {inCart.cantidad} en carrito
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => addItem(producto)}
+            disabled={sinStock || stockAgotado}
+            className={`w-full flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
+              sinStock || stockAgotado
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-green-main hover:bg-green-dark text-white"
+            }`}
+          >
+            <Plus size={16} />
+            {sinStock ? "Sin stock" : stockAgotado ? "Stock máximo" : "Agregar al carrito"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const [filters] = useState<ProductosFilters>(DEFAULT_FILTERS);
+  const { data, isLoading } = useProductos(filters);
+  const itemCount = useCartStore((s) => s.itemCount());
+
+  return (
+    <div className="space-y-8">
+      {/* Hero */}
+      <section className="bg-gradient-to-r from-green-main to-green-dark rounded-3xl p-8 md:p-16 text-center text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10">
-          <h1 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-tight">
-            Tus ingredientes favoritos, <br className="hidden md:block" />
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
+            Tus productos favoritos, <br className="hidden md:block" />
             <span className="text-yellow-banner">a un clic de distancia</span>
           </h1>
-          <p className="text-base md:text-lg text-white/90 mb-6 max-w-2xl mx-auto">
-            Descubrí nuestro catálogo completo de productos frescos y de alta calidad para tu negocio o tu casa.
+          <p className="text-lg text-white/90 mb-6 max-w-2xl mx-auto">
+            Descubrí nuestro catálogo completo de productos frescos y de alta calidad.
           </p>
-          <a href="#catalogo" className="inline-flex items-center gap-2 bg-yellow-banner text-green-dark font-bold px-6 py-3 rounded-full hover:scale-105 transition-transform shadow-md cursor-pointer text-sm">
-            Ver Productos <ArrowRight size={18} />
-          </a>
+          {itemCount > 0 && (
+            <Link
+              to="/carrito"
+              className="inline-flex items-center gap-2 bg-yellow-banner text-green-dark font-bold px-8 py-4 rounded-full hover:scale-105 transition-transform shadow-lg"
+            >
+              <ShoppingCart size={20} />
+              Ver carrito ({itemCount} {itemCount === 1 ? "producto" : "productos"})
+            </Link>
+          )}
         </div>
-        {/* Decoración geométrica */}
-        <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+        <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
       </section>
 
-      {/* Carrusel de Categorías Rápidas */}
-      {!isLoading && !isError && categorias && categorias.length > 0 && (
-        <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 pt-1 snap-x px-4 sm:px-0">
-          {categorias.map(cat => (
-            <a 
-              key={cat.id} 
-              href={`#cat-${cat.id}`}
-              className="bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-green-main transition-all rounded-full px-5 py-2 whitespace-nowrap text-sm font-semibold text-gray-700 hover:text-green-main hover:bg-green-50 snap-start shrink-0"
-            >
-              {cat.nombre}
-            </a>
-          ))}
-        </div>
-      )}
+      {/* Catálogo */}
+      <section>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Nuestros Productos</h2>
 
-      <div id="catalogo" className="px-4 sm:px-0 space-y-2">
-        {/* Estado de Carga Global */}
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-4">
-            <Loader size={48} className="animate-spin text-green-main" />
-            <span className="text-lg font-medium">Preparando el catálogo...</span>
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl h-52 animate-pulse" />
+            ))}
           </div>
-        )}
-
-        {/* Estado de Error Global */}
-        {isError && (
-          <div className="bg-red-50 text-danger-main rounded-2xl p-12 text-center border-2 border-dashed border-red-200">
-            <span className="text-4xl block mb-4">🔧</span>
-            <h3 className="text-lg font-medium mb-2">Ups, tuvimos un problema</h3>
-            <p className="max-w-md mx-auto">
-              No pudimos cargar el catálogo en este momento. Por favor, intentá de nuevo más tarde.
-            </p>
+        ) : !data?.items.length ? (
+          <div className="text-center py-16 text-gray-500">
+            No hay productos disponibles en este momento.
           </div>
-        )}
-
-        {/* Carruseles Dinámicos */}
-        {!isLoading && !isError && categorias && categorias.length > 0 && (
-          <div className="space-y-4 pt-2">
-            {categorias.map(categoria => (
-              <CategoryCarousel 
-                key={categoria.id} 
-                id={`cat-${categoria.id}`}
-                categoriaId={categoria.id} 
-                titulo={categoria.nombre} 
-              />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {data.items.map((p) => (
+              <ProductCard key={p.id} producto={p} />
             ))}
           </div>
         )}
-
-        {!isLoading && !isError && categorias?.length === 0 && (
-          <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-gray-200 shadow-sm">
-            <span className="text-4xl block mb-4">🛒</span>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Próximamente</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
-              Aún no hay productos disponibles. ¡Volvé pronto para ver las novedades!
-            </p>
-          </div>
-        )}
-      </div>
+      </section>
     </div>
   );
 }
