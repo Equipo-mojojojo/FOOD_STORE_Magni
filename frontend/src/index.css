@@ -35,6 +35,15 @@ body {
   margin: 0;
 }
 
+/* Ocultar barra de scroll pero mantener funcionalidad */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE y Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari y Opera */
+}
+
 /* ====== Scrollbar ====== */
 ::-webkit-scrollbar {
   width: 6px;

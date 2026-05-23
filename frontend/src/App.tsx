@@ -13,6 +13,8 @@ import ProductosPage from "./pages/ProductosPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import NavbarUsuario from "./components/NavbarUsuario";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import StorefrontCatalogoPage from "./pages/StorefrontCatalogoPage";
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
@@ -56,6 +58,8 @@ export default function App() {
         {/* Ruta Pública - Storefront */}
         <Route element={<NavbarUsuario />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/catalogo" element={<StorefrontCatalogoPage />} />
+          <Route path="/producto/:id" element={<ProductDetailPage />} />
         </Route>
 
         {/* Rutas Privadas - Admin Dashboard */}
