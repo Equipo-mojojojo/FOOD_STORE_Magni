@@ -22,6 +22,8 @@ import HomePage from "./pages/HomePage";
 import CartPage from "./pages/CartPage";
 import MisPedidosPage from "./pages/MisPedidosPage";
 import PedidoDetallePage from "./pages/PedidoDetallePage";
+import StorefrontCatalogoPage from "./pages/StorefrontCatalogoPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
@@ -81,6 +83,8 @@ export default function App() {
         {/* Store — layout con Navbar pública */}
         <Route element={<NavbarUsuario />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/catalogo" element={<StorefrontCatalogoPage />} />
+          <Route path="/producto/:id" element={<ProductDetailPage />} />
           <Route path="/carrito" element={<CartPage />} />
           <Route
             path="/mis-pedidos"
