@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, ShoppingBag } from "lucide-react";
+import { ShoppingCart, ShoppingBag } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
+import { useCartStore } from "../store/cartStore";
 import NavbarCategoriesMenu from "./NavbarCategoriesMenu";
 
 export default function NavbarUsuario() {
@@ -8,6 +9,7 @@ export default function NavbarUsuario() {
   const usuario = useAuthStore((s) => s.usuario);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+  const itemCount = useCartStore((s) => s.itemCount());
 
   const handleLogout = () => {
     logout();
@@ -41,12 +43,14 @@ export default function NavbarUsuario() {
 
             {/* Acciones (Carrito y Usuario) */}
             <div className="flex items-center gap-4 md:gap-6">
-              <button className="relative p-2 text-gray-600 hover:text-green-main transition-colors">
+              <Link to="/carrito" className="relative p-2 text-gray-600 hover:text-green-main transition-colors">
                 <ShoppingCart size={24} />
-                <span className="absolute top-0 right-0 bg-yellow-banner text-green-dark text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
-                  0
-                </span>
-              </button>
+                {itemCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-yellow-banner text-green-dark text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
 
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
 
@@ -55,7 +59,9 @@ export default function NavbarUsuario() {
                   <span className="text-sm font-medium text-gray-700 hidden md:block">
                     Hola, {usuario?.nombre}
                   </span>
-                  {/* Link al dashboard si es admin */}
+                  <Link to="/mis-pedidos" className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors hidden md:block">
+                    Mis Pedidos
+                  </Link>
                   {usuario?.roles?.some((r: any) => r === 'ADMIN' || r?.rol_codigo === 'ADMIN') && (
                     <Link to="/dashboard" className="text-sm bg-green-main text-white px-3 py-1.5 rounded-lg hover:bg-green-dark transition-colors">
                       Dashboard

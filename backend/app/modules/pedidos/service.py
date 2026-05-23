@@ -43,6 +43,7 @@ class PedidoService:
 
             subtotal = Decimal("0.00")
             detalles_data = []
+            productos_a_decrementar = []
 
             for item in data.items:
                 producto = self.uow.productos.get_by_id(item.producto_id)
@@ -50,6 +51,11 @@ class PedidoService:
                     raise HTTPException(status_code=404, detail=f"Producto id={item.producto_id} no encontrado")
                 if not producto.disponible:
                     raise HTTPException(status_code=400, detail=f"El producto '{producto.nombre}' no está disponible")
+                if producto.stock_cantidad < item.cantidad:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock_cantidad}, solicitado: {item.cantidad}",
+                    )
 
                 precio_snap = producto.precio_base
                 subtotal_item = precio_snap * Decimal(str(item.cantidad))
@@ -63,6 +69,7 @@ class PedidoService:
                     "subtotal_snap": subtotal_item,
                     "personalizacion": item.personalizacion,
                 })
+                productos_a_decrementar.append((producto, item.cantidad))
 
             total = subtotal - Decimal("0.00") + COSTO_ENVIO_DEFAULT
 
@@ -81,6 +88,11 @@ class PedidoService:
             for d in detalles_data:
                 self.uow.detalles_pedido.add(DetallePedido(pedido_id=pedido.id, **d))
 
+            # Decrementar stock de cada producto incluido en el pedido
+            for producto, cantidad in productos_a_decrementar:
+                producto.stock_cantidad -= cantidad
+                self.uow.productos.update(producto)
+
             # Primer registro del historial: estado_desde=NULL (RN-02)
             self.uow.historial_estados.add(HistorialEstadoPedido(
                 pedido_id=pedido.id,
@@ -98,6 +110,10 @@ class PedidoService:
         per_page: int,
         estado_codigo: Optional[str],
         usuario: Usuario,
+        pedido_id: Optional[int] = None,
+        fecha_desde: Optional[str] = None,
+        fecha_hasta: Optional[str] = None,
+        forma_pago_codigo: Optional[str] = None,
     ) -> PaginatedPedidos:
         """CLIENT ve solo sus pedidos. ADMIN/PEDIDOS ven todos."""
         with self.uow:
@@ -107,6 +123,10 @@ class PedidoService:
                 per_page=per_page,
                 usuario_id=filtro_usuario,
                 estado_codigo=estado_codigo,
+                pedido_id=pedido_id,
+                fecha_desde=fecha_desde,
+                fecha_hasta=fecha_hasta,
+                forma_pago_codigo=forma_pago_codigo,
             )
         return PaginatedPedidos(**result)
 

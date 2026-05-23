@@ -1,22 +1,30 @@
-/** App principal — Router + Layout con Sidebar. */
+/** App principal — Router + layouts + protección por rol. */
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import { useUiStore } from "./store/uiStore";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+import NavbarUsuario from "./components/NavbarUsuario";
+
+// Admin pages
 import LoginPage from "./pages/LoginPage";
-import HomePage from "./pages/HomePage";
+import RegisterPage from "./pages/RegisterPage";
+import DashboardPage from "./pages/DashboardPage";
 import IngredientesPage from "./pages/IngredientesPage";
 import CategoriasPage from "./pages/CategoriasPage";
 import ProductosPage from "./pages/ProductosPage";
-import RegisterPage from "./pages/RegisterPage";
-import DashboardPage from "./pages/DashboardPage";
-import NavbarUsuario from "./components/NavbarUsuario";
+import PedidosCajeroPage from "./pages/PedidosCajeroPage";
+import UsuariosPage from "./pages/UsuariosPage";
+
+// Store pages
+import HomePage from "./pages/HomePage";
+import CartPage from "./pages/CartPage";
+import MisPedidosPage from "./pages/MisPedidosPage";
+import PedidoDetallePage from "./pages/PedidoDetallePage";
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
-  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const closeSidebar = useUiStore((s) => s.closeSidebar);
 
   return (
@@ -30,6 +38,22 @@ function AppLayout() {
             <Route path="/ingredientes" element={<IngredientesPage />} />
             <Route path="/categorias" element={<CategoriasPage />} />
             <Route path="/productos" element={<ProductosPage />} />
+            <Route
+              path="/pedidos"
+              element={
+                <ProtectedRoute roles={["ADMIN", "PEDIDOS"]}>
+                  <PedidosCajeroPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/usuarios"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <UsuariosPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
@@ -44,6 +68,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Auth */}
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
@@ -52,13 +77,30 @@ export default function App() {
           path="/register"
           element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
         />
-        
-        {/* Ruta Pública - Storefront */}
+
+        {/* Store — layout con Navbar pública */}
         <Route element={<NavbarUsuario />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/carrito" element={<CartPage />} />
+          <Route
+            path="/mis-pedidos"
+            element={
+              <ProtectedRoute>
+                <MisPedidosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pedidos/:id"
+            element={
+              <ProtectedRoute>
+                <PedidoDetallePage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
-        {/* Rutas Privadas - Admin Dashboard */}
+        {/* Admin — layout con Sidebar + Navbar admin */}
         <Route
           path="/*"
           element={

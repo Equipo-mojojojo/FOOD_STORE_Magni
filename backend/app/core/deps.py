@@ -75,6 +75,10 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
 
+    # Pega el rol principal del JWT en el objeto para que el service pueda leerlo
+    roles_from_jwt: list[str] = payload.get("roles", [])
+    object.__setattr__(user, "role", roles_from_jwt[0] if roles_from_jwt else "")
+
     return user
 
 

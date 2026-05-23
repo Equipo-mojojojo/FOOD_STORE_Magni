@@ -1,0 +1,61 @@
+/** Grilla de ítems del carrito con controles de cantidad. */
+import { Trash2, Plus, Minus } from "lucide-react";
+import { useCartStore } from "../../store/cartStore";
+
+export default function CarritoGrid() {
+  const items = useCartStore((s) => s.items);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const updateCantidad = useCartStore((s) => s.updateCantidad);
+
+  return (
+    <div className="space-y-4">
+      {items.map((item) => (
+        <div
+          key={item.producto.id}
+          className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4"
+        >
+          <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="text-2xl">🍽️</span>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 truncate">{item.producto.nombre}</h3>
+            <p className="text-green-dark font-medium text-sm">
+              ${Number(item.producto.precio_base).toLocaleString("es-AR")} c/u
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => updateCantidad(item.producto.id, item.cantidad - 1)}
+              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors"
+            >
+              <Minus size={14} />
+            </button>
+            <span className="w-6 text-center font-semibold">{item.cantidad}</span>
+            <button
+              onClick={() => updateCantidad(item.producto.id, item.cantidad + 1)}
+              disabled={item.cantidad >= item.producto.stock_cantidad}
+              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+
+          <div className="text-right min-w-[80px]">
+            <p className="font-bold text-gray-900">
+              ${Number(item.producto.precio_base * item.cantidad).toLocaleString("es-AR")}
+            </p>
+          </div>
+
+          <button
+            onClick={() => removeItem(item.producto.id)}
+            className="text-red-400 hover:text-red-600 transition-colors ml-1"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
