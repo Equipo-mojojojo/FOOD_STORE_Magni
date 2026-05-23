@@ -169,6 +169,14 @@ class PedidoService:
             if not self.uow.estados_pedido.get_by_codigo(estado_destino):
                 raise HTTPException(status_code=400, detail=f"Estado '{estado_destino}' no existe")
 
+            # Si se cancela, devolver el stock de cada ítem al inventario
+            if estado_destino == "CANCELADO":
+                for detalle in pedido.detalles:
+                    producto = self.uow.productos.get_by_id(detalle.producto_id)
+                    if producto:
+                        producto.stock_cantidad += detalle.cantidad
+                        self.uow.productos.update(producto)
+
             pedido.estado_codigo = estado_destino
             pedido.updated_at = datetime.now(timezone.utc)
             self.uow.pedidos.update(pedido)
