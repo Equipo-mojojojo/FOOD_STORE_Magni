@@ -8,7 +8,7 @@ Uso:
 Requiere PostgreSQL corriendo con las variables de .env configuradas.
 
 Crea:
-  - Catálogo de roles: ADMIN, STOCK, PEDIDO, CLIENT
+  - Catálogo de roles: ADMIN, STOCK, PEDIDOS, CLIENT
   - Administrador (rol=ADMIN)
   - 10 ingredientes básicos
   - 7 unidades de medida
@@ -29,7 +29,7 @@ from app.modules.pedidos.model import EstadoPedido, FormaPago
 ROLES_INICIALES = [
     {"codigo": "ADMIN",  "nombre": "Administrador",  "descripcion": "Acceso total sin restricciones"},
     {"codigo": "STOCK",  "nombre": "Stock Manager",   "descripcion": "Actualiza stock y disponibilidad"},
-    {"codigo": "PEDIDO", "nombre": "Pedidos",         "descripcion": "Avanza estado CONFIRMADO → ENTREGADO"},
+    {"codigo": "PEDIDOS", "nombre": "Pedidos",         "descripcion": "Ver y avanzar estados de pedidos"},
     {"codigo": "CLIENT", "nombre": "Cliente",         "descripcion": "Opera solo sus propios datos"},
 ]
 
