@@ -29,6 +29,15 @@ function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const closeSidebar = useUiStore((s) => s.closeSidebar);
 
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const fallbackPath = hasRole("ADMIN")
+    ? "/dashboard"
+    : hasRole("STOCK")
+    ? "/productos"
+    : hasRole("PEDIDOS")
+    ? "/pedidos"
+    : "/";
+
   return (
     <div className="flex h-screen overflow-hidden bg-cream">
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
@@ -36,10 +45,38 @@ function AppLayout() {
         <Navbar />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Routes>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/ingredientes" element={<IngredientesPage />} />
-            <Route path="/categorias" element={<CategoriasPage />} />
-            <Route path="/productos" element={<ProductosPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ingredientes"
+              element={
+                <ProtectedRoute roles={["ADMIN", "STOCK"]}>
+                  <IngredientesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/categorias"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <CategoriasPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/productos"
+              element={
+                <ProtectedRoute roles={["ADMIN", "STOCK"]}>
+                  <ProductosPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/pedidos"
               element={
@@ -56,7 +93,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to={fallbackPath} replace />} />
           </Routes>
         </main>
       </div>
@@ -67,13 +104,26 @@ function AppLayout() {
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
+  const usuario = useAuthStore((s) => s.usuario);
+
+  const hasRole = (role: string) =>
+    usuario?.roles?.some((r: any) => r === role || r?.rol_codigo === role);
+
+  const defaultPath = hasRole("ADMIN")
+    ? "/dashboard"
+    : hasRole("STOCK")
+    ? "/productos"
+    : hasRole("PEDIDOS")
+    ? "/pedidos"
+    : "/";
+
   return (
     <BrowserRouter>
       <Routes>
         {/* Auth */}
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+          element={isAuthenticated ? <Navigate to={defaultPath} replace /> : <LoginPage />}
         />
         <Route
           path="/register"

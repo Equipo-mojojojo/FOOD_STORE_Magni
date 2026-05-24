@@ -73,7 +73,8 @@ export default function PedidosAdminGrid() {
   });
   const [idInput, setIdInput] = useState("");
 
-  const isAdmin = useAuthStore((s) => s.hasRole("ADMIN"));
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const canManagePedidos = hasRole("ADMIN") || hasRole("PEDIDOS");
   const { data, isLoading } = usePedidos(filters);
   const { data: formasPago } = useFormasPago();
 
@@ -204,7 +205,7 @@ export default function PedidosAdminGrid() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {isAdmin && <AccionButtons pedido={pedido} />}
+                        {canManagePedidos && <AccionButtons pedido={pedido} />}
                         <Link
                           to={`/pedidos/${pedido.id}`}
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"

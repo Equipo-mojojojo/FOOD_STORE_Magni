@@ -41,6 +41,20 @@ USUARIOS_INICIALES = [
         "password": "admin",
         "roles": ["ADMIN"],
     },
+    {
+        "nombre": "Pedidos",
+        "apellido": "Foodstore",
+        "email": "pedidos@foodstore.com",
+        "password": "pedidos",
+        "roles": ["PEDIDOS"],
+    },
+    {
+        "nombre": "Stock",
+        "apellido": "Foodstore",
+        "email": "stock@foodstore.com",
+        "password": "stock",
+        "roles": ["STOCK"],
+    },
 ]
 
 INGREDIENTES_INICIALES = [
