@@ -31,6 +31,7 @@ from app.modules.pedidos.repository import (
     EstadoPedidoRepository,
     FormaPagoRepository,
 )
+from app.modules.direcciones.repository import DireccionEntregaRepository
 
 class UnitOfWork:
     """
@@ -54,6 +55,7 @@ class UnitOfWork:
         self.roles = RolRepository(self.session)
         self.usuario_roles = UsuarioRolRepository(self.session)
         self.refresh_tokens = RefreshTokenRepository(self.session)
+        self.direcciones = DireccionEntregaRepository(self.session)
         # Dominio 2: Productos
         self.ingredientes = IngredienteRepository(self.session)
         self.productos = ProductoRepository(self.session)

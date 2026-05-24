@@ -64,6 +64,11 @@ class ProductoUpdate(BaseModel):
     categorias: Optional[List[ProductoCategoriaCreate]] = None
     ingredientes: Optional[List[ProductoIngredienteCreate]] = None
 
+class ProductoStockUpdate(BaseModel):
+    stock_cantidad: int = Field(ge=0)
+
+class ProductoDisponibilidadUpdate(BaseModel):
+    disponible: bool
 
 class CategoriaSimple(BaseModel):
     """Categoría simplificada para incluir en detalle de producto."""

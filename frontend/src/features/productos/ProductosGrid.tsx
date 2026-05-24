@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Search, Edit2, Trash2, Package, Filter, X, RotateCcw, XCircle } from "lucide-react";
-import { useProductos, useDarDeBajaProducto, useEliminarProducto, useCrearProducto, useActualizarProducto, useRestaurarProducto } from "../../hooks/useProductos";
+import {
+  useProductos,
+  useDarDeBajaProducto,
+  useEliminarProducto,
+  useCrearProducto,
+  useActualizarProducto,
+  useRestaurarProducto,
+  useActualizarStockProducto,
+  useActualizarDisponibilidadProducto,
+} from "../../hooks/useProductos";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
 import Pagination from "../../components/Pagination";
 import ProductoForm from "./ProductoForm";
 import type { Producto, ProductosFilters, ProductoCreate } from "../../types";
+import { useAuthStore } from "../../store/authStore";
 
 export default function ProductosGrid() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,6 +40,11 @@ export default function ProductosGrid() {
   const [editingItem, setEditingItem] = useState<Producto | null>(null);
   const [searchInput, setSearchInput] = useState("");
 
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const isAdmin = hasRole("ADMIN");
+  const isStock = hasRole("STOCK");
+  const canManageFull = isAdmin;
+  const canManageStock = isAdmin || isStock;
   // Sincronizar filtros si cambia el parámetro de URL
   useEffect(() => {
     if (catParam) {
@@ -53,6 +68,9 @@ export default function ProductosGrid() {
   const darDeBajaMut = useDarDeBajaProducto();
   const eliminarMut = useEliminarProducto();
   const restaurarMut = useRestaurarProducto();
+
+  const actualizarStockMut = useActualizarStockProducto();
+  const actualizarDisponibilidadMut = useActualizarDisponibilidadProducto();
 
   const handleFilterChange = (key: keyof ProductosFilters, value: any) => {
     setFilters((f) => ({ ...f, [key]: value, page: 1 }));
@@ -81,6 +99,29 @@ export default function ProductosGrid() {
     await restaurarMut.mutateAsync(id);
   };
 
+  const handleActualizarStock = async (producto: Producto) => {
+  const value = prompt("Nuevo stock físico:", String(producto.stock_cantidad));
+  if (value === null) return;
+
+  const stock = Number(value);
+  if (!Number.isInteger(stock) || stock < 0) {
+    alert("El stock debe ser un número entero mayor o igual a 0.");
+    return;
+  }
+
+  await actualizarStockMut.mutateAsync({
+      id: producto.id,
+      stock_cantidad: stock,
+    });
+  };
+
+  const handleToggleDisponibilidad = async (producto: Producto) => {
+    await actualizarDisponibilidadMut.mutateAsync({
+      id: producto.id,
+      disponible: !producto.disponible,
+    });
+  };
+
   const isDeletedView = filters.estado === "inactivo";
 
   return (
@@ -96,7 +137,7 @@ export default function ProductosGrid() {
               : "Administra los platos y bebidas del menú."}
           </p>
         </div>
-        {!isDeletedView && (
+        {!isDeletedView && canManageFull && (
           <button
             onClick={() => { setEditingItem(null); setModalOpen(true); }}
             className="flex items-center gap-2 bg-green-main hover:bg-green-dark text-white px-4 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm"
@@ -289,37 +330,67 @@ export default function ProductosGrid() {
                         <div className="flex justify-end gap-1">
                           {isItemBaja ? (
                             <>
-                              <button
-                                onClick={() => handleRestore(prod.id)}
-                                className="p-1.5 text-green-main hover:bg-green-pale rounded transition-colors"
-                                title="Restaurar"
-                              >
-                                <RotateCcw size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleEliminar(prod.id)}
-                                className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
-                                title="Eliminar permanentemente"
-                              >
-                                <XCircle size={16} />
-                              </button>
+                              {canManageFull && (
+                                <>
+                                  <button
+                                    onClick={() => handleRestore(prod.id)}
+                                    className="p-1.5 text-green-main hover:bg-green-pale rounded transition-colors"
+                                    title="Restaurar"
+                                  >
+                                    <RotateCcw size={16} />
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleEliminar(prod.id)}
+                                    className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
+                                    title="Eliminar permanentemente"
+                                  >
+                                    <XCircle size={16} />
+                                  </button>
+                                </>
+                              )}
                             </>
                           ) : (
                             <>
-                              <button
-                                onClick={() => { setEditingItem(prod); setModalOpen(true); }}
-                                className="p-1.5 text-gray-400 hover:text-green-main hover:bg-green-pale rounded transition-colors"
-                                title="Editar"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDarDeBaja(prod.id)}
-                                className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
-                                title="Dar de baja"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {canManageStock && (
+                                <>
+                                  <button
+                                    onClick={() => handleActualizarStock(prod)}
+                                    className="px-2 py-1 text-xs font-semibold text-gray-500 hover:text-green-main hover:bg-green-pale rounded transition-colors"
+                                    title="Actualizar stock físico"
+                                  >
+                                    Stock
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleToggleDisponibilidad(prod)}
+                                    className="px-2 py-1 text-xs font-semibold text-gray-500 hover:text-green-main hover:bg-green-pale rounded transition-colors"
+                                    title={prod.disponible ? "Marcar no disponible" : "Marcar disponible"}
+                                  >
+                                    {prod.disponible ? "Off" : "On"}
+                                  </button>
+                                </>
+                              )}
+
+                              {canManageFull && (
+                                <>
+                                  <button
+                                    onClick={() => { setEditingItem(prod); setModalOpen(true); }}
+                                    className="p-1.5 text-gray-400 hover:text-green-main hover:bg-green-pale rounded transition-colors"
+                                    title="Editar"
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleDarDeBaja(prod.id)}
+                                    className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
+                                    title="Dar de baja"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              )}
                             </>
                           )}
                         </div>

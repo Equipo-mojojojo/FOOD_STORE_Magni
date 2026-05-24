@@ -228,6 +228,28 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
 
     return uow.productos.update(prod)
 
+def update_stock_producto(uow: UnitOfWork, prod_id: int, stock_cantidad: int) -> Producto:
+    """Actualiza solo el stock físico del producto."""
+    prod = uow.productos.get_by_id(prod_id)
+    if not prod or prod.deleted_at:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    prod.stock_cantidad = stock_cantidad
+    prod.updated_at = datetime.now(timezone.utc)
+
+    return uow.productos.update(prod)
+
+
+def update_disponibilidad_producto(uow: UnitOfWork, prod_id: int, disponible: bool) -> Producto:
+    """Actualiza solo la disponibilidad comercial del producto."""
+    prod = uow.productos.get_by_id(prod_id)
+    if not prod or prod.deleted_at:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    prod.disponible = disponible
+    prod.updated_at = datetime.now(timezone.utc)
+
+    return uow.productos.update(prod)
 
 def dar_de_baja_producto(uow: UnitOfWork, prod_id: int):
     prod = uow.productos.get_by_id(prod_id)
