@@ -163,6 +163,7 @@ def run() -> None:
                     es_alergeno=i_data["es_alergeno"],
                     unidad_medida_id=unidad_id,
                     stock_actual=i_data["stock"],
+                    stock_minimo=i_data.get("stock_minimo", 0.0),
                     precio_costo=i_data["precio"]
                 )
                 session.add(i)
@@ -170,6 +171,7 @@ def run() -> None:
             else:
                 existing.unidad_medida_id = unidad_id
                 existing.stock_actual = i_data["stock"]
+                existing.stock_minimo = i_data.get("stock_minimo", 0.0)
                 existing.precio_costo = i_data["precio"]
                 session.add(existing)
                 print(f"  [=] Ingrediente actualizado: {existing.nombre}")
