@@ -5,7 +5,14 @@ from app.core.deps import require_role
 from app.core.uow import UnitOfWork
 from app.modules.productos import service
 from app.modules.productos.schemas import (
-    ProductoCreate, ProductoUpdate, ProductoRead, ProductoDetail, PaginatedResponse, UnidadMedidaSimple
+    ProductoCreate,
+    ProductoUpdate,
+    ProductoRead,
+    ProductoDetail,
+    PaginatedResponse,
+    UnidadMedidaSimple,
+    ProductoStockUpdate,
+    ProductoDisponibilidadUpdate,
 )
 
 router = APIRouter(prefix="/api/v1/productos", tags=["Productos"])
@@ -80,7 +87,6 @@ def create_producto(data: ProductoCreate):
     """Crear un nuevo producto con categorías e ingredientes asociados."""
     with UnitOfWork() as uow:
         prod = service.create_producto(uow, data)
-        uow.commit() # Commit explícito para asegurar que el ID esté disponible
         return service.get_producto_detail(uow, prod.id)
 
 
@@ -97,9 +103,37 @@ def update_producto(
     """Actualizar un producto. Si se envían categoria_ids o ingrediente_ids, se sincronizan."""
     with UnitOfWork() as uow:
         prod = service.update_producto(uow, prod_id, data)
-        uow.commit()
         return service.get_producto_detail(uow, prod_id)
 
+@router.patch(
+    "/{prod_id}/stock",
+    response_model=ProductoRead,
+    responses={404: {"description": "Producto no encontrado"}},
+    dependencies=[Depends(require_role(["ADMIN", "STOCK"]))],
+)
+def actualizar_stock_producto(
+    prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
+    data: ProductoStockUpdate,
+):
+    """Actualizar solo el stock físico de un producto. Permitido para ADMIN y STOCK."""
+    with UnitOfWork() as uow:
+        prod = service.update_stock_producto(uow, prod_id, data.stock_cantidad)
+        return service.get_producto_detail(uow, prod_id)
+
+@router.patch(
+    "/{prod_id}/disponibilidad",
+    response_model=ProductoRead,
+    responses={404: {"description": "Producto no encontrado"}},
+    dependencies=[Depends(require_role(["ADMIN", "STOCK"]))],
+)
+def actualizar_disponibilidad_producto(
+    prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
+    data: ProductoDisponibilidadUpdate,
+):
+    """Activar o desactivar la disponibilidad comercial de un producto."""
+    with UnitOfWork() as uow:
+        prod = service.update_disponibilidad_producto(uow, prod_id, data.disponible)
+        return service.get_producto_detail(uow, prod_id)
 
 @router.patch(
     "/{prod_id}/baja",

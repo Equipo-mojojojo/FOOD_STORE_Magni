@@ -8,7 +8,7 @@ Uso:
 Requiere PostgreSQL corriendo con las variables de .env configuradas.
 
 Crea:
-  - Catálogo de roles: ADMIN, STOCK, PEDIDO, CLIENT
+  - Catálogo de roles: ADMIN, STOCK, PEDIDOS, CLIENT
   - Administrador (rol=ADMIN)
   - 10 ingredientes básicos
   - 7 unidades de medida
@@ -29,7 +29,7 @@ from app.modules.pedidos.model import EstadoPedido, FormaPago
 ROLES_INICIALES = [
     {"codigo": "ADMIN",  "nombre": "Administrador",  "descripcion": "Acceso total sin restricciones"},
     {"codigo": "STOCK",  "nombre": "Stock Manager",   "descripcion": "Actualiza stock y disponibilidad"},
-    {"codigo": "PEDIDO", "nombre": "Pedidos",         "descripcion": "Avanza estado CONFIRMADO → ENTREGADO"},
+    {"codigo": "PEDIDOS", "nombre": "Pedidos",         "descripcion": "Ver y avanzar estados de pedidos"},
     {"codigo": "CLIENT", "nombre": "Cliente",         "descripcion": "Opera solo sus propios datos"},
 ]
 
@@ -40,6 +40,20 @@ USUARIOS_INICIALES = [
         "email": "admin@foodstore.com",
         "password": "admin",
         "roles": ["ADMIN"],
+    },
+    {
+        "nombre": "Pedidos",
+        "apellido": "Foodstore",
+        "email": "pedidos@foodstore.com",
+        "password": "pedidos",
+        "roles": ["PEDIDOS"],
+    },
+    {
+        "nombre": "Stock",
+        "apellido": "Foodstore",
+        "email": "stock@foodstore.com",
+        "password": "stock",
+        "roles": ["STOCK"],
     },
 ]
 
@@ -149,6 +163,7 @@ def run() -> None:
                     es_alergeno=i_data["es_alergeno"],
                     unidad_medida_id=unidad_id,
                     stock_actual=i_data["stock"],
+                    stock_minimo=i_data.get("stock_minimo", 0.0),
                     precio_costo=i_data["precio"]
                 )
                 session.add(i)
@@ -156,6 +171,7 @@ def run() -> None:
             else:
                 existing.unidad_medida_id = unidad_id
                 existing.stock_actual = i_data["stock"]
+                existing.stock_minimo = i_data.get("stock_minimo", 0.0)
                 existing.precio_costo = i_data["precio"]
                 session.add(existing)
                 print(f"  [=] Ingrediente actualizado: {existing.nombre}")

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, Check, RotateCcw } from "lucide-react";
-import type { Categoria, CategoriaCreate, CategoriaUpdate } from "../../types";
+import type { Categoria} from "../../types";
 
 interface Props {
   isOpen: boolean;

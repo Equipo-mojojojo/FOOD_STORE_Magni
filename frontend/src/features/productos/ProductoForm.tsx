@@ -3,7 +3,7 @@ import { X, Check } from "lucide-react";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
 import { useIngredientes } from "../../hooks/useIngredientes";
 import { useUnidadesMedida } from "../../hooks/useUnidadesMedida";
-import type { Producto, ProductoCreate, ProductoCategoriaCreate, ProductoIngredienteCreate } from "../../types";
+import type { Producto, ProductoCreate, ProductoIngredienteCreate } from "../../types";
 
 interface Props {
   isOpen: boolean;

@@ -14,8 +14,6 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Limpiamos la caché de sesión manualmente para evitar un loop de redirección
-      // (Si no lo hacemos, App.tsx cree que seguimos logueados y nos patea al home)
       localStorage.removeItem('authStore');
       window.location.href = "/login";
     }

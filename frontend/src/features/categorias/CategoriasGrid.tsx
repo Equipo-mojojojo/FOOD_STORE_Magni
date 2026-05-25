@@ -1,6 +1,6 @@
 /** Grilla de categorías con filtros y paginación. */
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit2, Trash2, RotateCcw, ArrowUpDown, Layers } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, RotateCcw, Layers } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import CategoriaForm from "./CategoriaForm";
 import type { Categoria, CategoriasFilters, CategoriaCreate } from "../../types";
@@ -240,6 +240,7 @@ export default function CategoriasGrid() {
       <CategoriaForm
         isOpen={modalOpen}
         categoria={editingItem}
+        parentId={null}
         onClose={() => { setModalOpen(false); setEditingItem(null); }}
         onSave={handleSave}
       />

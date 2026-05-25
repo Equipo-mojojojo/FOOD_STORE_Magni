@@ -1,7 +1,6 @@
 /** Formulario de login. */
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { authApi } from "../../api/authApi";
 import { useAuthStore } from "../../store/authStore";
 
 export default function LoginForm() {
@@ -20,11 +19,17 @@ export default function LoginForm() {
       await login({ email, password });
       
       const state = useAuthStore.getState();
-      // Chequear si tiene rol ADMIN (sea string o objeto con rol_codigo)
-      const isAdmin = state.usuario?.roles?.some((r: any) => r === 'ADMIN' || r?.rol_codigo === 'ADMIN');
-      
-      if (isAdmin) {
+      const roles = state.usuario?.roles || [];
+
+      const hasRole = (role: string) =>
+        roles.some((r: any) => r === role || r?.rol_codigo === role);
+
+      if (hasRole("ADMIN")) {
         navigate("/dashboard");
+      } else if (hasRole("STOCK")) {
+        navigate("/productos");
+      } else if (hasRole("PEDIDOS")) {
+        navigate("/pedidos");
       } else {
         navigate("/");
       }

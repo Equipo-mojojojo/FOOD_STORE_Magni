@@ -9,6 +9,7 @@ from app.modules.productos.router import router as productos_router
 from app.modules.categorias.router import router as categorias_router
 from app.modules.pedidos.router import router as pedidos_router
 from app.modules.usuarios.router import router as usuarios_router
+from app.modules.direcciones.router import router as direcciones_router
 
 app = FastAPI(
     title="🍔 Food Store API",
@@ -16,7 +17,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS - Permitir todo para debuggear el error 500 real
+# CORS 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,7 +40,7 @@ app.include_router(productos_router)
 app.include_router(categorias_router)
 app.include_router(pedidos_router)
 app.include_router(usuarios_router)
-
+app.include_router(direcciones_router)
 
 @app.get("/", tags=["Health"])
 def health_check():

@@ -7,6 +7,8 @@ import { useUiStore } from "../store/uiStore";
 export default function Navbar() {
   const usuario = useAuthStore((s) => s.usuario);
   const logout = useAuthStore((s) => s.logout);
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const isAdmin = hasRole("ADMIN");
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const navigate = useNavigate();
 
@@ -30,12 +32,14 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Link 
-          to="/" 
-          className="text-sm font-medium text-green-dark hover:text-green-main transition-colors mr-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 hidden md:block"
-        >
-          Home usuario
-        </Link>
+        {isAdmin && (
+          <Link 
+            to="/" 
+            className="text-sm font-medium text-green-dark hover:text-green-main transition-colors mr-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 hidden md:block"
+          >
+            Home usuario
+          </Link>
+        )}
         <span className="text-sm text-gray-600 hidden sm:block">
           Hola, <strong className="text-green-dark">{usuario?.nombre || 'Usuario'}</strong>
         </span>

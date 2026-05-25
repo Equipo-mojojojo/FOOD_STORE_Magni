@@ -16,8 +16,8 @@ export default function StorefrontCatalogoPage() {
   const perPage = 12;
 
   // Derivar sort_by y sort_order
-  let sortBy: string | undefined = undefined;
-  let sortOrder: "asc" | "desc" | undefined = undefined;
+  let sortBy = "";
+  let sortOrder = "";
 
   if (sortOption === "precio_asc") {
     sortBy = "precio_base";
@@ -36,7 +36,20 @@ export default function StorefrontCatalogoPage() {
   // Traer Categorías (Solo activas)
   const { data: categoriasData } = useQuery({
     queryKey: ["categorias", "activas"],
-    queryFn: () => categoriasApi.listPaginated({ estado: "activo", per_page: 100 }),
+    queryFn: () =>
+      categoriasApi.listPaginated({
+        page: 1,
+        per_page: 100,
+        search: "",
+        estado: "activo",
+        sort_by: "nombre",
+        sort_order: "asc",
+        created_from: "",
+        created_to: "",
+        updated_from: "",
+        updated_to: "",
+        starts_with: "",
+      }),
   });
   const categorias = categoriasData?.items || [];
 
@@ -58,10 +71,15 @@ export default function StorefrontCatalogoPage() {
         per_page: perPage,
         search: debouncedSearch,
         categoria: selectedCategoria,
-        estado: "activo", // Solo mostramos los activos en la tienda pública
-        disponible: "true", // Opcional: solo los disponibles
+        estado: "activo",
+        disponible: "true",
         sort_by: sortBy,
         sort_order: sortOrder,
+        created_from: "",
+        created_to: "",
+        updated_from: "",
+        updated_to: "",
+        starts_with: "",
       }),
   });
 
@@ -71,7 +89,7 @@ export default function StorefrontCatalogoPage() {
   // Manejadores
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setPage(1); // Volver a la pag 1 al buscar
+    setPage(1);
   };
 
   const handleCategoriaSelect = (id?: number) => {
@@ -88,7 +106,7 @@ export default function StorefrontCatalogoPage() {
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 300; // deslizar en bloque
+      const scrollAmount = 300;
       scrollContainerRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'

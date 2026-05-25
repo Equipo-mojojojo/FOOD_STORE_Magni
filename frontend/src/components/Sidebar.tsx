@@ -1,6 +1,7 @@
 /** Sidebar de navegación. */
 import { NavLink } from "react-router-dom";
 import { Home, Package, X, Layers, ShoppingBag, ClipboardList, Users } from "lucide-react";
+import { useAuthStore } from "../store/authStore";
 
 interface Props {
   open: boolean;
@@ -8,15 +9,17 @@ interface Props {
 }
 
 const links = [
-  { to: "/dashboard", label: "Dashboard", icon: Home },
-  { to: "/productos", label: "Productos", icon: ShoppingBag },
-  { to: "/categorias", label: "Categorías", icon: Layers },
-  { to: "/ingredientes", label: "Ingrediente", icon: Package },
-  { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
-  { to: "/usuarios", label: "Usuarios", icon: Users },
+  { to: "/dashboard", label: "Dashboard", icon: Home, roles: ["ADMIN"] },
+  { to: "/productos", label: "Productos", icon: ShoppingBag, roles: ["ADMIN", "STOCK"] },
+  { to: "/categorias", label: "Categorías", icon: Layers, roles: ["ADMIN"] },
+  { to: "/ingredientes", label: "Ingrediente", icon: Package, roles: ["ADMIN", "STOCK"] },
+  { to: "/pedidos", label: "Pedidos", icon: ClipboardList, roles: ["ADMIN", "PEDIDOS"] },
+  { to: "/usuarios", label: "Usuarios", icon: Users, roles: ["ADMIN"] },
 ];
 
 export default function Sidebar({ open, onClose }: Props) {
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const visibleLinks = links.filter((link) => link.roles.some((role) => hasRole(role)));
   return (
     <>
       {/* Overlay mobile */}
@@ -47,7 +50,7 @@ export default function Sidebar({ open, onClose }: Props) {
 
         {/* Links de navegación */}
         <nav className="mt-4 flex flex-col gap-1 px-3">
-          {links.map(({ to, label, icon: Icon }) => (
+          {visibleLinks.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

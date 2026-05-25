@@ -46,6 +46,20 @@ export const productosApi = {
     return res.data;
   },
 
+  updateStock: async (id: number, stock_cantidad: number): Promise<Producto> => {
+    const res = await axiosClient.patch<Producto>(`/productos/${id}/stock`, {
+      stock_cantidad,
+    });
+    return res.data;
+  },
+
+  updateDisponibilidad: async (id: number, disponible: boolean): Promise<Producto> => {
+    const res = await axiosClient.patch<Producto>(`/productos/${id}/disponibilidad`, {
+      disponible,
+    });
+    return res.data;
+  },
+
   darDeBaja: async (id: number): Promise<void> => {
     await axiosClient.patch(`/productos/${id}/baja`);
   },

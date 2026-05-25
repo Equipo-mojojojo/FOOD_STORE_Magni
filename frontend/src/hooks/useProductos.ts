@@ -39,6 +39,30 @@ export const useActualizarProducto = () => {
   });
 };
 
+export const useActualizarStockProducto = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, stock_cantidad }: { id: number; stock_cantidad: number }) =>
+      productosApi.updateStock(id, stock_cantidad),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
+    },
+  });
+};
+
+export const useActualizarDisponibilidadProducto = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, disponible }: { id: number; disponible: boolean }) =>
+      productosApi.updateDisponibilidad(id, disponible),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
+    },
+  });
+};
+
 export const useDarDeBajaProducto = () => {
   const queryClient = useQueryClient();
   return useMutation({

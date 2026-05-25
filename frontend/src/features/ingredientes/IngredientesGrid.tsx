@@ -20,13 +20,17 @@ function formatArgentinaDate(value: string) {
   });
 }
 
-export default function IngredientesGrid() {
+interface Props {
+  estado?: string;
+}
+
+export default function IngredientesGrid({ estado = "activo" }: Props) {
   const [filters, setFilters] = useState<IngredientesFilters>({
     page: 1,
     per_page: 10,
     search: "",
     es_alergeno: "",
-    estado: "activo",
+    estado: estado,
     sort_by: "nombre",
     sort_order: "asc",
     created_from: "",

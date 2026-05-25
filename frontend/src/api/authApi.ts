@@ -12,4 +12,9 @@ export const authApi = {
     const res = await axiosClient.post<TokenResponse>("/auth/register", data);
     return res.data;
   },
+
+  refresh: async (): Promise<TokenResponse> => {
+    const res = await axiosClient.post<TokenResponse>("/auth/refresh");
+    return res.data;
+  },
 };
