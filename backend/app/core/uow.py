@@ -77,10 +77,6 @@ class UnitOfWork:
             self.session.commit()
         self.session.close()
 
-    def commit(self):
-        """Commit explícito (para casos donde se necesita antes de salir del with)."""
-        self.session.commit()
-
     def rollback(self):
         """Rollback explícito."""
         self.session.rollback()

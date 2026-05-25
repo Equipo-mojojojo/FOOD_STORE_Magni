@@ -17,7 +17,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS - Permitir todo para debuggear el error 500 real
+# CORS 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

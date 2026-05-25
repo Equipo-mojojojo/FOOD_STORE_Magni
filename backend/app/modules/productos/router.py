@@ -87,7 +87,6 @@ def create_producto(data: ProductoCreate):
     """Crear un nuevo producto con categorías e ingredientes asociados."""
     with UnitOfWork() as uow:
         prod = service.create_producto(uow, data)
-        uow.commit() # Commit explícito para asegurar que el ID esté disponible
         return service.get_producto_detail(uow, prod.id)
 
 
@@ -104,7 +103,6 @@ def update_producto(
     """Actualizar un producto. Si se envían categoria_ids o ingrediente_ids, se sincronizan."""
     with UnitOfWork() as uow:
         prod = service.update_producto(uow, prod_id, data)
-        uow.commit()
         return service.get_producto_detail(uow, prod_id)
 
 @router.patch(
@@ -120,7 +118,6 @@ def actualizar_stock_producto(
     """Actualizar solo el stock físico de un producto. Permitido para ADMIN y STOCK."""
     with UnitOfWork() as uow:
         prod = service.update_stock_producto(uow, prod_id, data.stock_cantidad)
-        uow.commit()
         return service.get_producto_detail(uow, prod_id)
 
 @router.patch(
@@ -136,7 +133,6 @@ def actualizar_disponibilidad_producto(
     """Activar o desactivar la disponibilidad comercial de un producto."""
     with UnitOfWork() as uow:
         prod = service.update_disponibilidad_producto(uow, prod_id, data.disponible)
-        uow.commit()
         return service.get_producto_detail(uow, prod_id)
 
 @router.patch(
