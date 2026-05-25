@@ -102,11 +102,11 @@ export interface Categoria {
   padre_id: number | null;
   created_at: string;
   updated_at: string;
+  active_at: string | null;
   deleted_at: string | null;
 }
 
 export interface CategoriaTree extends Categoria {
-  active_at: string | null;
   subcategorias: CategoriaTree[];
 }
 
@@ -306,7 +306,33 @@ export interface UsuarioAdmin {
   apellido: string;
   email: string;
   celular: string;
+  roles: string[];
   created_at: string;
+  deleted_at: string | null;
+}
+
+export interface UsuarioUpdate {
+  nombre?: string;
+  apellido?: string;
+  celular?: string;
+}
+
+export interface UsuarioRolesUpdate {
+  roles: string[];
+}
+
+export interface Rol {
+  codigo: string;
+  nombre: string;
+  descripcion: string | null;
+}
+
+export interface PaginatedUsuarios {
+  items: UsuarioAdmin[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
 }
 
 // --- CARRITO ---

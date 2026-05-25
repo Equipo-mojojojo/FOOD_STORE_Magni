@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Search, Edit2, Trash2, Package, Filter, X, RotateCcw, XCircle } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Package, RotateCcw, XCircle } from "lucide-react";
 import {
   useProductos,
   useDarDeBajaProducto,

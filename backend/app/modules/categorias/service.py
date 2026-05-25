@@ -126,7 +126,7 @@ def delete_categoria(uow: UnitOfWork, cat_id: int):
     has_products = uow.categorias.has_active_products(cat_id)
     if has_products:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_409_CONFLICT,
             detail="No se puede eliminar: la categoría tiene productos activos asociados",
         )
 

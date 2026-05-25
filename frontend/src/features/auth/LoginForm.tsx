@@ -1,7 +1,6 @@
 /** Formulario de login. */
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { authApi } from "../../api/authApi";
 import { useAuthStore } from "../../store/authStore";
 
 export default function LoginForm() {
