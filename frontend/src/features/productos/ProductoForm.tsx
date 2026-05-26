@@ -106,6 +106,15 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
 
   const precioSugerido = calculatedCosto * (1 + formData.margen_ganancia);
 
+  // Detectar si alguno de los ingredientes seleccionados es un insumo terminado
+  const tieneInsumoTerminado = formData.ingredientes.some(pi => {
+    const ing = ingredientesData?.items.find(i => i.id === pi.ingrediente_id);
+    return ing?.es_producto_terminado;
+  });
+
+  // Si tiene ingredientes, el stock físico debe ser 0 (se calcula dinámicamente)
+  const esElaborable = formData.ingredientes.length > 0;
+
   if (!isOpen) return null;
 
   const toggleCategoria = (id: number) => {
@@ -153,6 +162,26 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
       if (exists) {
         return { ...prev, ingredientes: prev.ingredientes.filter(i => i.ingrediente_id !== id) };
       } else {
+        // Verificar si el insumo que estamos agregando es un producto terminado
+        const ingInfo = ingredientesData?.items.find(i => i.id === id);
+        
+        if (ingInfo?.es_producto_terminado) {
+          // Si es terminado, reemplaza todos los demas ingredientes (solo puede ir uno)
+          return {
+            ...prev,
+            ingredientes: [
+              { ingrediente_id: id, cantidad: 1, unidad_medida_id: unidadesMedida?.[0]?.id || 1, es_removible: false }
+            ]
+          };
+        }
+
+        // Si ya hay un insumo terminado, no se puede agregar más
+        const yaHayTerminado = prev.ingredientes.some(pi => {
+          const ing = ingredientesData?.items.find(i => i.id === pi.ingrediente_id);
+          return ing?.es_producto_terminado;
+        });
+        if (yaHayTerminado) return prev; // Bloqueado
+
         return {
           ...prev,
           ingredientes: [
@@ -182,6 +211,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
     try {
       const dataToSend = {
         ...formData,
+        stock_cantidad: formData.ingredientes.length > 0 ? 0 : formData.stock_cantidad,
         activo: formData.disponible, // Sincronizamos activo con disponible
         descripcion: formData.descripcion?.trim() || null
       };
@@ -295,13 +325,21 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Stock Físico (Pre-hecho)</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Stock Físico (Pre-hecho)
+                {esElaborable && (
+                  <span className="ml-2 text-[10px] font-normal text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    Calculado desde ingredientes
+                  </span>
+                )}
+              </label>
               <div className="flex gap-2">
                 <input
                   type="number" required
-                  value={formData.stock_cantidad}
+                  value={esElaborable ? 0 : formData.stock_cantidad}
+                  disabled={esElaborable}
                   onChange={(e) => setFormData({ ...formData, stock_cantidad: Number(e.target.value) })}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none"
+                  className={`w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none ${esElaborable ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
                 />
                 <select
                   value={formData.unidad_venta_id || ""}
@@ -384,15 +422,24 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                   .map(i => {
                     const ingredienteData = formData.ingredientes.find(ing => ing.ingrediente_id === i.id);
                     const isSelected = !!ingredienteData;
+                    const esTerminado = i.es_producto_terminado;
+                    // Bloquear si ya hay un terminado y este no es el terminado actual
+                    const bloqueadoPorTerminado = tieneInsumoTerminado && !isSelected && !esTerminado;
+                    // Bloquear insumos normales si ya hay un terminado seleccionado
+                    const bloqueadoPorMezcla = tieneInsumoTerminado && !isSelected;
 
                     return (
-                      <div key={i.id} className={`flex flex-col gap-2 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-green-50/50 border-green-200' : 'hover:bg-white border-transparent'}`}>
-                        <label className="flex items-center gap-3 cursor-pointer">
+                      <div key={i.id} className={`flex flex-col gap-2 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-green-50/50 border-green-200' : bloqueadoPorMezcla ? 'opacity-40 cursor-not-allowed border-transparent' : 'hover:bg-white border-transparent'}`}>
+                        <label className={`flex items-center gap-3 ${bloqueadoPorMezcla ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                           <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isSelected ? 'bg-green-main border-green-main text-white' : 'border-gray-300 bg-white group-hover:border-green-main'}`}>
                             {isSelected && <Check size={14} strokeWidth={3} />}
                           </div>
-                          <input type="checkbox" className="hidden" checked={isSelected} onChange={() => toggleIngrediente(i.id)} />
-                          <span className="text-sm font-medium text-gray-700">{i.nombre} <span className="text-[10px] text-gray-400 font-normal">($ {i.precio_costo}/unid)</span></span>
+                          <input type="checkbox" className="hidden" checked={isSelected} onChange={() => !bloqueadoPorMezcla && toggleIngrediente(i.id)} disabled={bloqueadoPorMezcla} />
+                          <span className="text-sm font-medium text-gray-700">
+                            {i.nombre}
+                            {esTerminado && <span className="ml-1 text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">TERMINADO</span>}
+                            {' '}<span className="text-[10px] text-gray-400 font-normal">($ {i.precio_costo}/unid)</span>
+                          </span>
                         </label>
                         
                         {isSelected && ingredienteData && (

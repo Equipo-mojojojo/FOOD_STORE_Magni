@@ -1,8 +1,10 @@
 /** Modal para crear/editar ingrediente. */
 import { useState, useEffect } from "react";
-import { X, Info } from "lucide-react";
+import { X, Info, Package } from "lucide-react";
 import type { Ingrediente, IngredienteCreate, UnidadMedidaSimple } from "../../types";
 import { productosApi } from "../../api/productosApi";
+import { categoriasApi } from "../../api/categoriasApi";
+import { ingredientesApi } from "../../api/ingredientesApi";
 
 interface Props {
   isOpen: boolean;
@@ -21,6 +23,11 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [stockMinimo, setStockMinimo] = useState<number>(0);
   const [unidadMedidaId, setUnidadMedidaId] = useState<number | "">("");
   const [activo, setActivo] = useState(true);
+
+  // Campos para auto-creación de producto cuando es insumo terminado
+  const [categoriaId, setCategoriaId] = useState<number | "">("")
+  const [montoExtra, setMontoExtra] = useState<number>(0);
+  const [categorias, setCategorias] = useState<{id: number; nombre: string}[]>([]);
   
   const [unidades, setUnidades] = useState<UnidadMedidaSimple[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,6 +36,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   useEffect(() => {
     if (isOpen) {
       fetchUnidades();
+      fetchCategorias();
     }
   }, [isOpen]);
 
@@ -38,6 +46,15 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       setUnidades(data);
     } catch (err) {
       console.error("Error fetching units", err);
+    }
+  };
+
+  const fetchCategorias = async () => {
+    try {
+      const data = await categoriasApi.listFlat();
+      setCategorias(data);
+    } catch (err) {
+      console.error("Error fetching categories", err);
     }
   };
 
@@ -62,6 +79,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       setStockMinimo(0);
       setUnidadMedidaId("");
       setActivo(true);
+      setCategoriaId("");
+      setMontoExtra(0);
     }
     setError("");
   }, [ingrediente, isOpen]);
@@ -79,6 +98,14 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       return;
     }
 
+    // Validar campos de producto terminado
+    if (esProductoTerminado && !ingrediente) {
+      if (categoriaId === "") {
+        setError("Seleccioná una categoría para el producto");
+        return;
+      }
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -93,6 +120,53 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         unidad_medida_id: Number(unidadMedidaId),
         activo 
       }, ingrediente?.id);
+
+      // Si es producto terminado y es CREACIÓN (no edición), crear producto automáticamente
+      if (esProductoTerminado && !ingrediente) {
+        try {
+          // Buscar el ingrediente recién creado por nombre para obtener su ID
+          const ingData = await ingredientesApi.list({
+            search: nombre.trim(),
+            page: 1,
+            per_page: 1,
+            es_alergeno: "",
+            estado: "activo",
+            sort_by: "created_at",
+            sort_order: "desc",
+            created_from: "",
+            created_to: "",
+            updated_from: "",
+            updated_to: "",
+            starts_with: ""
+          });
+          const nuevoIngId = ingData?.items?.[0]?.id;
+
+          if (nuevoIngId) {
+            const precioFinal = Number(precioCosto) + Number(montoExtra);
+            await productosApi.create({
+              nombre: nombre.trim(),
+              descripcion: descripcion.trim() || null,
+              precio_base: precioFinal,
+              stock_cantidad: 0, // El stock se calcula desde el ingrediente
+              margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
+              disponible: true,
+              activo: true,
+              unidad_venta_id: null,
+              categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
+              ingredientes: [{
+                ingrediente_id: nuevoIngId,
+                cantidad: 1,
+                unidad_medida_id: Number(unidadMedidaId),
+                es_removible: false
+              }]
+            });
+          }
+        } catch (prodErr) {
+          console.error("Error creando producto automático:", prodErr);
+          // No bloqueamos — el insumo ya se creó exitosamente
+        }
+      }
+
       onClose();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string } } };
@@ -250,6 +324,61 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-green-main rounded-full peer peer-checked:bg-blue-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
               </label>
             </div>
+
+            {/* Sección de auto-creación de producto — solo visible para insumos terminados NUEVOS */}
+            {esProductoTerminado && !ingrediente && (
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-4 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <Package size={16} />
+                  <span className="text-sm font-bold">Producto Automático</span>
+                </div>
+                <p className="text-xs text-blue-600">
+                  Al guardar, se creará un producto de venta directa con este insumo. Solo necesitás elegir la categoría y cuánto querés sumarle al costo.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Categoría de Tienda</label>
+                    <select
+                      value={categoriaId}
+                      onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : "")}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {categorias.map(c => (
+                        <option key={c.id} value={c.id}>{c.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Monto Extra</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-gray-400 text-sm">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={montoExtra}
+                        onChange={(e) => setMontoExtra(Number(e.target.value))}
+                        className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview del precio final */}
+                <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-100">
+                  <div className="text-xs text-gray-500">
+                    Costo: <span className="font-bold text-gray-800">${Number(precioCosto).toLocaleString("es-AR")}</span>
+                    {" + "}
+                    Extra: <span className="font-bold text-blue-600">${Number(montoExtra).toLocaleString("es-AR")}</span>
+                  </div>
+                  <div className="text-sm font-black text-green-700">
+                    Precio Final: ${(Number(precioCosto) + Number(montoExtra)).toLocaleString("es-AR")}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {ingrediente && (
               <div className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
