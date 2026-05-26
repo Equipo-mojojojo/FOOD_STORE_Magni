@@ -46,16 +46,38 @@ class PedidoService:
             productos_a_decrementar = []
 
             for item in data.items:
-                producto = self.uow.productos.get_by_id(item.producto_id)
+                producto = self.uow.productos.get_by_id_with_relations(item.producto_id)
                 if not producto or producto.deleted_at is not None:
                     raise HTTPException(status_code=404, detail=f"Producto id={item.producto_id} no encontrado")
                 if not producto.disponible:
                     raise HTTPException(status_code=400, detail=f"El producto '{producto.nombre}' no está disponible")
-                if producto.stock_cantidad < item.cantidad:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock_cantidad}, solicitado: {item.cantidad}",
-                    )
+                
+                es_elaborable = len(producto.ingredientes) > 0
+                
+                if es_elaborable:
+                    unidades_posibles = []
+                    for pi in producto.ingredientes:
+                        if pi.ingrediente:
+                            f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
+                            f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
+                            qty_base = pi.cantidad * Decimal(str(f_receta))
+                            if qty_base > 0:
+                                stock_base = pi.ingrediente.stock_actual * Decimal(str(f_ing))
+                                unidades = stock_base / qty_base
+                                unidades_posibles.append(float(unidades))
+                    
+                    stock_disponible = int(min(unidades_posibles)) if unidades_posibles else 0
+                    if stock_disponible < item.cantidad:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Stock de ingredientes insuficiente para '{producto.nombre}'. Posible: {stock_disponible}, solicitado: {item.cantidad}"
+                        )
+                else:
+                    if producto.stock_cantidad < item.cantidad:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock_cantidad}, solicitado: {item.cantidad}",
+                        )
 
                 precio_snap = producto.precio_base
                 subtotal_item = precio_snap * Decimal(str(item.cantidad))
@@ -69,7 +91,7 @@ class PedidoService:
                     "subtotal_snap": subtotal_item,
                     "personalizacion": item.personalizacion,
                 })
-                productos_a_decrementar.append((producto, item.cantidad))
+                productos_a_decrementar.append((producto, item.cantidad, es_elaborable))
 
             total = subtotal - Decimal("0.00") + COSTO_ENVIO_DEFAULT
 
@@ -89,9 +111,19 @@ class PedidoService:
                 self.uow.detalles_pedido.add(DetallePedido(pedido_id=pedido.id, **d))
 
             # Decrementar stock de cada producto incluido en el pedido
-            for producto, cantidad in productos_a_decrementar:
-                producto.stock_cantidad -= cantidad
-                self.uow.productos.update(producto)
+            for producto, cantidad, es_elaborable in productos_a_decrementar:
+                if es_elaborable:
+                    for pi in producto.ingredientes:
+                        if pi.ingrediente:
+                            f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
+                            f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
+                            qty_base_total = pi.cantidad * Decimal(str(f_receta)) * Decimal(str(cantidad))
+                            deduccion = qty_base_total / Decimal(str(f_ing))
+                            pi.ingrediente.stock_actual -= deduccion
+                            self.uow.ingredientes.update(pi.ingrediente)
+                else:
+                    producto.stock_cantidad -= cantidad
+                    self.uow.productos.update(producto)
 
             # Primer registro del historial: estado_desde=NULL (RN-02)
             self.uow.historial_estados.add(HistorialEstadoPedido(
@@ -172,10 +204,14 @@ class PedidoService:
             # Si se cancela, devolver el stock de cada ítem al inventario
             if estado_destino == "CANCELADO":
                 for detalle in pedido.detalles:
-                    producto = self.uow.productos.get_by_id(detalle.producto_id)
+                    producto = self.uow.productos.get_by_id_with_relations(detalle.producto_id)
                     if producto:
-                        producto.stock_cantidad += detalle.cantidad
-                        self.uow.productos.update(producto)
+                        es_elaborable = len(producto.ingredientes) > 0
+                        if not es_elaborable:
+                            # Solo reponemos stock si es un producto finalizado
+                            # Por regla de negocio: no se puede "des-cocinar" una pizza elaborada
+                            producto.stock_cantidad += detalle.cantidad
+                            self.uow.productos.update(producto)
 
             pedido.estado_codigo = estado_destino
             pedido.updated_at = datetime.now(timezone.utc)

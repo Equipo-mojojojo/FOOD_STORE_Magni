@@ -13,8 +13,8 @@ export default function ProductCard({ producto }: ProductCardProps) {
   const { openCart } = useUiStore();
 
   const inCart = items.find((i) => i.producto.id === producto.id);
-  const sinStock = producto.stock_cantidad === 0;
-  const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_cantidad;
+  const sinStock = producto.stock_disponible === 0;
+  const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_disponible;
   const bloqueado = sinStock || stockAgotado;
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -43,10 +43,9 @@ export default function ProductCard({ producto }: ProductCardProps) {
     >
       {/* Imagen Placeholder */}
       <div className={`h-40 w-full flex flex-col justify-center items-center ${colorClass} relative overflow-hidden`}>
-        {/* Etiqueta de Stock */}
-        {producto.stock_cantidad <= 5 && producto.stock_cantidad > 0 && (
+        {producto.stock_disponible <= 5 && producto.stock_disponible > 0 && (
           <span className="absolute top-3 right-3 bg-white/90 text-orange-600 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
-            ¡Quedan {producto.stock_cantidad}!
+            ¡Quedan {producto.stock_disponible}!
           </span>
         )}
         <span className="text-4xl font-black opacity-20 transform -rotate-12 scale-150">

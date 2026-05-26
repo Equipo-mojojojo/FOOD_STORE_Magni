@@ -35,7 +35,7 @@ export default function CarritoGrid() {
             <span className="w-6 text-center font-semibold">{item.cantidad}</span>
             <button
               onClick={() => updateCantidad(item.producto.id, item.cantidad + 1)}
-              disabled={item.cantidad >= item.producto.stock_cantidad}
+              disabled={item.cantidad >= item.producto.stock_disponible}
               className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Plus size={14} />

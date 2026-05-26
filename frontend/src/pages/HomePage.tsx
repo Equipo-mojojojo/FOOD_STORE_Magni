@@ -29,8 +29,8 @@ function ProductCard({ producto }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
   const items = useCartStore((s) => s.items);
   const inCart = items.find((i) => i.producto.id === producto.id);
-  const sinStock = producto.stock_cantidad === 0;
-  const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_cantidad;
+  const sinStock = producto.stock_disponible === 0;
+  const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_disponible;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">

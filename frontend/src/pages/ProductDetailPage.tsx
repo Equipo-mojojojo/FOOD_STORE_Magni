@@ -151,7 +151,8 @@ export default function ProductDetailPage() {
                 </span>
                 <button 
                   onClick={() => setCantidad(cantidad + 1)}
-                  className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-gray-600 hover:text-green-main transition-colors"
+                  disabled={cantidad >= producto.stock_disponible}
+                  className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-gray-600 hover:text-green-main transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Plus size={20} />
                 </button>
@@ -160,10 +161,11 @@ export default function ProductDetailPage() {
               {/* Botón Agregar al Carrito */}
               <button 
                 onClick={handleAddToCart}
-                className="flex-1 bg-green-main text-white font-bold text-lg rounded-2xl flex items-center justify-center gap-3 hover:bg-green-dark transition-all shadow-lg shadow-green-main/30 active:scale-95 py-4 sm:py-0"
+                disabled={producto.stock_disponible === 0}
+                className="flex-1 bg-green-main text-white font-bold text-lg rounded-2xl flex items-center justify-center gap-3 hover:bg-green-dark transition-all shadow-lg shadow-green-main/30 active:scale-95 py-4 sm:py-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:shadow-none"
               >
                 <ShoppingCart size={24} className="fill-current" />
-                Agregar al Pedido
+                {producto.stock_disponible === 0 ? "Sin stock" : "Agregar al Pedido"}
               </button>
             </div>
           </div>

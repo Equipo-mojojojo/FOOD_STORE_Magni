@@ -105,7 +105,7 @@ export default function CartSlideOver() {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
-                          disabled={item.cantidad >= item.producto.stock_cantidad}
+                          disabled={item.cantidad >= item.producto.stock_disponible}
                           className="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-green-main transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Plus size={14} />
