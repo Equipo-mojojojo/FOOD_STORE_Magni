@@ -6,9 +6,10 @@ import { Link } from "react-router-dom";
 
 interface ProductCardProps {
   producto: Producto;
+  className?: string;
 }
 
-export default function ProductCard({ producto }: ProductCardProps) {
+export default function ProductCard({ producto, className }: ProductCardProps) {
   const { addItem, items } = useCartStore();
   const { openCart } = useUiStore();
 
@@ -39,7 +40,7 @@ export default function ProductCard({ producto }: ProductCardProps) {
   return (
     <Link
       to={`/producto/${producto.id}`}
-      className="group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-gray-50 flex flex-col w-64 shrink-0 snap-start block"
+      className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-gray-50 flex flex-col block ${className ?? "w-64 shrink-0 snap-start"}`}
     >
       {/* Imagen Placeholder */}
       <div className={`h-40 w-full flex flex-col justify-center items-center ${colorClass} relative overflow-hidden`}>

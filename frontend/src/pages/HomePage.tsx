@@ -1,10 +1,11 @@
 /** Home pública — catálogo de productos disponibles con carrito. */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Plus } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useProductos } from "../hooks/useProductos";
 import { useCartStore } from "../store/cartStore";
-import type { Producto, ProductosFilters } from "../types";
+import ProductCard from "../components/ProductCard";
+import type { ProductosFilters } from "../types";
 
 const DEFAULT_FILTERS: ProductosFilters = {
   page: 1,
@@ -20,58 +21,6 @@ const DEFAULT_FILTERS: ProductosFilters = {
   starts_with: "",
   disponible: "true",
 };
-
-interface ProductCardProps {
-  producto: Producto;
-}
-
-function ProductCard({ producto }: ProductCardProps) {
-  const addItem = useCartStore((s) => s.addItem);
-  const items = useCartStore((s) => s.items);
-  const inCart = items.find((i) => i.producto.id === producto.id);
-  const sinStock = producto.stock_disponible === 0;
-  const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_disponible;
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-      <div className="h-40 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-        <span className="text-5xl">🍽️</span>
-      </div>
-      <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-semibold text-gray-900 mb-1 truncate">{producto.nombre}</h3>
-        {producto.descripcion && (
-          <p className="text-gray-500 text-sm mb-3 line-clamp-2 flex-1">
-            {producto.descripcion}
-          </p>
-        )}
-        <div className="mt-auto pt-2 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-green-dark font-bold text-lg">
-              ${Number(producto.precio_base).toLocaleString("es-AR")}
-            </span>
-            {inCart && (
-              <span className="text-xs text-green-dark font-medium">
-                {inCart.cantidad} en carrito
-              </span>
-            )}
-          </div>
-          <button
-            onClick={() => addItem(producto)}
-            disabled={sinStock || stockAgotado}
-            className={`w-full flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
-              sinStock || stockAgotado
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-green-main hover:bg-green-dark text-white"
-            }`}
-          >
-            <Plus size={16} />
-            {sinStock ? "Sin stock" : stockAgotado ? "Stock máximo" : "Agregar al carrito"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const [filters] = useState<ProductosFilters>(DEFAULT_FILTERS);
@@ -121,7 +70,7 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {data.items.map((p) => (
-              <ProductCard key={p.id} producto={p} />
+              <ProductCard key={p.id} producto={p} className="" />
             ))}
           </div>
         )}
@@ -129,3 +78,4 @@ export default function HomePage() {
     </div>
   );
 }
+
