@@ -69,6 +69,14 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       setStockMinimo(ingrediente.stock_minimo || 0);
       setUnidadMedidaId(ingrediente.unidad_medida_id || "");
       setActivo(ingrediente.active_at === null);
+
+      // Si es terminado, buscar el producto vinculado para pre-popular categoría y monto extra
+      if (ingrediente.es_producto_terminado) {
+        fetchLinkedProduct(ingrediente.id);
+      } else {
+        setCategoriaId("");
+        setMontoExtra(0);
+      }
     } else {
       setNombre("");
       setDescripcion("");
@@ -85,6 +93,30 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     setError("");
   }, [ingrediente, isOpen]);
 
+  // Buscar producto vinculado a este ingrediente (para edición)
+  const fetchLinkedProduct = async (ingredienteId: number) => {
+    try {
+      const productosList = await productosApi.list({
+        page: 1, per_page: 50, search: "", estado: "",
+        sort_by: "", sort_order: "desc",
+        created_from: "", created_to: "",
+        updated_from: "", updated_to: "",
+        starts_with: ""
+      });
+      // Buscar un producto que tenga este ingrediente en su receta
+      const linked = productosList.items.find(p =>
+        p.ingredientes?.some(pi => pi.ingrediente.id === ingredienteId)
+      );
+      if (linked) {
+        const catPrincipal = linked.categorias?.find(c => c.es_principal) || linked.categorias?.[0];
+        if (catPrincipal) setCategoriaId(catPrincipal.categoria.id);
+        setMontoExtra(Number(linked.precio_base) - Number(ingrediente?.precio_costo || 0));
+      }
+    } catch (err) {
+      console.error("Error buscando producto vinculado", err);
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,7 +131,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     }
 
     // Validar campos de producto terminado
-    if (esProductoTerminado && !ingrediente) {
+    if (esProductoTerminado) {
       if (categoriaId === "") {
         setError("Seleccioná una categoría para el producto");
         return;
@@ -121,49 +153,105 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         activo 
       }, ingrediente?.id);
 
-      // Si es producto terminado y es CREACIÓN (no edición), crear producto automáticamente
-      if (esProductoTerminado && !ingrediente) {
+      // Si es producto terminado, crear o actualizar el producto vinculado
+      if (esProductoTerminado) {
         try {
-          // Buscar el ingrediente recién creado por nombre para obtener su ID
-          const ingData = await ingredientesApi.list({
-            search: nombre.trim(),
-            page: 1,
-            per_page: 1,
-            es_alergeno: "",
-            estado: "activo",
-            sort_by: "created_at",
-            sort_order: "desc",
-            created_from: "",
-            created_to: "",
-            updated_from: "",
-            updated_to: "",
-            starts_with: ""
-          });
-          const nuevoIngId = ingData?.items?.[0]?.id;
+          const precioFinal = Number(precioCosto) + Number(montoExtra);
+          const ingId = ingrediente?.id;
 
-          if (nuevoIngId) {
-            const precioFinal = Number(precioCosto) + Number(montoExtra);
-            await productosApi.create({
-              nombre: nombre.trim(),
-              descripcion: descripcion.trim() || null,
-              precio_base: precioFinal,
-              stock_cantidad: 0, // El stock se calcula desde el ingrediente
-              margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
-              disponible: true,
-              activo: true,
-              unidad_venta_id: null,
-              categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
-              ingredientes: [{
-                ingrediente_id: nuevoIngId,
-                cantidad: 1,
-                unidad_medida_id: Number(unidadMedidaId),
-                es_removible: false
-              }]
+          if (ingrediente) {
+            // EDICIÓN: buscar producto vinculado y actualizarlo
+            const productosList = await productosApi.list({
+              page: 1, per_page: 50, search: "", estado: "",
+              sort_by: "", sort_order: "desc",
+              created_from: "", created_to: "",
+              updated_from: "", updated_to: "",
+              starts_with: ""
             });
+            const linked = productosList.items.find(p =>
+              p.ingredientes?.some(pi => pi.ingrediente.id === ingId)
+            );
+
+            if (linked) {
+              // Actualizar producto existente
+              await productosApi.update(linked.id, {
+                nombre: nombre.trim(),
+                descripcion: descripcion.trim() || null,
+                precio_base: precioFinal,
+                stock_cantidad: 0,
+                margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
+                disponible: true,
+                activo: true,
+                unidad_venta_id: null,
+                categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
+                ingredientes: [{
+                  ingrediente_id: ingId!,
+                  cantidad: 1,
+                  unidad_medida_id: Number(unidadMedidaId),
+                  es_removible: false
+                }]
+              });
+            } else {
+              // No había producto vinculado — crear uno nuevo
+              await productosApi.create({
+                nombre: nombre.trim(),
+                descripcion: descripcion.trim() || null,
+                precio_base: precioFinal,
+                stock_cantidad: 0,
+                margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
+                disponible: true,
+                activo: true,
+                unidad_venta_id: null,
+                categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
+                ingredientes: [{
+                  ingrediente_id: ingId!,
+                  cantidad: 1,
+                  unidad_medida_id: Number(unidadMedidaId),
+                  es_removible: false
+                }]
+              });
+            }
+          } else {
+            // CREACIÓN: buscar el ingrediente recién creado por nombre
+            const ingData = await ingredientesApi.list({
+              search: nombre.trim(),
+              page: 1,
+              per_page: 1,
+              es_alergeno: "",
+              estado: "activo",
+              sort_by: "created_at",
+              sort_order: "desc",
+              created_from: "",
+              created_to: "",
+              updated_from: "",
+              updated_to: "",
+              starts_with: ""
+            });
+            const nuevoIngId = ingData?.items?.[0]?.id;
+
+            if (nuevoIngId) {
+              await productosApi.create({
+                nombre: nombre.trim(),
+                descripcion: descripcion.trim() || null,
+                precio_base: precioFinal,
+                stock_cantidad: 0,
+                margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
+                disponible: true,
+                activo: true,
+                unidad_venta_id: null,
+                categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
+                ingredientes: [{
+                  ingrediente_id: nuevoIngId,
+                  cantidad: 1,
+                  unidad_medida_id: Number(unidadMedidaId),
+                  es_removible: false
+                }]
+              });
+            }
           }
         } catch (prodErr) {
-          console.error("Error creando producto automático:", prodErr);
-          // No bloqueamos — el insumo ya se creó exitosamente
+          console.error("Error gestionando producto vinculado:", prodErr);
+          // No bloqueamos — el insumo ya se guardó exitosamente
         }
       }
 
@@ -325,15 +413,18 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
               </label>
             </div>
 
-            {/* Sección de auto-creación de producto — solo visible para insumos terminados NUEVOS */}
-            {esProductoTerminado && !ingrediente && (
+            {/* Sección de producto vinculado — visible siempre que sea terminado */}
+            {esProductoTerminado && (
               <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-4 animate-in fade-in duration-200">
                 <div className="flex items-center gap-2 text-blue-700">
                   <Package size={16} />
                   <span className="text-sm font-bold">Producto Automático</span>
                 </div>
                 <p className="text-xs text-blue-600">
-                  Al guardar, se creará un producto de venta directa con este insumo. Solo necesitás elegir la categoría y cuánto querés sumarle al costo.
+                  {ingrediente
+                    ? "Editá la categoría y el monto extra. Al guardar, se actualizará el producto vinculado automáticamente."
+                    : "Al guardar, se creará un producto de venta directa con este insumo. Solo necesitás elegir la categoría y cuánto querés sumarle al costo."
+                  }
                 </p>
 
                 <div className="grid grid-cols-2 gap-4">
