@@ -63,6 +63,9 @@ Thumbs.db
 
 # Scripts temporales
 check_db.py
+inspect_db.py
+test_api.py
+test_service.py
 
 # Documentación de referencia local / material del integrador
 2026Integrador/

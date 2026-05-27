@@ -9,6 +9,14 @@ export const useCategoriasTree = (estado: string = "activo") => {
   });
 };
 
+export const useCategoria = (id: number) => {
+  return useQuery({
+    queryKey: ["categorias", id],
+    queryFn: () => categoriasApi.getById(id),
+    enabled: !!id,
+  });
+};
+
 export const useCategoriasPaginated = (filters: CategoriasFilters) => {
   return useQuery({
     queryKey: ["categorias", "list", filters],
