@@ -4,6 +4,8 @@ import { useCartStore } from '../store/cartStore';
 import { useUiStore } from '../store/uiStore';
 import { Link } from "react-router-dom";
 
+import { toast } from "sonner";
+
 interface ProductCardProps {
   producto: Producto;
   className?: string;
@@ -11,7 +13,6 @@ interface ProductCardProps {
 
 export default function ProductCard({ producto, className }: ProductCardProps) {
   const { addItem, items } = useCartStore();
-  const { openCart } = useUiStore();
 
   const inCart = items.find((i) => i.producto.id === producto.id);
   const sinStock = producto.stock_disponible === 0;
@@ -23,7 +24,7 @@ export default function ProductCard({ producto, className }: ProductCardProps) {
     e.stopPropagation();
     if (bloqueado) return;
     addItem(producto, 1);
-    openCart();
+    toast.success(`${producto.nombre} agregado al carrito`);
   };
 
   // Generamos un color consistente basado en el ID para el placeholder
@@ -42,16 +43,25 @@ export default function ProductCard({ producto, className }: ProductCardProps) {
       to={`/producto/${producto.id}`}
       className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-gray-50 flex flex-col block ${className ?? "w-64 shrink-0 snap-start"}`}
     >
-      {/* Imagen Placeholder */}
+      {/* Imagen Placeholder o Real */}
       <div className={`h-40 w-full flex flex-col justify-center items-center ${colorClass} relative overflow-hidden`}>
         {producto.stock_disponible <= 5 && producto.stock_disponible > 0 && (
-          <span className="absolute top-3 right-3 bg-white/90 text-orange-600 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+          <span className="absolute top-3 right-3 bg-white/90 text-orange-600 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm z-10">
             ¡Quedan {producto.stock_disponible}!
           </span>
         )}
-        <span className="text-4xl font-black opacity-20 transform -rotate-12 scale-150">
-          {producto.nombre.substring(0, 2).toUpperCase()}
-        </span>
+        
+        {producto.imagenes && producto.imagenes.length > 0 ? (
+          <img 
+            src={`http://localhost:8000${producto.imagenes[0]}`} 
+            alt={producto.nombre} 
+            className="w-full h-full object-cover" 
+          />
+        ) : (
+          <span className="text-4xl font-black opacity-20 transform -rotate-12 scale-150">
+            {producto.nombre.substring(0, 2).toUpperCase()}
+          </span>
+        )}
       </div>
 
       {/* Contenido */}

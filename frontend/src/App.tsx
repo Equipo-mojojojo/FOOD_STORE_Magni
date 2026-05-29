@@ -7,6 +7,8 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import NavbarUsuario from "./components/NavbarUsuario";
 
+import { Toaster } from "sonner";
+
 // Admin pages
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -119,9 +121,11 @@ export default function App() {
     : "/";
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Auth */}
+    <>
+      <Toaster position="bottom-right" richColors />
+      <BrowserRouter>
+        <Routes>
+          {/* Auth */}
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to={defaultPath} replace /> : <LoginPage />}
@@ -166,6 +170,7 @@ export default function App() {
           }
         />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </>
   );
 }

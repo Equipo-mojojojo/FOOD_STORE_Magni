@@ -70,3 +70,11 @@ test_service.py
 # Documentación de referencia local / material del integrador
 2026Integrador/
 .tmp_integrador_text/
+
+# ══════════════════════════════════════════════
+#  UPLOADS / MEDIA
+# ══════════════════════════════════════════════
+
+backend/uploads/
+uploads/
+/uploads/

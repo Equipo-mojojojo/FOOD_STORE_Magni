@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { X, Check } from "lucide-react";
+import { X, Check, UploadCloud, Trash2 } from "lucide-react";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
 import { useIngredientes } from "../../hooks/useIngredientes";
 import { useUnidadesMedida } from "../../hooks/useUnidadesMedida";
 import type { Producto, ProductoCreate, ProductoIngredienteCreate } from "../../types";
+import { uploadApi } from "../../api/uploadApi";
 
 interface Props {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
     disponible: true,
     activo: true,
     unidad_venta_id: null,
+    imagenes: [],
     categorias: [],
     ingredientes: []
   });
@@ -31,19 +33,19 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
   const [searchIng, setSearchIng] = useState("");
 
   const { data: categorias } = useCategoriasFlat();
-  const { data: ingredientesData } = useIngredientes({ 
-    page: 1, 
-    per_page: 50, 
-    search: "", 
-    es_alergeno: "", 
-    estado: "activo", 
-    sort_by: "nombre", 
-    sort_order: "asc", 
-    created_from: "", 
-    created_to: "", 
-    updated_from: "", 
-    updated_to: "", 
-    starts_with: "" 
+  const { data: ingredientesData } = useIngredientes({
+    page: 1,
+    per_page: 50,
+    search: "",
+    es_alergeno: "",
+    estado: "activo",
+    sort_by: "nombre",
+    sort_order: "asc",
+    created_from: "",
+    created_to: "",
+    updated_from: "",
+    updated_to: "",
+    starts_with: ""
   });
   const { data: unidadesMedida } = useUnidadesMedida();
 
@@ -58,6 +60,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         disponible: producto.disponible,
         activo: producto.active_at === null,
         unidad_venta_id: producto.unidad_venta?.id || null,
+        imagenes: producto.imagenes || [],
         categorias: producto.categorias.map(c => ({
           categoria_id: c.categoria.id,
           es_principal: c.es_principal
@@ -79,6 +82,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         disponible: true,
         activo: true,
         unidad_venta_id: null,
+        imagenes: [],
         categorias: [],
         ingredientes: []
       });
@@ -120,7 +124,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
   const toggleCategoria = (id: number) => {
     setFormData(prev => {
       const isSelected = prev.categorias.some(c => c.categoria_id === id);
-      
+
       if (isSelected) {
         // Al deseleccionar, por ahora solo sacamos la que clickeó el usuario
         return { ...prev, categorias: prev.categorias.filter(c => c.categoria_id !== id) };
@@ -128,19 +132,19 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         // Al seleccionar, subimos en la jerarquía para marcar a los padres
         let newCats = [...prev.categorias];
         let currentId: number | null = id;
-        
+
         while (currentId) {
           // Si no está ya seleccionada, la agregamos
           if (!newCats.some(c => c.categoria_id === currentId)) {
             const esPrimer = newCats.length === 0;
             newCats.push({ categoria_id: currentId, es_principal: esPrimer });
           }
-          
+
           // Buscamos el padre en la lista plana de categorías que ya tenemos cargada
           const catInfo = categorias?.find(c => c.id === currentId);
           currentId = catInfo?.padre_id || null;
         }
-        
+
         return { ...prev, categorias: newCats };
       }
     });
@@ -164,7 +168,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
       } else {
         // Verificar si el insumo que estamos agregando es un producto terminado
         const ingInfo = ingredientesData?.items.find(i => i.id === id);
-        
+
         if (ingInfo?.es_producto_terminado) {
           // Si es terminado, reemplaza todos los demas ingredientes (solo puede ir uno)
           return {
@@ -275,12 +279,55 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
               />
             </div>
 
+            {/* Subida de Imágenes */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Imágenes del Producto (hasta 3 fotos)</label>
+              <div className="flex gap-4">
+                {formData.imagenes?.map((img, idx) => (
+                  <div key={idx} className="relative w-24 h-24 rounded-lg border border-gray-200 overflow-hidden group shadow-sm">
+                    <img src={`http://localhost:8000${img}`} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, imagenes: formData.imagenes?.filter((_, i) => i !== idx) })}
+                      className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+
+                {(formData.imagenes?.length || 0) < 3 && (
+                  <label className={`w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition-colors text-gray-400 hover:text-green-main hover:border-green-main ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <UploadCloud size={24} className="mb-1" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-center px-1">Subir Foto</span>
+                    <input
+                      type="file" className="hidden" accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            setLoading(true);
+                            const url = await uploadApi.uploadImagen(file);
+                            setFormData({ ...formData, imagenes: [...(formData.imagenes || []), url] });
+                          } catch (err: any) {
+                            setError(err.response?.data?.detail || "Error al subir la imagen");
+                          } finally {
+                            setLoading(false);
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
             <div className="md:col-span-2 bg-green-50/30 p-4 rounded-xl border border-green-100 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-3 border-b border-green-100 pb-2 mb-2 flex items-center justify-between">
                 <h3 className="text-xs font-bold text-green-800 uppercase tracking-wider">Rentabilidad y Precio</h3>
                 <div className="text-[10px] text-green-600 font-medium">Cálculo basado en insumos</div>
               </div>
-              
+
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Costo Insumos</label>
                 <div className="text-lg font-bold text-gray-900">${calculatedCosto.toFixed(2)}</div>
@@ -313,7 +360,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                     onChange={(e) => setFormData({ ...formData, precio_base: Number(e.target.value) })}
                     className="flex-1 px-4 py-2.5 border-2 border-green-main rounded-xl focus:ring-4 focus:ring-green-100 outline-none text-lg font-bold text-green-800"
                   />
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setFormData({ ...formData, precio_base: Number(precioSugerido.toFixed(2)) })}
                     className="text-[10px] bg-green-main text-white px-3 py-2 rounded-lg font-bold hover:bg-green-dark transition-colors"
@@ -441,17 +488,17 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                             {' '}<span className="text-[10px] text-gray-400 font-normal">($ {i.precio_costo}/unid)</span>
                           </span>
                         </label>
-                        
+
                         {isSelected && ingredienteData && (
                           <div className="flex flex-col gap-2 pl-8 pt-1">
                             <div className="flex gap-2">
-                              <input 
+                              <input
                                 type="number" step="any"
                                 value={ingredienteData.cantidad}
                                 onChange={(e) => updateIngrediente(i.id, 'cantidad', Number(e.target.value))}
                                 className="w-20 text-xs px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-green-main outline-none"
                               />
-                              <select 
+                              <select
                                 value={ingredienteData.unidad_medida_id}
                                 onChange={(e) => updateIngrediente(i.id, 'unidad_medida_id', Number(e.target.value))}
                                 className="flex-1 text-xs px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-green-main outline-none bg-white"

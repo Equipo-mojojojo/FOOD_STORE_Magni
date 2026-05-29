@@ -26,6 +26,7 @@ class ProductoCreate(BaseModel):
     nombre: Annotated[str, Field(min_length=2, max_length=200, description="Nombre del producto")]
     descripcion: Optional[str] = Field(default=None, max_length=1000)
     imagen_url: Optional[str] = Field(default=None, max_length=500)
+    imagenes: List[str] = Field(default=[], description="Lista de URLs de imágenes (1 a 3 fotos)")
     precio_base: Annotated[Decimal, Field(gt=0, description="Precio base del producto (>0)")]
     stock_cantidad: Annotated[int, Field(ge=0, description="Cantidad en stock (>=0)")] = 0
     disponible: bool = True
@@ -55,6 +56,7 @@ class ProductoUpdate(BaseModel):
     nombre: Optional[str] = Field(default=None, min_length=2, max_length=200)
     descripcion: Optional[str] = Field(default=None, max_length=1000)
     imagen_url: Optional[str] = Field(default=None, max_length=500)
+    imagenes: Optional[List[str]] = None
     precio_base: Optional[Decimal] = Field(default=None, gt=0)
     stock_cantidad: Optional[int] = Field(default=None, ge=0)
     disponible: Optional[bool] = None
@@ -115,6 +117,7 @@ class ProductoRead(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
     imagen_url: Optional[str] = None
+    imagenes: List[str] = Field(default=[])
     precio_base: Decimal
     costo_total: Decimal = Field(default=0.0)
     stock_cantidad: int

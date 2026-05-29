@@ -161,6 +161,8 @@ export interface Producto {
   id: number;
   nombre: string;
   descripcion: string | null;
+  imagen_url: string | null;
+  imagenes: string[];
   precio_base: number;
   costo_total: number;
   stock_cantidad: number;
@@ -179,6 +181,8 @@ export interface Producto {
 export interface ProductoCreate {
   nombre: string;
   descripcion: string | null;
+  imagen_url?: string | null;
+  imagenes?: string[];
   precio_base: number;
   stock_cantidad: number;
   margen_ganancia: number;
@@ -191,6 +195,8 @@ export interface ProductoCreate {
 
 export interface ProductoUpdate extends Partial<Omit<ProductoCreate, 'categorias' | 'ingredientes'>> {
   activo?: boolean;
+  imagen_url?: string | null;
+  imagenes?: string[];
   categorias?: ProductoCategoriaCreate[];
   ingredientes?: ProductoIngredienteCreate[];
 }
