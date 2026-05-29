@@ -35,6 +35,18 @@ body {
   margin: 0;
 }
 
+@layer base {
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"]:disabled {
+    cursor: not-allowed;
+  }
+}
+
 /* Ocultar barra de scroll pero mantener funcionalidad */
 .hide-scrollbar {
   -ms-overflow-style: none;  /* IE y Edge */

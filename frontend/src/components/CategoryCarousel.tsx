@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Loader } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { productosApi } from '../api/productosApi';
+import { useProductos } from '../hooks/useProductos';
 import ProductCard from './ProductCard';
 
 interface CategoryCarouselProps {
@@ -12,24 +11,20 @@ interface CategoryCarouselProps {
 
 export default function CategoryCarousel({ id, categoriaId, titulo }: CategoryCarouselProps) {
   // Buscamos solo productos disponibles para esta categoría, máximo 10 para no saturar el home
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['productos-carrusel', categoriaId],
-    queryFn: () => productosApi.list({
-      categoria: categoriaId,
-      disponible: 'true',
-      page: 1,
-      per_page: 10,
-      search: '',
-      estado: 'activo',
-      sort_by: 'nombre',
-      sort_order: 'asc',
-      created_from: '',
-      created_to: '',
-      updated_from: '',
-      updated_to: '',
-      starts_with: ''
-    }),
-    staleTime: 1000 * 60 * 5, // 5 minutos de caché
+  const { data, isLoading, isError } = useProductos({
+    categoria: categoriaId,
+    disponible: 'true',
+    page: 1,
+    per_page: 10,
+    search: '',
+    estado: 'activo',
+    sort_by: 'nombre',
+    sort_order: 'asc',
+    created_from: '',
+    created_to: '',
+    updated_from: '',
+    updated_to: '',
+    starts_with: ''
   });
 
   const productos = data?.items || [];
@@ -51,6 +46,7 @@ export default function CategoryCarousel({ id, categoriaId, titulo }: CategoryCa
   }
 
   if (isError) {
+    console.error("CategoryCarousel error fetching for:", titulo, "id:", categoriaId);
     return null; // Si hay error fallamos en silencio para no arruinar el home, solo ocultamos el carrusel
   }
 

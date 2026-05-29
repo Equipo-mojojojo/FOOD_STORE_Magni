@@ -102,7 +102,8 @@ class ProductoRepository(BaseRepository[Producto]):
 
         # Total count (antes de paginar)
         # Usamos distinct en el count para no contar duplicados por el join de categorías
-        total_stmt = select(func.count(func.distinct(Producto.id))).select_from(query.subquery())
+        subquery = query.subquery()
+        total_stmt = select(func.count(func.distinct(subquery.c.id))).select_from(subquery)
         try:
             total = self.session.exec(total_stmt).one()
         except Exception:

@@ -66,11 +66,19 @@ export default function CartSlideOver() {
             <ul className="space-y-4">
               {items.map((item) => (
                 <li key={item.producto.id} className="flex gap-4 p-3 bg-white border border-gray-100 shadow-sm rounded-2xl">
-                  {/* Imagen Placeholder pequeña */}
-                  <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
-                    <span className="text-2xl font-bold text-green-main opacity-50">
-                      {item.producto.nombre.charAt(0).toUpperCase()}
-                    </span>
+                  {/* Imagen del Producto */}
+                  <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                    {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
+                      <img 
+                        src={`http://localhost:8000${item.producto.imagenes[0]}`} 
+                        alt={item.producto.nombre} 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-green-main opacity-50">
+                        {item.producto.nombre.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
 
                   {/* Info */}

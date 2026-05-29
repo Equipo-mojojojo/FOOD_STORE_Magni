@@ -7,6 +7,8 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import NavbarUsuario from "./components/NavbarUsuario";
 
+import { Toaster } from "sonner";
+
 // Admin pages
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -24,6 +26,7 @@ import MisPedidosPage from "./pages/MisPedidosPage";
 import PedidoDetallePage from "./pages/PedidoDetallePage";
 import StorefrontCatalogoPage from "./pages/StorefrontCatalogoPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
+import CategoriaDetailPage from "./pages/CategoriaDetailPage";
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
@@ -118,9 +121,11 @@ export default function App() {
     : "/";
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Auth */}
+    <>
+      <Toaster position="bottom-right" richColors />
+      <BrowserRouter>
+        <Routes>
+          {/* Auth */}
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to={defaultPath} replace /> : <LoginPage />}
@@ -135,6 +140,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/catalogo" element={<StorefrontCatalogoPage />} />
           <Route path="/producto/:id" element={<ProductDetailPage />} />
+          <Route path="/categoria/:id" element={<CategoriaDetailPage />} />
           <Route path="/carrito" element={<CartPage />} />
           <Route
             path="/mis-pedidos"
@@ -164,6 +170,7 @@ export default function App() {
           }
         />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </>
   );
 }

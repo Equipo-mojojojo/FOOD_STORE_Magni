@@ -5,11 +5,13 @@ import { useState } from 'react';
 import { productosApi } from '../api/productosApi';
 import { useCartStore } from '../store/cartStore';
 import { useUiStore } from '../store/uiStore';
+import { toast } from 'sonner';
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [cantidad, setCantidad] = useState(1);
+  const [activeImage, setActiveImage] = useState(0);
   
   const { addItem } = useCartStore();
   const { openCart } = useUiStore();
@@ -47,7 +49,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     // casteamos a unknown -> Producto ya que ProductoDetail y Producto son muy similares y compatibles para el carrito
     addItem(producto as any, cantidad);
-    openCart();
+    toast.success(`${producto.nombre} agregado al carrito`);
   };
 
   // Color de placeholder según ID
@@ -71,11 +73,38 @@ export default function ProductDetailPage() {
       <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row">
         
         {/* Lado Izquierdo: Imagen / Color Placeholder */}
-        <div className={`md:w-1/2 min-h-[300px] md:min-h-[500px] flex items-center justify-center relative overflow-hidden ${colorClass}`}>
-          <span className="text-[10rem] md:text-[15rem] font-black opacity-20 transform -rotate-12 scale-150">
-            {producto.nombre.substring(0, 2).toUpperCase()}
-          </span>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        <div className="md:w-1/2 flex flex-col">
+          <div className={`flex-1 min-h-[300px] md:min-h-[400px] flex items-center justify-center relative overflow-hidden ${colorClass}`}>
+            {producto.imagenes && producto.imagenes.length > 0 ? (
+              <img 
+                src={`http://localhost:8000${producto.imagenes[activeImage]}`} 
+                alt={producto.nombre} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <span className="text-[10rem] md:text-[15rem] font-black opacity-20 transform -rotate-12 scale-150">
+                {producto.nombre.substring(0, 2).toUpperCase()}
+              </span>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+          </div>
+          
+          {/* Thumbnails si hay más de 1 imagen */}
+          {producto.imagenes && producto.imagenes.length > 1 && (
+            <div className="flex gap-2 p-4 bg-gray-50 border-t border-gray-100 justify-center">
+              {producto.imagenes.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImage(idx)}
+                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    activeImage === idx ? 'border-green-main shadow-md scale-105' : 'border-transparent opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <img src={`http://localhost:8000${img}`} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Lado Derecho: Detalles */}

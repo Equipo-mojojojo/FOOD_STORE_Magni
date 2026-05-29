@@ -9,6 +9,7 @@ from typing import Optional, List, TYPE_CHECKING
 from decimal import Decimal
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, String, Numeric
+from sqlalchemy.dialects.postgresql import JSONB
 from app.modules.categorias.model import Categoria  # noqa: F401
 
 if TYPE_CHECKING:
@@ -41,6 +42,7 @@ class Producto(SQLModel, table=True):
     nombre: str = Field(max_length=200)
     descripcion: Optional[str] = Field(default=None, max_length=1000)
     imagen_url: Optional[str] = Field(default=None, max_length=500)
+    imagenes: List[str] = Field(default=[], sa_column=Column(JSONB))
     precio_base: Decimal = Field(
         sa_column=Column(Numeric(10, 2), nullable=False),
     )

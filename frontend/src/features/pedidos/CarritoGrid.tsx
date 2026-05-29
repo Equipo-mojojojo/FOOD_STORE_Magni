@@ -14,8 +14,18 @@ export default function CarritoGrid() {
           key={item.producto.id}
           className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4"
         >
-          <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl">🍽️</span>
+          <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
+              <img 
+                src={`http://localhost:8000${item.producto.imagenes[0]}`} 
+                alt={item.producto.nombre} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <span className="text-2xl font-bold text-green-main opacity-50">
+                {item.producto.nombre.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
