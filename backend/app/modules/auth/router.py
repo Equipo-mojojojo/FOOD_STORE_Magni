@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
+from app.core.config import settings
 from app.core.deps import get_current_user, require_role
 from app.core.security import decode_access_token, hash_token
 from app.core.uow import UnitOfWork, get_uow
@@ -40,7 +41,7 @@ def login(
         httponly=True,
         max_age=token.expires_in,
         samesite="lax",
-        secure=False,
+        secure=settings.COOKIE_SECURE,
     )
 
     # Cookie HttpOnly para refresh token
@@ -50,7 +51,7 @@ def login(
         httponly=True,
         max_age=60 * 60 * 24 * 7,  # 7 días
         samesite="lax",
-        secure=False,
+        secure=settings.COOKIE_SECURE,
         path="/api/v1/auth/refresh",  # solo se envía al endpoint de refresh
     )
 
@@ -61,8 +62,6 @@ def login(
         roles = uow.usuario_roles.get_roles_activos(user.id)
 
     return LoginResponse(
-        access_token=token.access_token,
-        token_type=token.token_type,
         expires_in=token.expires_in,
         user=UserPublic(
             id=user.id,
@@ -100,7 +99,7 @@ def refresh(
         httponly=True,
         max_age=token.expires_in,
         samesite="lax",
-        secure=False,
+        secure=settings.COOKIE_SECURE,
     )
     response.set_cookie(
         key="refresh_token",
@@ -108,7 +107,7 @@ def refresh(
         httponly=True,
         max_age=60 * 60 * 24 * 7,
         samesite="lax",
-        secure=False,
+        secure=settings.COOKIE_SECURE,
         path="/api/v1/auth/refresh",
     )
 
@@ -119,8 +118,6 @@ def refresh(
         roles = uow.usuario_roles.get_roles_activos(user.id)
 
     return LoginResponse(
-        access_token=token.access_token,
-        token_type=token.token_type,
         expires_in=token.expires_in,
         user=UserPublic(
             id=user.id,
@@ -147,8 +144,8 @@ def logout(
         with uow:
             uow.refresh_tokens.revocar(hash_token(refresh_token))
 
-    response.delete_cookie(key="access_token", httponly=True, samesite="lax", secure=False)
-    response.delete_cookie(key="refresh_token", httponly=True, samesite="lax", secure=False, path="/api/v1/auth/refresh")
+    response.delete_cookie(key="access_token", httponly=True, samesite="lax", secure=settings.COOKIE_SECURE)
+    response.delete_cookie(key="refresh_token", httponly=True, samesite="lax", secure=settings.COOKIE_SECURE, path="/api/v1/auth/refresh")
     return {"mensaje": "Sesión cerrada exitosamente"}
 
 

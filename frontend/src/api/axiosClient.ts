@@ -13,7 +13,10 @@ const axiosClient = axios.create({
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url || "";
+    const isAuthRequest = requestUrl.includes("/auth/");
+
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('authStore');
       window.location.href = "/login";
     }

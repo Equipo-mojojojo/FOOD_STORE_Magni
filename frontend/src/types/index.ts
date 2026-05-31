@@ -18,13 +18,9 @@ export interface RegisterRequest {
   password: string;
 }
 
-export interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  user_id: number;
-  nombre: string;
-  email: string;
-  rol: string;
+export interface AuthResponse {
+  expires_in: number;
+  user: UserResponse;
 }
 
 export interface Ingrediente {

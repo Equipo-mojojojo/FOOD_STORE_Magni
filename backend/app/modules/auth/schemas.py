@@ -31,10 +31,8 @@ class UserPublic(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    """Respuesta del endpoint /login."""
-    access_token: str
-    token_type: str = "bearer"
-    expires_in: int  # segundos hasta expiración del access token
+    """Respuesta pública del login/refresh. Los tokens van solo en cookies."""
+    expires_in: int
     user: UserPublic
 
 
