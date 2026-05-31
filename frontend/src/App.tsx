@@ -1,4 +1,5 @@
 /** App principal — Router + layouts + protección por rol. */
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import { useUiStore } from "./store/uiStore";
@@ -103,6 +104,8 @@ function AppLayout() {
 
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAuthLoading = useAuthStore((s) => s.isAuthLoading);
+  const initializeAuth = useAuthStore((s) => s.initializeAuth);
 
   const usuario = useAuthStore((s) => s.usuario);
 
@@ -116,6 +119,14 @@ export default function App() {
     : hasRole("PEDIDOS")
     ? "/pedidos"
     : "/";
+
+  useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
+
+  if (isAuthLoading) {
+    return <div className="min-h-screen bg-cream" />;
+  }
 
   return (
     <BrowserRouter>
