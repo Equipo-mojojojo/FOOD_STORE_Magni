@@ -8,7 +8,6 @@ import {
   useCrearProducto,
   useActualizarProducto,
   useRestaurarProducto,
-  useActualizarStockProducto,
   useActualizarDisponibilidadProducto,
 } from "../../hooks/useProductos";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
@@ -69,7 +68,6 @@ export default function ProductosGrid() {
   const eliminarMut = useEliminarProducto();
   const restaurarMut = useRestaurarProducto();
 
-  const actualizarStockMut = useActualizarStockProducto();
   const actualizarDisponibilidadMut = useActualizarDisponibilidadProducto();
 
   const handleFilterChange = (key: keyof ProductosFilters, value: any) => {
@@ -97,22 +95,6 @@ export default function ProductosGrid() {
 
   const handleRestore = async (id: number) => {
     await restaurarMut.mutateAsync(id);
-  };
-
-  const handleActualizarStock = async (producto: Producto) => {
-  const value = prompt("Nuevo stock físico:", String(producto.stock_cantidad));
-  if (value === null) return;
-
-  const stock = Number(value);
-  if (!Number.isInteger(stock) || stock < 0) {
-    alert("El stock debe ser un número entero mayor o igual a 0.");
-    return;
-  }
-
-  await actualizarStockMut.mutateAsync({
-      id: producto.id,
-      stock_cantidad: stock,
-    });
   };
 
   const handleToggleDisponibilidad = async (producto: Producto) => {
@@ -354,14 +336,6 @@ export default function ProductosGrid() {
                             <>
                               {canManageStock && (
                                 <>
-                                  <button
-                                    onClick={() => handleActualizarStock(prod)}
-                                    className="px-2 py-1 text-xs font-semibold text-gray-500 hover:text-green-main hover:bg-green-pale rounded transition-colors"
-                                    title="Actualizar stock físico"
-                                  >
-                                    Stock
-                                  </button>
-
                                   <button
                                     onClick={() => handleToggleDisponibilidad(prod)}
                                     className="px-2 py-1 text-xs font-semibold text-gray-500 hover:text-green-main hover:bg-green-pale rounded transition-colors"

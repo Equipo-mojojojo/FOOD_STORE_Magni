@@ -14,12 +14,12 @@ interface Props {
 }
 
 export default function ProductoForm({ isOpen, producto, onClose, onSave }: Props) {
-  const [formData, setFormData] = useState<ProductoCreate>({
+  const [formData, setFormData] = useState<any>({
     nombre: "",
     descripcion: "",
-    precio_base: 0,
-    stock_cantidad: 0,
-    margen_ganancia: 0,
+    precio_base: "",
+    stock_cantidad: "",
+    margen_ganancia: "",
     disponible: true,
     activo: true,
     unidad_venta_id: null,
@@ -54,9 +54,9 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
       setFormData({
         nombre: producto.nombre,
         descripcion: producto.descripcion || "",
-        precio_base: producto.precio_base,
-        stock_cantidad: producto.stock_cantidad,
-        margen_ganancia: producto.margen_ganancia || 0,
+        precio_base: producto.precio_base ?? "",
+        stock_cantidad: producto.stock_cantidad ?? "",
+        margen_ganancia: producto.margen_ganancia ?? "",
         disponible: producto.disponible,
         activo: producto.active_at === null,
         unidad_venta_id: producto.unidad_venta?.id || null,
@@ -76,9 +76,9 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
       setFormData({
         nombre: "",
         descripcion: "",
-        precio_base: 0,
-        stock_cantidad: 0,
-        margen_ganancia: 0,
+        precio_base: "",
+        stock_cantidad: "",
+        margen_ganancia: "",
         disponible: true,
         activo: true,
         unidad_venta_id: null,
@@ -100,7 +100,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
       const fIng = ingInfo.unidad_medida?.factor_conversion || 1;
       const fReceta = unidadReceta?.factor_conversion || 1;
 
-      const qtyBase = pi.cantidad * fReceta;
+      const qtyBase = Number(pi.cantidad || 0) * fReceta;
       const priceBase = ingInfo.precio_costo / fIng;
 
       return total + (qtyBase * priceBase);
@@ -108,7 +108,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
     return total;
   }, 0);
 
-  const precioSugerido = calculatedCosto * (1 + formData.margen_ganancia);
+  const precioSugerido = calculatedCosto * (1 + Number(formData.margen_ganancia || 0));
 
   // Detectar si alguno de los ingredientes seleccionados es un insumo terminado
   const tieneInsumoTerminado = formData.ingredientes.some(pi => {
@@ -206,7 +206,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.precio_base <= 0) {
+    if (Number(formData.precio_base || 0) <= 0) {
       setError("El precio base debe ser mayor a 0");
       return;
     }
@@ -215,9 +215,12 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
     try {
       const dataToSend = {
         ...formData,
-        stock_cantidad: formData.ingredientes.length > 0 ? 0 : formData.stock_cantidad,
+        precio_base: Number(formData.precio_base || 0),
+        stock_cantidad: formData.ingredientes.length > 0 ? 0 : Number(formData.stock_cantidad || 0),
+        margen_ganancia: Number(formData.margen_ganancia || 0),
         activo: formData.disponible, // Sincronizamos activo con disponible
-        descripcion: formData.descripcion?.trim() || null
+        descripcion: formData.descripcion?.trim() || null,
+        ingredientes: formData.ingredientes.map((i: any) => ({ ...i, cantidad: Number(i.cantidad || 0) }))
       };
       await onSave(dataToSend, producto?.id);
     } catch (err: any) {
@@ -229,7 +232,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <div>
             <h2 className="text-xl font-bold text-gray-900">
@@ -338,8 +341,8 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                 <div className="flex items-center gap-2">
                   <input
                     type="number" step="0.1"
-                    value={formData.margen_ganancia * 100}
-                    onChange={(e) => setFormData({ ...formData, margen_ganancia: Number(e.target.value) / 100 })}
+                    value={formData.margen_ganancia === "" ? "" : Number(formData.margen_ganancia) * 100}
+                    onChange={(e) => setFormData({ ...formData, margen_ganancia: e.target.value === "" ? "" : Number(e.target.value) / 100 })}
                     className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
                   />
                   <span className="text-sm font-bold text-gray-400">%</span>
@@ -357,7 +360,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                   <input
                     type="number" step="0.01" required
                     value={formData.precio_base}
-                    onChange={(e) => setFormData({ ...formData, precio_base: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, precio_base: e.target.value })}
                     className="flex-1 px-4 py-2.5 border-2 border-green-main rounded-xl focus:ring-4 focus:ring-green-100 outline-none text-lg font-bold text-green-800"
                   />
                   <button
@@ -385,7 +388,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                   type="number" required
                   value={esElaborable ? 0 : formData.stock_cantidad}
                   disabled={esElaborable}
-                  onChange={(e) => setFormData({ ...formData, stock_cantidad: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, stock_cantidad: e.target.value })}
                   className={`w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none ${esElaborable ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
                 />
                 <select
@@ -427,7 +430,8 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
               </div>
               <div className="border border-gray-200 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1 bg-gray-50/30">
                 {categorias
-                  ?.filter(c => c.nombre.toLowerCase().includes(searchCat.toLowerCase()))
+                  ?.filter(c => !categorias.some(sub => sub.padre_id === c.id)) // Solo hojas
+                  .filter(c => c.nombre.toLowerCase().includes(searchCat.toLowerCase()))
                   .map(c => {
                     const isSelected = formData.categorias.some(cat => cat.categoria_id === c.id);
                     const isPrincipal = formData.categorias.find(cat => cat.categoria_id === c.id)?.es_principal;
@@ -495,7 +499,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                               <input
                                 type="number" step="any"
                                 value={ingredienteData.cantidad}
-                                onChange={(e) => updateIngrediente(i.id, 'cantidad', Number(e.target.value))}
+                                onChange={(e) => updateIngrediente(i.id, 'cantidad', e.target.value)}
                                 className="w-20 text-xs px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-green-main outline-none"
                               />
                               <select
