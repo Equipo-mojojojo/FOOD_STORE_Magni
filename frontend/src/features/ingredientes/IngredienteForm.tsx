@@ -18,15 +18,16 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [descripcion, setDescripcion] = useState("");
   const [esAlergeno, setEsAlergeno] = useState(false);
   const [esProductoTerminado, setEsProductoTerminado] = useState(false);
-  const [precioCosto, setPrecioCosto] = useState<number>(0);
-  const [stockActual, setStockActual] = useState<number>(0);
-  const [stockMinimo, setStockMinimo] = useState<number>(0);
+  const [precioCosto, setPrecioCosto] = useState<number | string>("");
+  const [stockActual, setStockActual] = useState<number | string>("");
+  const [stockMinimo, setStockMinimo] = useState<number | string>("");
   const [unidadMedidaId, setUnidadMedidaId] = useState<number | "">("");
   const [activo, setActivo] = useState(true);
 
   // Campos para auto-creación de producto cuando es insumo terminado
   const [categoriaId, setCategoriaId] = useState<number | "">("")
-  const [montoExtra, setMontoExtra] = useState<number>(0);
+  const [margenGanancia, setMargenGanancia] = useState<number | string>("");
+  const [precioBase, setPrecioBase] = useState<number | string>("");
   const [categorias, setCategorias] = useState<{id: number; nombre: string}[]>([]);
   
   const [unidades, setUnidades] = useState<UnidadMedidaSimple[]>([]);
@@ -64,9 +65,9 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       setDescripcion(ingrediente.descripcion || "");
       setEsAlergeno(ingrediente.es_alergeno);
       setEsProductoTerminado(ingrediente.es_producto_terminado || false);
-      setPrecioCosto(ingrediente.precio_costo || 0);
-      setStockActual(ingrediente.stock_actual || 0);
-      setStockMinimo(ingrediente.stock_minimo || 0);
+      setPrecioCosto(ingrediente.precio_costo ?? "");
+      setStockActual(ingrediente.stock_actual ?? "");
+      setStockMinimo(ingrediente.stock_minimo ?? "");
       setUnidadMedidaId(ingrediente.unidad_medida_id || "");
       setActivo(ingrediente.active_at === null);
 
@@ -75,20 +76,22 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         fetchLinkedProduct(ingrediente.id);
       } else {
         setCategoriaId("");
-        setMontoExtra(0);
+        setMargenGanancia("");
+        setPrecioBase("");
       }
     } else {
       setNombre("");
       setDescripcion("");
       setEsAlergeno(false);
       setEsProductoTerminado(false);
-      setPrecioCosto(0);
-      setStockActual(0);
-      setStockMinimo(0);
+      setPrecioCosto("");
+      setStockActual("");
+      setStockMinimo("");
       setUnidadMedidaId("");
       setActivo(true);
       setCategoriaId("");
-      setMontoExtra(0);
+      setMargenGanancia("");
+      setPrecioBase("");
     }
     setError("");
   }, [ingrediente, isOpen]);
@@ -110,7 +113,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       if (linked) {
         const catPrincipal = linked.categorias?.find(c => c.es_principal) || linked.categorias?.[0];
         if (catPrincipal) setCategoriaId(catPrincipal.categoria.id);
-        setMontoExtra(Number(linked.precio_base) - Number(ingrediente?.precio_costo || 0));
+        setMargenGanancia(linked.margen_ganancia ?? "");
+        setPrecioBase(linked.precio_base ?? "");
       }
     } catch (err) {
       console.error("Error buscando producto vinculado", err);
@@ -156,7 +160,6 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       // Si es producto terminado, crear o actualizar el producto vinculado
       if (esProductoTerminado) {
         try {
-          const precioFinal = Number(precioCosto) + Number(montoExtra);
           const ingId = ingrediente?.id;
 
           if (ingrediente) {
@@ -177,9 +180,9 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
               await productosApi.update(linked.id, {
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim() || null,
-                precio_base: precioFinal,
+                precio_base: Number(precioBase || 0),
                 stock_cantidad: 0,
-                margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
+                margen_ganancia: Number(margenGanancia || 0),
                 disponible: true,
                 activo: true,
                 unidad_venta_id: null,
@@ -196,9 +199,9 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
               await productosApi.create({
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim() || null,
-                precio_base: precioFinal,
+                precio_base: Number(precioBase || 0),
                 stock_cantidad: 0,
-                margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
+                margen_ganancia: Number(margenGanancia || 0),
                 disponible: true,
                 activo: true,
                 unidad_venta_id: null,
@@ -233,9 +236,9 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
               await productosApi.create({
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim() || null,
-                precio_base: precioFinal,
+                precio_base: Number(precioBase || 0),
                 stock_cantidad: 0,
-                margen_ganancia: montoExtra > 0 ? montoExtra / Number(precioCosto || 1) : 0,
+                margen_ganancia: Number(margenGanancia || 0),
                 disponible: true,
                 activo: true,
                 unidad_venta_id: null,
@@ -264,10 +267,13 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     }
   };
 
+  const calculatedCosto = Number(precioCosto || 0);
+  const precioSugerido = calculatedCosto * (1 + Number(margenGanancia || 0));
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-6 animate-scale-in max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl p-6 animate-scale-in max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5 border-b pb-4">
@@ -349,7 +355,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                     type="number"
                     step="0.01"
                     value={precioCosto}
-                    onChange={(e) => setPrecioCosto(Number(e.target.value))}
+                    onChange={(e) => setPrecioCosto(e.target.value)}
                     className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
                   />
                 </div>
@@ -361,7 +367,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                   type="number"
                   step="0.001"
                   value={stockActual}
-                  onChange={(e) => setStockActual(Number(e.target.value))}
+                  onChange={(e) => setStockActual(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
                 />
               </div>
@@ -372,7 +378,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                   type="number"
                   step="0.001"
                   value={stockMinimo}
-                  onChange={(e) => setStockMinimo(Number(e.target.value))}
+                  onChange={(e) => setStockMinimo(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
                 />
               </div>
@@ -427,7 +433,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                   }
                 </p>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Categoría de Tienda</label>
                     <select
@@ -436,36 +442,61 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm bg-white"
                     >
                       <option value="">Seleccionar...</option>
-                      {categorias.map(c => (
+                      {categorias
+                        .filter(c => !categorias.some(sub => sub.padre_id === c.id))
+                        .map(c => (
                         <option key={c.id} value={c.id}>{c.nombre}</option>
                       ))}
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Monto Extra</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2 text-gray-400 text-sm">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={montoExtra}
-                        onChange={(e) => setMontoExtra(Number(e.target.value))}
-                        className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm"
-                      />
+                  <div className="bg-white p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-3 border-b border-blue-50 pb-2 mb-2 flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wider">Rentabilidad y Precio</h3>
+                      <div className="text-[10px] text-blue-600 font-medium">Cálculo basado en insumo</div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Preview del precio final */}
-                <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-100">
-                  <div className="text-xs text-gray-500">
-                    Costo: <span className="font-bold text-gray-800">${Number(precioCosto).toLocaleString("es-AR")}</span>
-                    {" + "}
-                    Extra: <span className="font-bold text-blue-600">${Number(montoExtra).toLocaleString("es-AR")}</span>
-                  </div>
-                  <div className="text-sm font-black text-green-700">
-                    Precio Final: ${(Number(precioCosto) + Number(montoExtra)).toLocaleString("es-AR")}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Costo Insumo</label>
+                      <div className="text-lg font-bold text-gray-900">${calculatedCosto.toFixed(2)}</div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Margen Ganancia (%)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number" step="0.1"
+                          value={margenGanancia === "" ? "" : Number(margenGanancia) * 100}
+                          onChange={(e) => setMargenGanancia(e.target.value === "" ? "" : Number(e.target.value) / 100)}
+                          className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm"
+                        />
+                        <span className="text-sm font-bold text-gray-400">%</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Precio Sugerido</label>
+                      <div className="text-lg font-bold text-blue-600">${precioSugerido.toFixed(2)}</div>
+                    </div>
+
+                    <div className="md:col-span-3 pt-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Precio Final de Venta ($)</label>
+                      <div className="flex gap-4 items-center">
+                        <input
+                          type="number" step="0.01" required
+                          value={precioBase}
+                          onChange={(e) => setPrecioBase(e.target.value)}
+                          className="flex-1 px-4 py-2.5 border-2 border-blue-400 rounded-xl focus:ring-4 focus:ring-blue-100 outline-none text-lg font-bold text-blue-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPrecioBase(Number(precioSugerido.toFixed(2)))}
+                          className="text-[10px] bg-blue-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                        >
+                          USAR SUGERIDO
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
