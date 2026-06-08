@@ -12,6 +12,8 @@ from app.core.deps import get_current_user, require_role
 from app.core.uow import UnitOfWork, get_uow
 from app.modules.usuarios.model import Usuario
 from app.modules.usuarios.rol_model import Rol, UsuarioRol
+from app.modules.direcciones.schemas import DireccionResponse
+from app.modules.pedidos.schemas import PedidoResponse
 
 router = APIRouter(prefix="/api/v1/usuarios", tags=["Usuarios"])
 
@@ -48,6 +50,13 @@ class PaginatedUsuarios(BaseModel):
     page: int
     per_page: int
     pages: int
+
+
+class UsuarioDetalleResponse(BaseModel):
+    """Respuesta detallada de un usuario con pedidos y direcciones."""
+    usuario: UsuarioAdminResponse
+    direcciones: list[DireccionResponse] = []
+    pedidos: list[PedidoResponse] = []
 
 @router.get(
     "",
@@ -309,3 +318,42 @@ def restaurar_usuario(
             created_at=user.created_at,
             deleted_at=user.deleted_at,
         )
+
+
+@router.get(
+    "/{usuario_id}/detalle",
+    response_model=UsuarioDetalleResponse,
+    dependencies=[Depends(require_role(["ADMIN"]))],
+)
+def detalle_usuario(
+    usuario_id: int,
+    uow: Annotated[UnitOfWork, Depends(get_uow)],
+):
+    """Devuelve datos completos del usuario: info + direcciones + pedidos. Solo ADMIN."""
+    with uow:
+        user = uow.session.get(Usuario, usuario_id)
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario no encontrado",
+            )
+
+        roles = uow.usuario_roles.get_roles_activos(user.id)
+        direcciones = uow.direcciones.get_by_usuario(user.id)
+        pedidos_data = uow.pedidos.get_paginated(usuario_id=user.id, per_page=100)
+
+        return UsuarioDetalleResponse(
+            usuario=UsuarioAdminResponse(
+                id=user.id,
+                nombre=user.nombre,
+                apellido=user.apellido,
+                email=user.email,
+                celular=user.celular,
+                roles=roles,
+                created_at=user.created_at,
+                deleted_at=user.deleted_at,
+            ),
+            direcciones=direcciones,
+            pedidos=pedidos_data["items"],
+        )

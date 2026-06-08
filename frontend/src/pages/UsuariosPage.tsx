@@ -1,6 +1,6 @@
 /** Página de administración de usuarios — solo ADMIN. */
-import { useState } from "react";
-import { Search, Shield, RotateCcw, UserX } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Shield, RotateCcw, UserX, Eye, X, MapPin, ShoppingBag, User } from "lucide-react";
 import {
   useActualizarRolesUsuario,
   useEliminarUsuario,
@@ -8,6 +8,7 @@ import {
   useRoles,
   useUsuarios,
 } from "../hooks/useUsuarios";
+import { usuariosApi } from "../api/usuariosApi";
 import type { UsuarioAdmin } from "../types";
 
 type EstadoFiltro = "activo" | "inactivo" | "todos";
@@ -20,6 +21,10 @@ export default function UsuariosPage() {
     rol: "",
     estado: "activo" as EstadoFiltro,
   });
+  const [detailUserId, setDetailUserId] = useState<number | null>(null);
+  const [detailData, setDetailData] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailTab, setDetailTab] = useState<"datos" | "direcciones" | "pedidos">("datos");
 
   const [searchInput, setSearchInput] = useState("");
 
@@ -57,6 +62,19 @@ export default function UsuariosPage() {
   const handleRestaurar = async (usuario: UsuarioAdmin) => {
     await restaurarUsuario.mutateAsync(usuario.id);
   };
+
+  useEffect(() => {
+    if (!detailUserId) {
+      setDetailData(null);
+      return;
+    }
+    setDetailLoading(true);
+    setDetailTab("datos");
+    usuariosApi.getDetalle(detailUserId)
+      .then(setDetailData)
+      .catch(() => setDetailData(null))
+      .finally(() => setDetailLoading(false));
+  }, [detailUserId]);
 
   return (
     <div>
@@ -153,9 +171,8 @@ export default function UsuariosPage() {
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                    Acciones
-                  </th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">Detalle</th>
+                  <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
 
@@ -228,6 +245,14 @@ export default function UsuariosPage() {
                         )}
                       </td>
 
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setDetailUserId(u.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        >
+                          <Eye size={14} /> Ver
+                        </button>
+                      </td>
                       <td className="px-4 py-3 text-right">
                         {inactivo ? (
                           <button
@@ -257,6 +282,100 @@ export default function UsuariosPage() {
           </div>
         )}
       </div>
+
+      {detailUserId && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Detalle de Usuario</h2>
+              <button onClick={() => setDetailUserId(null)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={20} /></button>
+            </div>
+
+            {detailLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-2 border-green-main border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : detailData ? (
+              <>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-100 px-6">
+                  {(["datos", "direcciones", "pedidos"] as const).map((tab) => {
+                    const icons = { datos: <User size={14} />, direcciones: <MapPin size={14} />, pedidos: <ShoppingBag size={14} /> };
+                    const labels = { datos: "Datos", direcciones: `Direcciones (${detailData.direcciones?.length || 0})`, pedidos: `Pedidos (${detailData.pedidos?.length || 0})` };
+                    return (
+                      <button key={tab} onClick={() => setDetailTab(tab)}
+                        className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                          detailTab === tab ? "border-green-main text-green-dark" : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
+                      >{icons[tab]} {labels[tab]}</button>
+                    );
+                  })}
+                </div>
+
+                {/* Content */}
+                <div className="px-6 py-4 overflow-y-auto flex-1">
+                  {detailTab === "datos" && (
+                    <div className="space-y-3 text-sm">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><span className="text-gray-500 block text-xs">ID</span><span className="font-medium">#{detailData.usuario.id}</span></div>
+                        <div><span className="text-gray-500 block text-xs">Estado</span><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${detailData.usuario.deleted_at ? "bg-red-100 text-red-700" : "bg-green-50 text-green-700"}`}>{detailData.usuario.deleted_at ? "Inactivo" : "Activo"}</span></div>
+                        <div><span className="text-gray-500 block text-xs">Nombre</span><span className="font-medium">{detailData.usuario.nombre} {detailData.usuario.apellido}</span></div>
+                        <div><span className="text-gray-500 block text-xs">Email</span><span className="font-medium">{detailData.usuario.email}</span></div>
+                        <div><span className="text-gray-500 block text-xs">Celular</span><span className="font-medium">{detailData.usuario.celular || "—"}</span></div>
+                        <div><span className="text-gray-500 block text-xs">Roles</span><div className="flex flex-wrap gap-1 mt-0.5">{detailData.usuario.roles?.map((r: string) => (<span key={r} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-50 text-green-dark"><Shield size={10} />{r}</span>))}</div></div>
+                        <div><span className="text-gray-500 block text-xs">Fecha de registro</span><span className="font-medium">{new Date(detailData.usuario.created_at).toLocaleDateString("es-AR")}</span></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {detailTab === "direcciones" && (
+                    <div className="space-y-3">
+                      {!detailData.direcciones?.length ? (
+                        <p className="text-gray-500 text-sm text-center py-8">Este usuario no tiene direcciones registradas.</p>
+                      ) : detailData.direcciones.map((d: any) => (
+                        <div key={d.id} className="border border-gray-100 rounded-xl p-4 text-sm">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MapPin size={14} className="text-green-main" />
+                            <span className="font-semibold">{d.alias || "Sin alias"}</span>
+                            {d.es_principal && <span className="text-[10px] bg-green-50 text-green-dark px-2 py-0.5 rounded-full font-bold">PRINCIPAL</span>}
+                          </div>
+                          <p className="text-gray-700">{d.linea1}</p>
+                          {d.linea2 && <p className="text-gray-500">{d.linea2}</p>}
+                          <p className="text-gray-500">{d.ciudad}{d.provincia ? `, ${d.provincia}` : ""}{d.codigo_postal ? ` - CP ${d.codigo_postal}` : ""}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {detailTab === "pedidos" && (
+                    <div className="space-y-3">
+                      {!detailData.pedidos?.length ? (
+                        <p className="text-gray-500 text-sm text-center py-8">Este usuario no tiene pedidos.</p>
+                      ) : detailData.pedidos.map((p: any) => (
+                        <div key={p.id} className="border border-gray-100 rounded-xl p-4 text-sm flex items-center justify-between">
+                          <div>
+                            <span className="font-semibold">Pedido #{p.id}</span>
+                            <span className={`ml-2 inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              p.estado_codigo === "ENTREGADO" ? "bg-green-50 text-green-700" :
+                              p.estado_codigo === "CANCELADO" ? "bg-red-100 text-red-700" :
+                              "bg-yellow-50 text-yellow-700"
+                            }`}>{p.estado_codigo}</span>
+                            <p className="text-gray-500 mt-1">{new Date(p.created_at).toLocaleDateString("es-AR")} · {p.forma_pago_codigo}</p>
+                          </div>
+                          <span className="font-bold text-green-dark">${Number(p.total).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-16 text-gray-500">Error al cargar datos.</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {data && data.pages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-6">

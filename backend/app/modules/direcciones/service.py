@@ -42,8 +42,7 @@ class DireccionService:
                 ciudad=data.ciudad,
                 provincia=data.provincia,
                 codigo_postal=data.codigo_postal,
-                latitud=data.latitud,
-                longitud=data.longitud,
+
                 es_principal=es_principal,
             )
 

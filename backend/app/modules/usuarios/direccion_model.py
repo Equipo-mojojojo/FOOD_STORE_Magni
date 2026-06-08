@@ -6,7 +6,6 @@ Direcciones de entrega del usuario con soporte de geolocalización.
 """
 
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Optional, TYPE_CHECKING
 
 from sqlmodel import SQLModel, Field, Relationship
@@ -28,8 +27,6 @@ class DireccionEntrega(SQLModel, table=True):
     ciudad: str = Field(max_length=100)
     provincia: str = Field(default="", max_length=100)
     codigo_postal: str = Field(default="", max_length=10)
-    latitud: Optional[Decimal] = Field(default=None, max_digits=9, decimal_places=6)
-    longitud: Optional[Decimal] = Field(default=None, max_digits=9, decimal_places=6)
     es_principal: bool = Field(default=False)
 
     created_at: datetime = Field(

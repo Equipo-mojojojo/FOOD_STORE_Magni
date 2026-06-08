@@ -40,6 +40,11 @@ class PedidoService:
             forma_pago = self.uow.formas_pago.get_by_codigo(data.forma_pago_codigo)
             if not forma_pago or not forma_pago.habilitado:
                 raise HTTPException(status_code=400, detail=f"Forma de pago '{data.forma_pago_codigo}' no disponible")
+                
+            if data.direccion_id is not None:
+                direccion = self.uow.direcciones.get_by_id(data.direccion_id)
+                if not direccion or direccion.usuario_id != usuario.id:
+                    raise HTTPException(status_code=400, detail="Dirección de entrega inválida")
 
             subtotal = Decimal("0.00")
             detalles_data = []
@@ -97,6 +102,7 @@ class PedidoService:
 
             pedido = Pedido(
                 usuario_id=usuario.id,
+                direccion_id=data.direccion_id,
                 estado_codigo="PENDIENTE",
                 forma_pago_codigo=data.forma_pago_codigo,
                 subtotal=subtotal,

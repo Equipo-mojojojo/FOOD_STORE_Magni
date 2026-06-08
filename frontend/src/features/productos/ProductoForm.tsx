@@ -169,7 +169,18 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         // Verificar si el insumo que estamos agregando es un producto terminado
         const ingInfo = ingredientesData?.items.find(i => i.id === id);
 
+        const yaHayTerminado = prev.ingredientes.some(pi => {
+          const ing = ingredientesData?.items.find(i => i.id === pi.ingrediente_id);
+          return ing?.es_producto_terminado;
+        });
+
         if (ingInfo?.es_producto_terminado) {
+          // Avisamos si ya había insumos normales seleccionados para que no se "destilden solos" sin aviso
+          if (prev.ingredientes.length > 0 && !yaHayTerminado) {
+            if (!window.confirm("Elegir un producto terminado eliminará los otros insumos normales que ya marcaste. ¿Querés continuar?")) {
+              return prev;
+            }
+          }
           // Si es terminado, reemplaza todos los demas ingredientes (solo puede ir uno)
           return {
             ...prev,
@@ -179,11 +190,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
           };
         }
 
-        // Si ya hay un insumo terminado, no se puede agregar más
-        const yaHayTerminado = prev.ingredientes.some(pi => {
-          const ing = ingredientesData?.items.find(i => i.id === pi.ingrediente_id);
-          return ing?.es_producto_terminado;
-        });
+        // Si ya hay un insumo terminado, no se puede agregar más (insumos normales)
         if (yaHayTerminado) return prev; // Bloqueado
 
         return {
@@ -474,18 +481,17 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                     const ingredienteData = formData.ingredientes.find(ing => ing.ingrediente_id === i.id);
                     const isSelected = !!ingredienteData;
                     const esTerminado = i.es_producto_terminado;
-                    // Bloquear si ya hay un terminado y este no es el terminado actual
-                    const bloqueadoPorTerminado = tieneInsumoTerminado && !isSelected && !esTerminado;
-                    // Bloquear insumos normales si ya hay un terminado seleccionado
-                    const bloqueadoPorMezcla = tieneInsumoTerminado && !isSelected;
+                    // Si ya hay un terminado, bloqueamos los insumos normales.
+                    // Si este es un terminado (pero no el seleccionado), permitimos clickearlo para que REEMPLACE al actual.
+                    const bloqueado = tieneInsumoTerminado && !isSelected && !esTerminado;
 
                     return (
-                      <div key={i.id} className={`flex flex-col gap-2 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-green-50/50 border-green-200' : bloqueadoPorMezcla ? 'opacity-40 cursor-not-allowed border-transparent' : 'hover:bg-white border-transparent'}`}>
-                        <label className={`flex items-center gap-3 ${bloqueadoPorMezcla ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <div key={i.id} className={`flex flex-col gap-2 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-green-50/50 border-green-200' : bloqueado ? 'opacity-40 cursor-not-allowed border-transparent' : 'hover:bg-white border-transparent'}`}>
+                        <label className={`flex items-center gap-3 ${bloqueado ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                           <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isSelected ? 'bg-green-main border-green-main text-white' : 'border-gray-300 bg-white group-hover:border-green-main'}`}>
                             {isSelected && <Check size={14} strokeWidth={3} />}
                           </div>
-                          <input type="checkbox" className="hidden" checked={isSelected} onChange={() => !bloqueadoPorMezcla && toggleIngrediente(i.id)} disabled={bloqueadoPorMezcla} />
+                          <input type="checkbox" className="hidden" checked={isSelected} onChange={() => !bloqueado && toggleIngrediente(i.id)} disabled={bloqueado} />
                           <span className="text-sm font-medium text-gray-700">
                             {i.nombre}
                             {esTerminado && <span className="ml-1 text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">TERMINADO</span>}

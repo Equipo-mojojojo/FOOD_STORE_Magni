@@ -14,8 +14,17 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   nombre: string;
+  apellido: string;
   email: string;
+  celular: string;
   password: string;
+  direccion: {
+    linea1: string;
+    linea2?: string;
+    ciudad: string;
+    provincia?: string;
+    codigo_postal?: string;
+  };
 }
 
 export interface AuthResponse {
@@ -202,7 +211,7 @@ export interface ProductosFilters extends BaseFilters {
   disponible?: string; // "true" | "false" | ""
 }
 
-export interface CategoriasFilters extends BaseFilters {}
+export interface CategoriasFilters extends BaseFilters { }
 
 // --- AUTH ---
 export interface UserResponse {
@@ -235,6 +244,7 @@ export interface ItemPedidoRequest {
 export interface PedidoCreate {
   items: ItemPedidoRequest[];
   forma_pago_codigo: string;
+  direccion_id?: number | null;
   notas?: string;
 }
 
@@ -290,6 +300,32 @@ export interface PaginatedPedidos {
   page: number;
   per_page: number;
   pages: number;
+}
+
+// ------------------------------------------------------------------
+// DIRECCIONES
+// ------------------------------------------------------------------
+
+export interface DireccionCreate {
+  alias?: string;
+  linea1: string;
+  linea2?: string;
+  ciudad: string;
+  provincia?: string;
+  codigo_postal?: string;
+  es_principal?: boolean;
+}
+
+export interface DireccionResponse {
+  id: number;
+  usuario_id: number;
+  alias: string;
+  linea1: string;
+  linea2: string | null;
+  ciudad: string;
+  provincia: string;
+  codigo_postal: string;
+  es_principal: boolean;
 }
 
 export interface PedidosFilters {

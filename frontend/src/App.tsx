@@ -24,6 +24,7 @@ import UsuariosPage from "./pages/UsuariosPage";
 import HomePage from "./pages/HomePage";
 import CartPage from "./pages/CartPage";
 import MisPedidosPage from "./pages/MisPedidosPage";
+import MisDireccionesPage from "./pages/MisDireccionesPage";
 import PedidoDetallePage from "./pages/PedidoDetallePage";
 import StorefrontCatalogoPage from "./pages/StorefrontCatalogoPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
@@ -158,6 +159,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MisPedidosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mis-direcciones"
+            element={
+              <ProtectedRoute>
+                <MisDireccionesPage />
               </ProtectedRoute>
             }
           />

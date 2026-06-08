@@ -1,4 +1,4 @@
-import { Package, ShieldCheck, Tags, ShoppingBag, ClipboardList } from "lucide-react";
+import { Package, ShieldCheck, Tags, ShoppingBag, ClipboardList, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
@@ -34,6 +34,13 @@ export default function DashboardPage() {
       to: "/pedidos",
       color: "bg-purple-500",
     },
+    {
+      title: "Usuarios",
+      description: "Administración de usuarios, roles y detalles de cuentas",
+      icon: Users,
+      to: "/usuarios",
+      color: "bg-teal-500",
+    },
   ];
 
   return (
@@ -51,7 +58,7 @@ export default function DashboardPage() {
 
       {/* Quick access cards */}
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Acceso rápido</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((card) => (
           <Link
             key={card.to}

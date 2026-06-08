@@ -79,12 +79,20 @@ export default function NavbarUsuario() {
                     </span>
                   </div>
 
-                  <Link
-                    to="/mis-pedidos"
-                    className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors hidden md:block"
-                  >
-                    Mis Pedidos
-                  </Link>
+                  <div className="hidden md:flex items-center gap-4">
+                    <Link
+                      to="/mis-pedidos"
+                      className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
+                    >
+                      Mis Pedidos
+                    </Link>
+                    <Link
+                      to="/mis-direcciones"
+                      className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
+                    >
+                      Mis Direcciones
+                    </Link>
+                  </div>
 
                   {isAdmin && (
                     <Link

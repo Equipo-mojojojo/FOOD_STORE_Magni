@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -12,8 +11,6 @@ class DireccionBase(BaseModel):
     ciudad: str = Field(min_length=1, max_length=100)
     provincia: str = Field(default="", max_length=100)
     codigo_postal: str = Field(default="", max_length=10)
-    latitud: Optional[Decimal] = None
-    longitud: Optional[Decimal] = None
     es_principal: bool = False
 
 
@@ -28,8 +25,6 @@ class DireccionUpdate(BaseModel):
     ciudad: Optional[str] = Field(default=None, min_length=1, max_length=100)
     provincia: Optional[str] = Field(default=None, max_length=100)
     codigo_postal: Optional[str] = Field(default=None, max_length=10)
-    latitud: Optional[Decimal] = None
-    longitud: Optional[Decimal] = None
     es_principal: Optional[bool] = None
 
 
