@@ -109,9 +109,9 @@ export default function CartPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Tu Carrito</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Feature component — lista de ítems con controles */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <CarritoGrid />
           </div>
 
