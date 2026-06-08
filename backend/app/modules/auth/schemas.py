@@ -1,5 +1,6 @@
 """Schemas Pydantic para autenticación."""
 from pydantic import BaseModel, EmailStr, Field
+from app.modules.direcciones.schemas import DireccionCreate
 
 
 class LoginRequest(BaseModel):
@@ -10,11 +11,16 @@ class LoginRequest(BaseModel):
 
 class UserCreate(BaseModel):
     """Datos requeridos para registrar un usuario."""
-    nombre: str = Field(min_length=1, max_length=60)
-    apellido: str = Field(default="", max_length=60)
+    nombre: str = Field(min_length=1, max_length=80)
+    apellido: str = Field(min_length=1, max_length=80)
     email: EmailStr
     celular: str = Field(default="", max_length=20)
     password: str = Field(min_length=8)
+    
+    # Datos de dirección anidados
+    direccion: DireccionCreate
+
+    model_config = {"from_attributes": True}
 
 
 class UserPublic(BaseModel):

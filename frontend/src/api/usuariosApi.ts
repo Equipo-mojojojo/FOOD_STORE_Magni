@@ -46,4 +46,9 @@ export const usuariosApi = {
     const res = await axiosClient.patch<UsuarioAdmin>(`/usuarios/${id}/restore`);
     return res.data;
   },
+
+  getDetalle: async (id: number) => {
+    const res = await axiosClient.get(`/usuarios/${id}/detalle`);
+    return res.data;
+  },
 };

@@ -1,10 +1,11 @@
 /** Página carrito — wrapper fino sobre CarritoItems + resumen de pago. */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
 import CarritoGrid from "../features/pedidos/CarritoGrid";
 import { useCartStore } from "../store/cartStore";
 import { useCrearPedido, useFormasPago } from "../hooks/usePedidos";
+import { useDirecciones, useCrearDireccion } from "../hooks/useDirecciones";
 import { useAuthStore } from "../store/authStore";
 
 const COSTO_ENVIO = 50;
@@ -21,8 +22,33 @@ export default function CartPage() {
   const crearPedido = useCrearPedido();
 
   const [formaPago, setFormaPago] = useState("");
+  const [direccionId, setDireccionId] = useState<number | null>(null);
   const [notas, setNotas] = useState("");
   const [error, setError] = useState("");
+  const [mostrarNuevaDireccion, setMostrarNuevaDireccion] = useState(false);
+  const [nuevaDireccionForm, setNuevaDireccionForm] = useState({
+    alias: "",
+    calle: "",
+    altura: "",
+    linea2: "",
+    ciudad: "",
+    provincia: "",
+    codigo_postal: "",
+    es_principal: false,
+  });
+
+  const { data: direcciones, isLoading: loadingDirecciones } = useDirecciones();
+  const crearDireccion = useCrearDireccion();
+
+  // Seleccionar la principal por defecto
+  useEffect(() => {
+    if (direcciones && direcciones.length > 0 && direccionId === null) {
+      const principal = direcciones.find((d) => d.es_principal);
+      setDireccionId(principal ? principal.id : direcciones[0].id);
+    }
+  }, [direcciones, direccionId]);
+
+  const isEfectivo = formaPago === "EFECTIVO";
 
   const handleConfirmar = () => {
     if (!isAuthenticated) {
@@ -31,6 +57,10 @@ export default function CartPage() {
     }
     if (!formaPago) {
       setError("Seleccioná una forma de pago.");
+      return;
+    }
+    if (!isEfectivo && !direccionId) {
+      setError("Tenés que elegir una dirección de entrega.");
       return;
     }
     setError("");
@@ -43,6 +73,7 @@ export default function CartPage() {
           personalizacion: [],
         })),
         forma_pago_codigo: formaPago,
+        direccion_id: isEfectivo ? null : direccionId,
         notas: notas || undefined,
       },
       {
@@ -123,6 +154,134 @@ export default function CartPage() {
                     ))}
                 </select>
               </div>
+
+              {!isEfectivo && isAuthenticated && (
+                <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Dirección de Entrega
+                    </label>
+                    <button 
+                      onClick={() => setMostrarNuevaDireccion(!mostrarNuevaDireccion)}
+                      className="text-xs text-green-main hover:text-green-dark font-medium"
+                    >
+                      {mostrarNuevaDireccion ? "Cancelar" : "+ Nueva"}
+                    </button>
+                  </div>
+                  
+                  {mostrarNuevaDireccion ? (
+                    <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Alias (Ej: Casa, Trabajo)</label>
+                      <input 
+                        type="text" 
+                        placeholder="Casa, Trabajo, etc."
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main"
+                        value={nuevaDireccionForm.alias}
+                        onChange={e => setNuevaDireccionForm({...nuevaDireccionForm, alias: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Calle *</label>
+                        <input 
+                          type="text" 
+                          placeholder="Av. Siempre Viva"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main"
+                          value={nuevaDireccionForm.calle}
+                          onChange={e => setNuevaDireccionForm({...nuevaDireccionForm, calle: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Altura *</label>
+                        <input 
+                          type="text" 
+                          placeholder="742"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main"
+                          value={nuevaDireccionForm.altura}
+                          onChange={e => setNuevaDireccionForm({...nuevaDireccionForm, altura: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Línea 2 (Piso, Depto, etc.)</label>
+                        <input 
+                          type="text" 
+                          placeholder="2B, Piso 3, etc. (Opcional)" 
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main"
+                          value={nuevaDireccionForm.linea2}
+                          onChange={e => setNuevaDireccionForm({...nuevaDireccionForm, linea2: e.target.value})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="Ciudad *" 
+                          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-main"
+                          value={nuevaDireccionForm.ciudad}
+                          onChange={e => setNuevaDireccionForm({...nuevaDireccionForm, ciudad: e.target.value})}
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Provincia" 
+                          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-main"
+                          value={nuevaDireccionForm.provincia}
+                          onChange={e => setNuevaDireccionForm({...nuevaDireccionForm, provincia: e.target.value})}
+                        />
+                      </div>
+                      <input 
+                        type="text" 
+                        placeholder="Código Postal" 
+                        className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-main"
+                        value={nuevaDireccionForm.codigo_postal}
+                        onChange={e => setNuevaDireccionForm({...nuevaDireccionForm, codigo_postal: e.target.value})}
+                      />
+                      <button 
+                        disabled={crearDireccion.isPending || !nuevaDireccionForm.calle || !nuevaDireccionForm.altura || !nuevaDireccionForm.ciudad}
+                        onClick={() => {
+                          const payload = {
+                            alias: nuevaDireccionForm.alias,
+                            linea1: `${nuevaDireccionForm.calle} ${nuevaDireccionForm.altura}`.trim(),
+                            linea2: nuevaDireccionForm.linea2 || undefined,
+                            ciudad: nuevaDireccionForm.ciudad || undefined,
+                            provincia: nuevaDireccionForm.provincia || undefined,
+                            codigo_postal: nuevaDireccionForm.codigo_postal || undefined,
+                            es_principal: nuevaDireccionForm.es_principal,
+                          };
+                          crearDireccion.mutate(payload, {
+                            onSuccess: () => {
+                              setMostrarNuevaDireccion(false);
+                              setNuevaDireccionForm({ alias: "", calle: "", altura: "", linea2: "", ciudad: "", provincia: "", codigo_postal: "", es_principal: false });
+                            }
+                          });                        }}
+                        className="w-full bg-gray-900 text-white text-xs py-2 rounded hover:bg-gray-800 transition-colors disabled:opacity-50"
+                      >
+                        {crearDireccion.isPending ? "Guardando..." : "Guardar Dirección"}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {loadingDirecciones ? (
+                        <p className="text-xs text-gray-500">Cargando direcciones...</p>
+                      ) : direcciones && direcciones.length > 0 ? (
+                        <select
+                          value={direccionId || ""}
+                          onChange={(e) => setDireccionId(Number(e.target.value))}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main bg-white"
+                        >
+                          {direcciones.map(d => (
+                            <option key={d.id} value={d.id}>
+                              {d.alias ? `${d.alias} - ` : ''}{d.linea1}, {d.ciudad}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className="text-xs text-amber-600">No tenés direcciones guardadas. Creá una nueva.</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -54,13 +54,22 @@ class PedidoCreate(BaseModel):
     """Datos para crear un pedido desde el carrito."""
     items: List[ItemPedidoRequest] = Field(min_length=1)
     forma_pago_codigo: str = Field(max_length=20)
+    direccion_id: Optional[int] = None
     notas: Optional[str] = None
  
     @model_validator(mode="after")
-    def no_productos_duplicados(self) -> "PedidoCreate":
+    def validar_pedido(self) -> "PedidoCreate":
+        # Productos duplicados
         ids = [item.producto_id for item in self.items]
         if len(ids) != len(set(ids)):
             raise ValueError("El carrito contiene productos duplicados")
+            
+        # Validación de dirección (NULL para efectivo/retiro en local)
+        if self.forma_pago_codigo == "EFECTIVO":
+            self.direccion_id = None
+        elif self.direccion_id is None:
+            raise ValueError("Se requiere una dirección de entrega válida")
+            
         return self
 
 
@@ -83,6 +92,7 @@ class PedidoResponse(BaseModel):
     """
     id: int
     usuario_id: int
+    direccion_id: Optional[int] = None
     estado_codigo: str
     forma_pago_codigo: str
     subtotal: Decimal

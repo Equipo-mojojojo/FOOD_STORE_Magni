@@ -1,4 +1,5 @@
 """Servicio de autenticación."""
+from app.modules.usuarios.direccion_model import DireccionEntrega
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
@@ -124,6 +125,16 @@ def register_user(uow: UnitOfWork, data: UserCreate) -> UserPublic:
             password_hash=hash_password(data.password),
         )
         uow.usuarios.add(user)
+        uow.session.flush() # Flush para tener el ID
+
+        # Guardar la dirección
+        direccion_data = data.direccion.model_dump(exclude_unset=True)
+        direccion_data["es_principal"] = True
+        direccion = DireccionEntrega(
+            usuario_id=user.id,
+            **direccion_data
+        )
+        uow.direcciones.add(direccion)
 
         # Asignar rol CLIENT por defecto
         uow.usuario_roles.asignar_rol(

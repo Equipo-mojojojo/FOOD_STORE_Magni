@@ -14,6 +14,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.modules.usuarios.model import Usuario
+    from app.modules.usuarios.direccion_model import DireccionEntrega
     from app.modules.productos.model import Producto
 
 class EstadoPedido(SQLModel, table=True):
@@ -43,6 +44,7 @@ class Pedido(SQLModel, table=True):
  
     id: Optional[int] = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id")
+    direccion_id: Optional[int] = Field(default=None, foreign_key="direcciones_entrega.id")
     estado_codigo: str = Field(foreign_key="estados_pedido.codigo", max_length=20)
     forma_pago_codigo: str = Field(foreign_key="formas_pago.codigo", max_length=20)
  
@@ -62,6 +64,7 @@ class Pedido(SQLModel, table=True):
     # Relaciones
     estado: Optional["EstadoPedido"] = Relationship(back_populates="pedidos")
     forma_pago: Optional["FormaPago"] = Relationship(back_populates="pedidos")
+    direccion: Optional["DireccionEntrega"] = Relationship()
     detalles: List["DetallePedido"] = Relationship(back_populates="pedido")
     historial: List["HistorialEstadoPedido"] = Relationship(back_populates="pedido")
 

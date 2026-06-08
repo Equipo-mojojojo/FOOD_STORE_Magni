@@ -33,13 +33,19 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4">
         {isAdmin && (
-          <Link 
-            to="/" 
-            className="text-sm font-medium text-green-dark hover:text-green-main transition-colors mr-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 hidden md:block"
-          >
-            Home usuario
-          </Link>
+            <Link
+              to="/"
+              className="text-sm font-medium text-green-dark hover:text-green-main transition-colors mr-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 hidden md:block"
+            >
+              Home usuario
+            </Link>
         )}
+        <Link
+          to="/mis-direcciones"
+          className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
+        >
+          Mis Direcciones
+        </Link>
         <span className="text-sm text-gray-600 hidden sm:block">
           Hola, <strong className="text-green-dark">{usuario?.nombre || 'Usuario'}</strong>
         </span>
