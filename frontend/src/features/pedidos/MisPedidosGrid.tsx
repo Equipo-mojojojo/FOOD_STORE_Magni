@@ -1,12 +1,18 @@
 /** Grilla de pedidos del cliente con badge de estado. */
+import { useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { usePedidos } from "../../hooks/usePedidos";
+import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedidosWebSocket";
+import { useAuthStore } from "../../store/authStore";
+import PedidoTimeline from "../../components/PedidoTimeline";
 import type { PedidosFilters } from "../../types";
 
 const ESTADO_BADGE: Record<string, string> = {
   PENDIENTE: "bg-yellow-100 text-yellow-800",
   CONFIRMADO: "bg-blue-100 text-blue-800",
   EN_PREP: "bg-orange-100 text-orange-800",
+  LISTO: "bg-emerald-100 text-emerald-800",
   EN_CAMINO: "bg-purple-100 text-purple-800",
   ENTREGADO: "bg-green-100 text-green-800",
   CANCELADO: "bg-red-100 text-red-800",
@@ -16,6 +22,7 @@ export const ESTADO_LABEL: Record<string, string> = {
   PENDIENTE: "Pendiente",
   CONFIRMADO: "Confirmado",
   EN_PREP: "En preparación",
+  LISTO: "Listo",
   EN_CAMINO: "En camino",
   ENTREGADO: "Entregado",
   CANCELADO: "Cancelado",
@@ -26,7 +33,26 @@ interface Props {
 }
 
 export default function MisPedidosGrid({ filters }: Props) {
+  const queryClient = useQueryClient();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data, isLoading } = usePedidos(filters);
+  const { subscribeToOrder } = usePedidosWebSocket({
+    enabled: isAuthenticated,
+    onMessage: useCallback(
+      (msg: PedidoWsMessage) => {
+        if (msg.event !== "ERROR" && msg.event !== "SUBSCRIBED") {
+          queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+        }
+      },
+      [queryClient],
+    ),
+  });
+
+  useEffect(() => {
+    data?.items
+      .filter((pedido) => !["ENTREGADO", "CANCELADO"].includes(pedido.estado_codigo))
+      .forEach((pedido) => subscribeToOrder(pedido.id));
+  }, [data?.items, subscribeToOrder]);
 
   if (isLoading) {
     return (
@@ -48,7 +74,7 @@ export default function MisPedidosGrid({ filters }: Props) {
         <Link
           key={pedido.id}
           to={`/pedidos/${pedido.id}`}
-          className="bg-white rounded-2xl p-5 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow"
+          className="bg-white rounded-2xl p-5 shadow-sm block hover:shadow-md transition-shadow"
         >
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -73,6 +99,7 @@ export default function MisPedidosGrid({ filters }: Props) {
           <p className="font-bold text-gray-900 text-lg">
             ${Number(pedido.total).toLocaleString("es-AR")}
           </p>
+          <PedidoTimeline estado={pedido.estado_codigo} compact isRetiro={pedido.direccion_id === null} />
         </Link>
       ))}
     </div>

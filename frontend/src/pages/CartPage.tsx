@@ -7,6 +7,7 @@ import { useCartStore } from "../store/cartStore";
 import { useCrearPedido, useFormasPago } from "../hooks/usePedidos";
 import { useDirecciones, useCrearDireccion } from "../hooks/useDirecciones";
 import { useAuthStore } from "../store/authStore";
+import type { DireccionCreate } from "../types";
 
 const COSTO_ENVIO = 50;
 
@@ -49,6 +50,7 @@ export default function CartPage() {
   }, [direcciones, direccionId]);
 
   const isEfectivo = formaPago === "EFECTIVO";
+  const costoEnvio = isEfectivo ? 0 : COSTO_ENVIO;
 
   const handleConfirmar = () => {
     if (!isAuthenticated) {
@@ -127,11 +129,11 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Costo de envío</span>
-                  <span>${COSTO_ENVIO}</span>
+                  <span>${costoEnvio}</span>
                 </div>
                 <div className="border-t border-gray-100 pt-2 flex justify-between font-bold text-gray-900 text-base">
                   <span>Total</span>
-                  <span>${(total + COSTO_ENVIO).toLocaleString("es-AR")}</span>
+                  <span>${(total + costoEnvio).toLocaleString("es-AR")}</span>
                 </div>
               </div>
 
@@ -239,11 +241,14 @@ export default function CartPage() {
                       <button 
                         disabled={crearDireccion.isPending || !nuevaDireccionForm.calle || !nuevaDireccionForm.altura || !nuevaDireccionForm.ciudad}
                         onClick={() => {
-                          const payload = {
+                          const ciudad = nuevaDireccionForm.ciudad.trim();
+                          if (!ciudad) return;
+
+                          const payload: DireccionCreate = {
                             alias: nuevaDireccionForm.alias,
                             linea1: `${nuevaDireccionForm.calle} ${nuevaDireccionForm.altura}`.trim(),
                             linea2: nuevaDireccionForm.linea2 || undefined,
-                            ciudad: nuevaDireccionForm.ciudad || undefined,
+                            ciudad,
                             provincia: nuevaDireccionForm.provincia || undefined,
                             codigo_postal: nuevaDireccionForm.codigo_postal || undefined,
                             es_principal: nuevaDireccionForm.es_principal,

@@ -4,7 +4,6 @@ import { ArrowLeft, ShoppingCart, Loader, AlertTriangle, Info, Plus, Minus } fro
 import { useState } from 'react';
 import { productosApi } from '../api/productosApi';
 import { useCartStore } from '../store/cartStore';
-import { useUiStore } from '../store/uiStore';
 import { toast } from 'sonner';
 
 export default function ProductDetailPage() {
@@ -14,7 +13,6 @@ export default function ProductDetailPage() {
   const [activeImage, setActiveImage] = useState(0);
   
   const { addItem } = useCartStore();
-  const { openCart } = useUiStore();
 
   const { data: producto, isLoading, isError } = useQuery({
     queryKey: ['producto', id],

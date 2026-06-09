@@ -36,6 +36,11 @@ export const pedidosApi = {
     return res.data;
   },
 
+  listCocina: async (): Promise<PedidoResponse[]> => {
+    const res = await axiosClient.get<PedidoResponse[]>("/pedidos/cocina");
+    return res.data;
+  },
+
   create: async (data: PedidoCreate): Promise<PedidoResponse> => {
     const res = await axiosClient.post<PedidoResponse>("/pedidos", data);
     return res.data;

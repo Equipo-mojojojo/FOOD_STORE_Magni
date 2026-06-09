@@ -75,6 +75,10 @@ test_service.py
 #  UPLOADS / MEDIA
 # ══════════════════════════════════════════════
 
-backend/uploads/
-uploads/
+# Uploads locales generados por la app.
+backend/uploads/*
+!backend/uploads/
+!backend/uploads/.gitkeep
+!backend/uploads/seed/
+!backend/uploads/seed/**
 /uploads/

@@ -41,7 +41,7 @@ export default function ProductosGrid() {
 
   const hasRole = useAuthStore((s) => s.hasRole);
   const isAdmin = hasRole("ADMIN");
-  const isStock = hasRole("STOCK");
+  const isStock = hasRole("COCINA_STOCK");
   const canManageFull = isAdmin;
   const canManageStock = isAdmin || isStock;
   // Sincronizar filtros si cambia el parámetro de URL

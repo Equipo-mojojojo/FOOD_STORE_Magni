@@ -21,6 +21,12 @@ export const usePedidos = (filters: PedidosFilters) =>
     queryFn: () => pedidosApi.list(filters),
   });
 
+export const usePedidosCocina = () =>
+  useQuery({
+    queryKey: ["pedidos", "cocina"],
+    queryFn: pedidosApi.listCocina,
+  });
+
 export const usePedido = (id: number) =>
   useQuery({
     queryKey: ["pedidos", id],

@@ -199,7 +199,7 @@ def actualizar_roles_usuario(
     uow: Annotated[UnitOfWork, Depends(get_uow)],
 ):
     """Reemplaza los roles de un usuario."""
-    roles_validos = {"ADMIN", "STOCK", "PEDIDOS", "CLIENT"}
+    roles_validos = {"ADMIN", "CAJERO", "COCINA_STOCK", "CLIENT"}
 
     if not data.roles:
         raise HTTPException(
@@ -356,4 +356,4 @@ def detalle_usuario(
             ),
             direcciones=direcciones,
             pedidos=pedidos_data["items"],
-        )
+        )

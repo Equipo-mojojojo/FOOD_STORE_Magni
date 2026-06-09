@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useDirecciones, useCrearDireccion } from "../hooks/useDirecciones";
 import { MapPin } from "lucide-react";
+import type { DireccionCreate } from "../types";
 
 export default function MisDireccionesPage() {
   const { data: direcciones, isLoading } = useDirecciones();
@@ -121,11 +122,14 @@ export default function MisDireccionesPage() {
             <button
               disabled={crearDireccion.isPending || !nuevaDireccionForm.calle || !nuevaDireccionForm.altura || !nuevaDireccionForm.ciudad}
               onClick={() => {
-                const payload = {
+                const ciudad = nuevaDireccionForm.ciudad.trim();
+                if (!ciudad) return;
+
+                const payload: DireccionCreate = {
                   alias: nuevaDireccionForm.alias,
                   linea1: `${nuevaDireccionForm.calle} ${nuevaDireccionForm.altura}`.trim(),
                   linea2: nuevaDireccionForm.linea2 || undefined,
-                  ciudad: nuevaDireccionForm.ciudad || undefined,
+                  ciudad,
                   provincia: nuevaDireccionForm.provincia || undefined,
                   codigo_postal: nuevaDireccionForm.codigo_postal || undefined,
                   es_principal: nuevaDireccionForm.es_principal,
