@@ -78,3 +78,12 @@ test_service.py
 backend/uploads/
 uploads/
 /uploads/
+
+# ══════════════════════════════════════════════
+#  AI & AGENT TEAMS
+# ══════════════════════════════════════════════
+
+.gemini/
+.atl/
+.cursor/
+.cursorrules

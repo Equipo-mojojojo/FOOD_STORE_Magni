@@ -12,6 +12,7 @@ from app.modules.pedidos.router import router as pedidos_router
 from app.modules.usuarios.router import router as usuarios_router
 from app.modules.direcciones.router import router as direcciones_router
 from app.modules.upload.router import router as upload_router
+from app.modules.estadisticas.router import router as estadisticas_router
 
 app = FastAPI(
     title="🍔 Food Store API",
@@ -52,6 +53,7 @@ app.include_router(pedidos_router)
 app.include_router(usuarios_router)
 app.include_router(direcciones_router)
 app.include_router(upload_router)
+app.include_router(estadisticas_router)
 
 @app.get("/", tags=["Health"])
 def health_check():
