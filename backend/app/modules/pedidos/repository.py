@@ -37,8 +37,9 @@ class PedidoRepository(BaseRepository[Pedido]):
         fecha_desde: Optional[str] = None,
         fecha_hasta: Optional[str] = None,
         forma_pago_codigo: Optional[str] = None,
+        estados_codigos: Optional[list[str]] = None,
     ) -> dict:
-        """Lista pedidos con filtros. usuario_id=None devuelve todos (ADMIN/PEDIDOS)."""
+        """Lista pedidos con filtros. usuario_id=None devuelve segun permisos del rol."""
         from datetime import timedelta
         query = (
             select(Pedido)
@@ -58,6 +59,8 @@ class PedidoRepository(BaseRepository[Pedido]):
 
         if estado_codigo:
             query = query.where(Pedido.estado_codigo == estado_codigo)
+        elif estados_codigos:
+            query = query.where(Pedido.estado_codigo.in_(estados_codigos))
 
         if fecha_desde:
             query = query.where(Pedido.created_at >= datetime.fromisoformat(fecha_desde))
@@ -95,6 +98,22 @@ class PedidoRepository(BaseRepository[Pedido]):
             )
         )
         return self.session.exec(stmt).first()
+
+    def get_by_estados(self, estados: tuple[str, ...], sort_order: str = "asc") -> list[Pedido]:
+        """Lista pedidos activos que coinciden con alguno de los estados dados."""
+        order_func = desc if sort_order == "desc" else asc
+        stmt = (
+            select(Pedido)
+            .where(Pedido.deleted_at.is_(None))
+            .where(Pedido.estado_codigo.in_(estados))
+            .options(
+                selectinload(Pedido.estado),
+                selectinload(Pedido.forma_pago),
+                selectinload(Pedido.detalles),
+            )
+            .order_by(order_func(Pedido.created_at))
+        )
+        return list(self.session.exec(stmt).all())
 
     def soft_delete(self, pedido: Pedido) -> Pedido:
         """Eliminación lógica."""

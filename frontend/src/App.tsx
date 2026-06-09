@@ -18,7 +18,9 @@ import IngredientesPage from "./pages/IngredientesPage";
 import CategoriasPage from "./pages/CategoriasPage";
 import ProductosPage from "./pages/ProductosPage";
 import PedidosCajeroPage from "./pages/PedidosCajeroPage";
+import KdsPage from "./pages/KdsPage";
 import UsuariosPage from "./pages/UsuariosPage";
+import PedidoOperativoDetallePage from "./pages/PedidoOperativoDetallePage";
 
 // Store pages
 import HomePage from "./pages/HomePage";
@@ -37,9 +39,9 @@ function AppLayout() {
   const hasRole = useAuthStore((s) => s.hasRole);
   const fallbackPath = hasRole("ADMIN")
     ? "/dashboard"
-    : hasRole("STOCK")
-    ? "/productos"
-    : hasRole("PEDIDOS")
+    : hasRole("COCINA_STOCK")
+    ? "/cocina"
+    : hasRole("CAJERO")
     ? "/pedidos"
     : "/";
 
@@ -61,7 +63,7 @@ function AppLayout() {
             <Route
               path="/ingredientes"
               element={
-                <ProtectedRoute roles={["ADMIN", "STOCK"]}>
+                <ProtectedRoute roles={["ADMIN", "COCINA_STOCK"]}>
                   <IngredientesPage />
                 </ProtectedRoute>
               }
@@ -77,7 +79,7 @@ function AppLayout() {
             <Route
               path="/productos"
               element={
-                <ProtectedRoute roles={["ADMIN", "STOCK"]}>
+                <ProtectedRoute roles={["ADMIN", "COCINA_STOCK"]}>
                   <ProductosPage />
                 </ProtectedRoute>
               }
@@ -85,8 +87,24 @@ function AppLayout() {
             <Route
               path="/pedidos"
               element={
-                <ProtectedRoute roles={["ADMIN", "PEDIDOS"]}>
+                <ProtectedRoute roles={["ADMIN", "CAJERO"]}>
                   <PedidosCajeroPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/gestion/pedidos/:id"
+              element={
+                <ProtectedRoute roles={["ADMIN", "CAJERO", "COCINA_STOCK"]}>
+                  <PedidoOperativoDetallePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cocina"
+              element={
+                <ProtectedRoute roles={["ADMIN", "COCINA_STOCK"]}>
+                  <KdsPage />
                 </ProtectedRoute>
               }
             />
@@ -118,9 +136,9 @@ export default function App() {
 
   const defaultPath = hasRole("ADMIN")
     ? "/dashboard"
-    : hasRole("STOCK")
-    ? "/productos"
-    : hasRole("PEDIDOS")
+    : hasRole("COCINA_STOCK")
+    ? "/cocina"
+    : hasRole("CAJERO")
     ? "/pedidos"
     : "/";
 

@@ -1,7 +1,6 @@
 import { ShoppingCart } from "lucide-react";
 import type { Producto } from "../types";
 import { useCartStore } from '../store/cartStore';
-import { useUiStore } from '../store/uiStore';
 import { Link } from "react-router-dom";
 
 import { toast } from "sonner";

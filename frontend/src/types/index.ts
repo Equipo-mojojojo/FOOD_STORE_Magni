@@ -276,6 +276,7 @@ export interface HistorialEstado {
 export interface PedidoResponse {
   id: number;
   usuario_id: number;
+  direccion_id: number | null;
   estado_codigo: string;
   forma_pago_codigo: string;
   subtotal: number;

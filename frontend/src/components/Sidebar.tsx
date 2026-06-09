@@ -1,6 +1,6 @@
 /** Sidebar de navegación. */
 import { NavLink } from "react-router-dom";
-import { Home, Package, X, Layers, ShoppingBag, ClipboardList, Users } from "lucide-react";
+import { ChefHat, Home, Package, X, Layers, ShoppingBag, ClipboardList, Users } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 
 interface Props {
@@ -10,10 +10,11 @@ interface Props {
 
 const links = [
   { to: "/dashboard", label: "Dashboard", icon: Home, roles: ["ADMIN"] },
-  { to: "/productos", label: "Productos", icon: ShoppingBag, roles: ["ADMIN", "STOCK"] },
+  { to: "/productos", label: "Productos", icon: ShoppingBag, roles: ["ADMIN", "COCINA_STOCK"] },
   { to: "/categorias", label: "Categorías", icon: Layers, roles: ["ADMIN"] },
-  { to: "/ingredientes", label: "Ingrediente", icon: Package, roles: ["ADMIN", "STOCK"] },
-  { to: "/pedidos", label: "Pedidos", icon: ClipboardList, roles: ["ADMIN", "PEDIDOS"] },
+  { to: "/ingredientes", label: "Ingrediente", icon: Package, roles: ["ADMIN", "COCINA_STOCK"] },
+  { to: "/pedidos", label: "Cajero", icon: ClipboardList, roles: ["ADMIN", "CAJERO"] },
+  { to: "/cocina", label: "Cocina", icon: ChefHat, roles: ["ADMIN", "COCINA_STOCK"] },
   { to: "/usuarios", label: "Usuarios", icon: Users, roles: ["ADMIN"] },
 ];
 

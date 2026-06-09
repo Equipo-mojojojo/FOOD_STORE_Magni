@@ -1,7 +1,7 @@
 /** Modal para crear/editar ingrediente. */
 import { useState, useEffect } from "react";
 import { X, Info, Package } from "lucide-react";
-import type { Ingrediente, IngredienteCreate, UnidadMedidaSimple } from "../../types";
+import type { Categoria, Ingrediente, IngredienteCreate, UnidadMedidaSimple } from "../../types";
 import { productosApi } from "../../api/productosApi";
 import { categoriasApi } from "../../api/categoriasApi";
 import { ingredientesApi } from "../../api/ingredientesApi";
@@ -28,7 +28,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [categoriaId, setCategoriaId] = useState<number | "">("")
   const [margenGanancia, setMargenGanancia] = useState<number | string>("");
   const [precioBase, setPrecioBase] = useState<number | string>("");
-  const [categorias, setCategorias] = useState<{id: number; nombre: string}[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   
   const [unidades, setUnidades] = useState<UnidadMedidaSimple[]>([]);
   const [loading, setLoading] = useState(false);

@@ -1,6 +1,6 @@
 """
-Script de seed — carga roles, usuarios e ingredientes iniciales para pruebas.
-Idempotente: se puede ejecutar múltiples veces sin duplicar datos.
+Script de seed - carga roles, usuarios e ingredientes iniciales para pruebas.
+Idempotente: se puede ejecutar multiples veces sin duplicar datos.
 
 Uso:
     python -m app.db.seed
@@ -8,29 +8,31 @@ Uso:
 Requiere PostgreSQL corriendo con las variables de .env configuradas.
 
 Crea:
-  - Catálogo de roles: ADMIN, STOCK, PEDIDOS, CLIENT
+  - Catalogo de roles: ADMIN, CAJERO, COCINA_STOCK, CLIENT
   - Administrador (rol=ADMIN)
-  - 10 ingredientes básicos
+  - 10 ingredientes basicos
   - 7 unidades de medida
-  - 5 estados de pedido
+  - 7 estados de pedido
   - 2 formas de pago
 """
 
+from decimal import Decimal
 from sqlmodel import Session, select
 from app.core.database import engine, create_all_tables
 from app.core.security import hash_password
 from app.modules.usuarios.model import Usuario
 from app.modules.usuarios.rol_model import Rol, UsuarioRol
 from app.modules.ingredientes.model import Ingrediente
-from app.modules.productos.model import UnidadMedida
+from app.modules.productos.model import Producto, ProductoCategoria, ProductoIngrediente, UnidadMedida
+from app.modules.categorias.model import Categoria
 from app.modules.pedidos.model import EstadoPedido, FormaPago
 
 
 ROLES_INICIALES = [
-    {"codigo": "ADMIN",  "nombre": "Administrador",  "descripcion": "Acceso total sin restricciones"},
-    {"codigo": "STOCK",  "nombre": "Stock Manager",   "descripcion": "Actualiza stock y disponibilidad"},
-    {"codigo": "PEDIDOS", "nombre": "Pedidos",         "descripcion": "Ver y avanzar estados de pedidos"},
-    {"codigo": "CLIENT", "nombre": "Cliente",         "descripcion": "Opera solo sus propios datos"},
+    {"codigo": "ADMIN", "nombre": "Administrador", "descripcion": "Acceso total sin restricciones"},
+    {"codigo": "CAJERO", "nombre": "Cajero", "descripcion": "Confirma pedidos y gestiona entrega o envio"},
+    {"codigo": "COCINA_STOCK", "nombre": "Cocina / Stock", "descripcion": "Prepara pedidos y gestiona productos, ingredientes y stock"},
+    {"codigo": "CLIENT", "nombre": "Cliente", "descripcion": "Opera solo sus propios datos"},
 ]
 
 USUARIOS_INICIALES = [
@@ -42,18 +44,18 @@ USUARIOS_INICIALES = [
         "roles": ["ADMIN"],
     },
     {
-        "nombre": "Pedidos",
+        "nombre": "Cajero",
         "apellido": "Foodstore",
-        "email": "pedidos@foodstore.com",
-        "password": "pedidos",
-        "roles": ["PEDIDOS"],
+        "email": "cajero@foodstore.com",
+        "password": "cajero",
+        "roles": ["CAJERO"],
     },
     {
-        "nombre": "Stock",
+        "nombre": "Cocina",
         "apellido": "Foodstore",
-        "email": "stock@foodstore.com",
-        "password": "stock",
-        "roles": ["STOCK"],
+        "email": "cocina@foodstore.com",
+        "password": "cocina",
+        "roles": ["COCINA_STOCK"],
     },
 ]
 
@@ -61,13 +63,19 @@ INGREDIENTES_INICIALES = [
     {"nombre": "Harina 0000", "descripcion": "Harina refinada", "es_alergeno": True, "unidad": "kilogramo", "stock": 10.0, "precio": 800.0},
     {"nombre": "Harina 000", "descripcion": "Harina de fuerza", "es_alergeno": True, "unidad": "kilogramo", "stock": 5.0, "precio": 750.0},
     {"nombre": "Levadura Fresca", "descripcion": "Levadura", "es_alergeno": False, "unidad": "gramo", "stock": 500.0, "precio": 10.0},
-    {"nombre": "Sal Fina", "descripcion": "Sal común", "es_alergeno": False, "unidad": "gramo", "stock": 1000.0, "precio": 5.0},
+    {"nombre": "Sal Fina", "descripcion": "Sal comun", "es_alergeno": False, "unidad": "gramo", "stock": 1000.0, "precio": 5.0},
     {"nombre": "Agua Filtrada", "descripcion": "Agua purificada", "es_alergeno": False, "unidad": "litro", "stock": 100.0, "precio": 0.0},
     {"nombre": "Aceite de Oliva", "descripcion": "Aceite virgen extra", "es_alergeno": False, "unidad": "litro", "stock": 5.0, "precio": 4500.0},
     {"nombre": "Queso Mozzarella", "descripcion": "Queso para pizza", "es_alergeno": True, "unidad": "kilogramo", "stock": 10.0, "precio": 6000.0},
     {"nombre": "Tomate Triturado", "descripcion": "Salsa base", "es_alergeno": False, "unidad": "litro", "stock": 10.0, "precio": 1200.0},
-    {"nombre": "Orégano", "descripcion": "Orégano seco", "es_alergeno": False, "unidad": "gramo", "stock": 200.0, "precio": 20.0},
+    {"nombre": "Oregano", "descripcion": "Oregano seco", "es_alergeno": False, "unidad": "gramo", "stock": 200.0, "precio": 20.0},
     {"nombre": "Albahaca Fresca", "descripcion": "Hojas frescas", "es_alergeno": False, "unidad": "gramo", "stock": 100.0, "precio": 50.0},
+    {"nombre": "Pan de Hamburguesa", "descripcion": "Pan individual para hamburguesa", "es_alergeno": True, "unidad": "pieza", "stock": 40.0, "precio": 350.0},
+    {"nombre": "Medallon de Carne", "descripcion": "Medallon vacuno para hamburguesa", "es_alergeno": False, "unidad": "pieza", "stock": 40.0, "precio": 900.0},
+    {"nombre": "Papa", "descripcion": "Papa para fritura", "es_alergeno": False, "unidad": "kilogramo", "stock": 8.0, "precio": 1800.0},
+    {"nombre": "Leche", "descripcion": "Leche entera", "es_alergeno": True, "unidad": "litro", "stock": 12.0, "precio": 1100.0},
+    {"nombre": "Huevo", "descripcion": "Huevo fresco", "es_alergeno": True, "unidad": "pieza", "stock": 60.0, "precio": 180.0},
+    {"nombre": "Azucar", "descripcion": "Azucar comun", "es_alergeno": False, "unidad": "kilogramo", "stock": 5.0, "precio": 1500.0},
 ]
 
 UNIDADES_MEDIDA_INICIALES = [
@@ -77,16 +85,17 @@ UNIDADES_MEDIDA_INICIALES = [
     {"nombre": "mililitro", "simbolo": "mL", "tipo": "volumen", "factor_conversion": 1.0},
     {"nombre": "pieza", "simbolo": "u", "tipo": "unidad", "factor_conversion": 1.0},
     {"nombre": "docena", "simbolo": "doc", "tipo": "unidad", "factor_conversion": 12.0},
-    {"nombre": "metro cuadrado", "simbolo": "m²", "tipo": "area", "factor_conversion": 1.0},
+    {"nombre": "metro cuadrado", "simbolo": "m2", "tipo": "area", "factor_conversion": 1.0},
 ]
 
 ESTADOS_PEDIDO_INICIALES = [
-    {"codigo": "PENDIENTE",   "descripcion": "Pedido recibido, esperando confirmación", "orden": 1, "es_terminal": False},
+    {"codigo": "PENDIENTE",   "descripcion": "Pedido recibido, esperando confirmacion", "orden": 1, "es_terminal": False},
     {"codigo": "CONFIRMADO",  "descripcion": "Pago confirmado, listo para preparar",    "orden": 2, "es_terminal": False},
-    {"codigo": "EN_PREP",     "descripcion": "En preparación en cocina",                "orden": 3, "es_terminal": False},
-    {"codigo": "EN_CAMINO",   "descripcion": "En camino al cliente",                    "orden": 4, "es_terminal": False},
-    {"codigo": "ENTREGADO",   "descripcion": "Entregado al cliente",                    "orden": 5, "es_terminal": True},
-    {"codigo": "CANCELADO",   "descripcion": "Pedido cancelado",                        "orden": 6, "es_terminal": True},
+    {"codigo": "EN_PREP",     "descripcion": "En preparacion en cocina",                "orden": 3, "es_terminal": False},
+    {"codigo": "LISTO",       "descripcion": "Listo para entrega o envio",              "orden": 4, "es_terminal": False},
+    {"codigo": "EN_CAMINO",   "descripcion": "En camino al cliente",                    "orden": 5, "es_terminal": False},
+    {"codigo": "ENTREGADO",   "descripcion": "Entregado al cliente",                    "orden": 6, "es_terminal": True},
+    {"codigo": "CANCELADO",   "descripcion": "Pedido cancelado",                        "orden": 7, "es_terminal": True},
 ]
 
 FORMAS_PAGO_INICIALES = [
@@ -94,13 +103,106 @@ FORMAS_PAGO_INICIALES = [
     {"codigo": "TRANSFERENCIA", "descripcion": "Transferencia bancaria",       "habilitado": True},
 ]
 
+CATEGORIAS_INICIALES = [
+    {"nombre": "Comidas", "descripcion": "Productos elaborados", "padre": None},
+    {"nombre": "Pizzas", "descripcion": "Pizzas clasicas y especiales", "padre": "Comidas"},
+    {"nombre": "Hamburguesas", "descripcion": "Hamburguesas del local", "padre": "Comidas"},
+    {"nombre": "Acompañamientos", "descripcion": "Guarniciones y frituras", "padre": "Comidas"},
+    {"nombre": "Postres", "descripcion": "Postres listos para servir", "padre": None},
+    {"nombre": "Bebidas", "descripcion": "Bebidas frias", "padre": None},
+]
+
+PRODUCTOS_INICIALES = [
+    {
+        "nombre": "Pizza Muzzarella",
+        "descripcion": "Pizza clasica con salsa de tomate, mozzarella y oregano.",
+        "imagen": "pizza_muzzarella.jpg",
+        "precio_base": "8500.00",
+        "stock": 20,
+        "unidad": "pieza",
+        "margen": "0.50",
+        "categoria": "Pizzas",
+        "ingredientes": [
+            {"nombre": "Harina 0000", "cantidad": "300", "unidad": "gramo", "removible": False},
+            {"nombre": "Levadura Fresca", "cantidad": "15", "unidad": "gramo", "removible": False},
+            {"nombre": "Tomate Triturado", "cantidad": "0.15", "unidad": "litro", "removible": False},
+            {"nombre": "Queso Mozzarella", "cantidad": "180", "unidad": "gramo", "removible": False},
+            {"nombre": "Oregano", "cantidad": "2", "unidad": "gramo", "removible": True},
+        ],
+    },
+    {
+        "nombre": "Hamburguesa Completa",
+        "descripcion": "Hamburguesa con medallon de carne y pan artesanal.",
+        "imagen": "hamburguesa.jpg",
+        "precio_base": "7200.00",
+        "stock": 30,
+        "unidad": "pieza",
+        "margen": "0.45",
+        "categoria": "Hamburguesas",
+        "ingredientes": [
+            {"nombre": "Pan de Hamburguesa", "cantidad": "1", "unidad": "pieza", "removible": False},
+            {"nombre": "Medallon de Carne", "cantidad": "1", "unidad": "pieza", "removible": False},
+        ],
+    },
+    {
+        "nombre": "Papas Fritas",
+        "descripcion": "Porcion de papas fritas crocantes.",
+        "imagen": "papas_fritas.jpg",
+        "precio_base": "3800.00",
+        "stock": 25,
+        "unidad": "pieza",
+        "margen": "0.40",
+        "categoria": "Acompanamientos",
+        "ingredientes": [
+            {"nombre": "Papa", "cantidad": "0.25", "unidad": "kilogramo", "removible": False},
+            {"nombre": "Sal Fina", "cantidad": "3", "unidad": "gramo", "removible": True},
+        ],
+    },
+    {
+        "nombre": "Flan Casero",
+        "descripcion": "Flan casero individual.",
+        "imagen": "flan.jpg",
+        "precio_base": "2900.00",
+        "stock": 18,
+        "unidad": "pieza",
+        "margen": "0.50",
+        "categoria": "Postres",
+        "ingredientes": [
+            {"nombre": "Leche", "cantidad": "0.12", "unidad": "litro", "removible": False},
+            {"nombre": "Huevo", "cantidad": "1", "unidad": "pieza", "removible": False},
+            {"nombre": "Azucar", "cantidad": "40", "unidad": "gramo", "removible": False},
+        ],
+    },
+    {
+        "nombre": "Coca-Cola 500ml",
+        "descripcion": "Gaseosa Coca-Cola de 500 ml.",
+        "imagen": "cocacola_ml.jpg",
+        "precio_base": "1800.00",
+        "stock": 50,
+        "unidad": "pieza",
+        "margen": "0.30",
+        "categoria": "Bebidas",
+        "ingredientes": [],
+    },
+    {
+        "nombre": "Agua Mineral 500ml",
+        "descripcion": "Agua mineral sin gas de 500 ml.",
+        "imagen": "agua_500ml.jpg",
+        "precio_base": "1200.00",
+        "stock": 50,
+        "unidad": "pieza",
+        "margen": "0.25",
+        "categoria": "Bebidas",
+        "ingredientes": [],
+    },
+]
 
 def run() -> None:
-    print("=== Seed — Food Store (PostgreSQL + SQLModel) ===")
+    print("=== Seed - Food Store (PostgreSQL + SQLModel) ===")
     create_all_tables()
 
     with Session(engine) as session:
-        # 1. Seed Roles — catálogo (PK semántica)
+        # 1. Seed Roles - catalogo (PK semantica)
         print("Sedeando roles...")
         for r_data in ROLES_INICIALES:
             existing = session.exec(select(Rol).where(Rol.codigo == r_data["codigo"])).first()
@@ -109,7 +211,10 @@ def run() -> None:
                 session.add(r)
                 print(f"  [+] Rol creado: {r.codigo}")
             else:
-                print(f"  [=] Rol ya existe: {r_data['codigo']}")
+                existing.nombre = r_data["nombre"]
+                existing.descripcion = r_data["descripcion"]
+                session.add(existing)
+                print(f"  [=] Rol actualizado: {r_data['codigo']}")
 
         session.flush()
 
@@ -136,7 +241,7 @@ def run() -> None:
             else:
                 print(f"  [=] Usuario ya existe: {u_data['email']}")
 
-        # 3. Seed Unidades de Medida — ANTES que ingredientes (FK)
+        # 3. Seed Unidades de Medida - ANTES que ingredientes (FK)
         print("Sedeando unidades de medida...")
         for u_data in UNIDADES_MEDIDA_INICIALES:
             existing = session.exec(select(UnidadMedida).where(UnidadMedida.nombre == u_data["nombre"])).first()
@@ -176,7 +281,100 @@ def run() -> None:
                 session.add(existing)
                 print(f"  [=] Ingrediente actualizado: {existing.nombre}")
 
-        # 5. Seed Estados de Pedido
+        session.flush()
+
+        # 5. Seed Categorias
+        print("Sedeando categorias...")
+        for c_data in CATEGORIAS_INICIALES:
+            padre_id = None
+            if c_data["padre"]:
+                padre = session.exec(select(Categoria).where(Categoria.nombre == c_data["padre"])).first()
+                padre_id = padre.id if padre else None
+
+            existing = session.exec(select(Categoria).where(Categoria.nombre == c_data["nombre"])).first()
+            if not existing:
+                categoria = Categoria(
+                    nombre=c_data["nombre"],
+                    descripcion=c_data["descripcion"],
+                    padre_id=padre_id,
+                )
+                session.add(categoria)
+                print(f"  [+] Categoria creada: {c_data['nombre']}")
+            else:
+                existing.descripcion = c_data["descripcion"]
+                existing.padre_id = padre_id
+                session.add(existing)
+                print(f"  [=] Categoria actualizada: {existing.nombre}")
+
+            session.flush()
+
+        # 6. Seed Productos
+        print("Sedeando productos...")
+        for p_data in PRODUCTOS_INICIALES:
+            unidad_obj = session.exec(select(UnidadMedida).where(UnidadMedida.nombre == p_data["unidad"])).first()
+            categoria_obj = session.exec(select(Categoria).where(Categoria.nombre == p_data["categoria"])).first()
+            image_url = f"/static/uploads/seed/{p_data['imagen']}"
+
+            existing = session.exec(select(Producto).where(Producto.nombre == p_data["nombre"])).first()
+            if not existing:
+                producto = Producto(
+                    nombre=p_data["nombre"],
+                    descripcion=p_data["descripcion"],
+                    imagen_url=image_url,
+                    imagenes=[image_url],
+                    precio_base=Decimal(p_data["precio_base"]),
+                    stock_cantidad=p_data["stock"],
+                    disponible=True,
+                    unidad_venta_id=unidad_obj.id if unidad_obj else None,
+                    margen_ganancia=Decimal(p_data["margen"]),
+                )
+                session.add(producto)
+                session.flush()
+                print(f"  [+] Producto creado: {producto.nombre}")
+            else:
+                producto = existing
+                producto.descripcion = p_data["descripcion"]
+                producto.imagen_url = image_url
+                producto.imagenes = [image_url]
+                producto.precio_base = Decimal(p_data["precio_base"])
+                producto.stock_cantidad = p_data["stock"]
+                producto.disponible = True
+                producto.unidad_venta_id = unidad_obj.id if unidad_obj else None
+                producto.margen_ganancia = Decimal(p_data["margen"])
+                session.add(producto)
+                session.flush()
+                print(f"  [=] Producto actualizado: {producto.nombre}")
+
+            for rel in session.exec(select(ProductoCategoria).where(ProductoCategoria.producto_id == producto.id)).all():
+                session.delete(rel)
+            for rel in session.exec(select(ProductoIngrediente).where(ProductoIngrediente.producto_id == producto.id)).all():
+                session.delete(rel)
+            session.flush()
+
+            if categoria_obj:
+                session.add(
+                    ProductoCategoria(
+                        producto_id=producto.id,
+                        categoria_id=categoria_obj.id,
+                        es_principal=True,
+                    )
+                )
+
+            for ing_data in p_data["ingredientes"]:
+                ingrediente = session.exec(select(Ingrediente).where(Ingrediente.nombre == ing_data["nombre"])).first()
+                unidad_receta = session.exec(select(UnidadMedida).where(UnidadMedida.nombre == ing_data["unidad"])).first()
+                if ingrediente and unidad_receta:
+                    session.add(
+                        ProductoIngrediente(
+                            producto_id=producto.id,
+                            ingrediente_id=ingrediente.id,
+                            cantidad=Decimal(ing_data["cantidad"]),
+                            unidad_medida_id=unidad_receta.id,
+                            es_removible=ing_data["removible"],
+                        )
+                    )
+
+        # 7. Seed Estados de Pedido
         print("Sedeando estados de pedido...")
         for e_data in ESTADOS_PEDIDO_INICIALES:
             existing = session.exec(select(EstadoPedido).where(EstadoPedido.codigo == e_data["codigo"])).first()
@@ -184,9 +382,13 @@ def run() -> None:
                 session.add(EstadoPedido(**e_data))
                 print(f"  [+] Estado creado: {e_data['codigo']}")
             else:
-                print(f"  [=] Estado ya existe: {e_data['codigo']}")
+                existing.descripcion = e_data["descripcion"]
+                existing.orden = e_data["orden"]
+                existing.es_terminal = e_data["es_terminal"]
+                session.add(existing)
+                print(f"  [=] Estado actualizado: {e_data['codigo']}")
 
-        # 6. Seed Formas de Pago
+        # 8. Seed Formas de Pago
         print("Sedeando formas de pago...")
         for f_data in FORMAS_PAGO_INICIALES:
             existing = session.exec(select(FormaPago).where(FormaPago.codigo == f_data["codigo"])).first()

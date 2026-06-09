@@ -1,12 +1,15 @@
 """Router de Pedidos — endpoints CRUD con FSM de estados."""
 
+import json
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, Path, Query, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel
 
 from app.core.deps import get_current_user, require_role
+from app.core.security import decode_access_token
 from app.core.uow import UnitOfWork, get_uow
+from app.core.websocket import manager
 from app.modules.pedidos.schemas import (
     AvanzarEstadoRequest,
     EstadoPedidoResponse,
@@ -60,18 +63,27 @@ def listar_pedidos(
     )
 
 
+@router.get(
+    "/cocina",
+    response_model=List[PedidoResponse],
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))],
+)
+def listar_pedidos_cocina(uow: Annotated[UnitOfWork, Depends(get_uow)]):
+    return PedidoService(uow).listar_pedidos_cocina()
+
+
 @router.post(
     "",
     response_model=PedidoResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_role(["CLIENT", "ADMIN"]))],
 )
-def crear_pedido(
+async def crear_pedido(
     data: PedidoCreate,
     uow: Annotated[UnitOfWork, Depends(get_uow)] = None,
     current_user: Annotated[Usuario, Depends(get_current_user)] = None,
 ):
-    return PedidoService(uow).crear_pedido(data, current_user)
+    return await PedidoService(uow).crear_pedido(data, current_user)
 
 
 @router.get("/{pedido_id}", response_model=PedidoDetail, responses={404: {"description": "Pedido no encontrado"}})
@@ -87,15 +99,15 @@ def obtener_pedido(
     "/{pedido_id}/estado",
     response_model=PedidoResponse,
     responses={404: {"description": "Pedido no encontrado"}, 409: {"description": "Transición inválida"}},
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS"]))],
+    dependencies=[Depends(require_role(["ADMIN", "CAJERO", "COCINA_STOCK"]))],
 )
-def avanzar_estado(
+async def avanzar_estado(
     pedido_id: Annotated[int, Path(ge=1)],
     data: AvanzarEstadoRequest,
     uow: Annotated[UnitOfWork, Depends(get_uow)] = None,
     current_user: Annotated[Usuario, Depends(get_current_user)] = None,
 ):
-    return PedidoService(uow).avanzar_estado(pedido_id, data, current_user)
+    return await PedidoService(uow).avanzar_estado(pedido_id, data, current_user)
 
 
 @router.post(
@@ -103,10 +115,78 @@ def avanzar_estado(
     response_model=PedidoResponse,
     responses={404: {"description": "Pedido no encontrado"}, 409: {"description": "No se puede cancelar"}},
 )
-def cancelar_pedido(
+async def cancelar_pedido(
     pedido_id: Annotated[int, Path(ge=1)],
     data: CancelarRequest,
     uow: Annotated[UnitOfWork, Depends(get_uow)] = None,
     current_user: Annotated[Usuario, Depends(get_current_user)] = None,
 ):
-    return PedidoService(uow).cancelar_pedido(pedido_id, data.motivo, current_user)
+    return await PedidoService(uow).cancelar_pedido(pedido_id, data.motivo, current_user)
+
+
+@router.websocket("/ws")
+async def pedidos_websocket(websocket: WebSocket):
+    token = websocket.cookies.get("access_token")
+    if not token:
+        await websocket.accept()
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token requerido")
+        return
+
+    payload = decode_access_token(token)
+    user_id_raw = payload.get("sub") if payload else None
+    if user_id_raw is None:
+        await websocket.accept()
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalido")
+        return
+
+    try:
+        user_id = int(user_id_raw)
+    except ValueError:
+        await websocket.accept()
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalido")
+        return
+
+    roles: list[str] = payload.get("roles", []) if payload else []
+    with UnitOfWork() as uow:
+        user = uow.usuarios.get_by_id(user_id)
+        if user is None or user.deleted_at is not None:
+            await websocket.accept()
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Usuario invalido")
+            return
+
+    await manager.connect(websocket, roles=roles, user_id=user_id)
+    staff_roles = {"ADMIN", "CAJERO", "COCINA_STOCK"}
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                message = json.loads(raw)
+            except json.JSONDecodeError:
+                await websocket.send_json({"event": "ERROR", "data": {"detail": "JSON invalido"}})
+                continue
+
+            action = message.get("action")
+            order_id = message.get("order_id")
+            if not isinstance(order_id, int):
+                await websocket.send_json({"event": "ERROR", "data": {"detail": "order_id invalido"}})
+                continue
+
+            if action == "subscribe-order":
+                if not any(role in staff_roles for role in roles):
+                    with UnitOfWork() as uow:
+                        pedido = uow.pedidos.get_by_id_with_relations(order_id)
+                        if pedido is None or pedido.usuario_id != user_id:
+                            await websocket.send_json({
+                                "event": "ERROR",
+                                "data": {"detail": "No autorizado para este pedido"},
+                            })
+                            continue
+                manager.join_order_room(websocket, order_id)
+                await websocket.send_json({"event": "SUBSCRIBED", "data": {"order_id": order_id}})
+            elif action == "unsubscribe-order":
+                manager.leave_order_room(websocket, order_id)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        manager.disconnect(websocket)
