@@ -19,6 +19,7 @@ export interface RegisterRequest {
   celular: string;
   password: string;
   direccion: {
+    alias?: string;
     linea1: string;
     linea2?: string;
     ciudad: string;
