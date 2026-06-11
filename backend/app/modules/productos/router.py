@@ -38,10 +38,10 @@ def list_productos(
     estado: Annotated[str, Query(pattern="^(activo|inactivo|todos)$")] = "activo",
     sort_by: Annotated[str, Query(pattern="^(nombre|precio_base|stock_cantidad|created_at|updated_at)$")] = "nombre",
     sort_order: Annotated[str, Query(pattern="^(asc|desc)$")] = "asc",
-    created_from: Annotated[Optional[str], Query(pattern="^\d{4}-\d{2}-\d{2}$")] = None,
-    created_to: Annotated[Optional[str], Query(pattern="^\d{4}-\d{2}-\d{2}$")] = None,
-    updated_from: Annotated[Optional[str], Query(pattern="^\d{4}-\d{2}-\d{2}$")] = None,
-    updated_to: Annotated[Optional[str], Query(pattern="^\d{4}-\d{2}-\d{2}$")] = None,
+    created_from: Annotated[Optional[str], Query(pattern=r"^\d{4}-\d{2}-\d{2}$")] = None,
+    created_to: Annotated[Optional[str], Query(pattern=r"^\d{4}-\d{2}-\d{2}$")] = None,
+    updated_from: Annotated[Optional[str], Query(pattern=r"^\d{4}-\d{2}-\d{2}$")] = None,
+    updated_to: Annotated[Optional[str], Query(pattern=r"^\d{4}-\d{2}-\d{2}$")] = None,
     starts_with: Annotated[Optional[str], Query(max_length=1)] = None,
 ):
     """Catálogo de productos con filtros avanzados, ordenamiento y paginación."""
@@ -81,7 +81,7 @@ def get_producto(
     "",
     response_model=ProductoRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(["ADMIN"]))]
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))]
 )
 def create_producto(data: ProductoCreate):
     """Crear un nuevo producto con categorías e ingredientes asociados."""
@@ -94,7 +94,7 @@ def create_producto(data: ProductoCreate):
     "/{prod_id}",
     response_model=ProductoRead,
     responses={404: {"description": "Producto no encontrado"}},
-    dependencies=[Depends(require_role(["ADMIN"]))]
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))]
 )
 def update_producto(
     prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
@@ -109,13 +109,13 @@ def update_producto(
     "/{prod_id}/stock",
     response_model=ProductoRead,
     responses={404: {"description": "Producto no encontrado"}},
-    dependencies=[Depends(require_role(["ADMIN", "STOCK"]))],
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))],
 )
 def actualizar_stock_producto(
     prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
     data: ProductoStockUpdate,
 ):
-    """Actualizar solo el stock físico de un producto. Permitido para ADMIN y STOCK."""
+    """Actualizar solo el stock fisico de un producto. Permitido para ADMIN y COCINA_STOCK."""
     with UnitOfWork() as uow:
         prod = service.update_stock_producto(uow, prod_id, data.stock_cantidad)
         return service.get_producto_detail(uow, prod_id)
@@ -124,7 +124,7 @@ def actualizar_stock_producto(
     "/{prod_id}/disponibilidad",
     response_model=ProductoRead,
     responses={404: {"description": "Producto no encontrado"}},
-    dependencies=[Depends(require_role(["ADMIN", "STOCK"]))],
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))],
 )
 def actualizar_disponibilidad_producto(
     prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
@@ -139,7 +139,7 @@ def actualizar_disponibilidad_producto(
     "/{prod_id}/baja",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={404: {"description": "Producto no encontrado"}},
-    dependencies=[Depends(require_role(["ADMIN"]))]
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))]
 )
 def dar_de_baja_producto(
     prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
@@ -153,7 +153,7 @@ def dar_de_baja_producto(
     "/{prod_id}/restore",
     status_code=status.HTTP_200_OK,
     responses={404: {"description": "Producto no encontrado"}},
-    dependencies=[Depends(require_role(["ADMIN"]))]
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))]
 )
 def restore_producto(
     prod_id: Annotated[int, Path(ge=1, description="ID del producto")],
@@ -167,7 +167,7 @@ def restore_producto(
     "/{prod_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={404: {"description": "Producto no encontrado"}},
-    dependencies=[Depends(require_role(["ADMIN"]))]
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))]
 )
 def eliminar_producto(
     prod_id: Annotated[int, Path(ge=1, description="ID del producto")],

@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 import io
 
 from app.core.uow import UnitOfWork, get_uow
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_role
 from app.modules.usuarios.model import Usuario
 from app.modules.ingredientes.service import IngredienteService
 from app.modules.ingredientes.schemas import (
@@ -15,7 +15,11 @@ from app.modules.ingredientes.schemas import (
     PaginatedIngredientes,
 )
 
-router = APIRouter(prefix="/api/v1/ingredientes", tags=["Ingredientes"])
+router = APIRouter(
+    prefix="/api/v1/ingredientes",
+    tags=["Ingredientes"],
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))],
+)
 
 
 @router.get("", response_model=PaginatedIngredientes)

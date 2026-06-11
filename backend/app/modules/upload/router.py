@@ -1,15 +1,19 @@
 """Router para subida de archivos estáticos (imágenes)."""
-import os
 import uuid
 from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
 from app.core.deps import require_role
+from app.core.media import STATIC_UPLOADS_URL, UPLOAD_DIR
 
 router = APIRouter(prefix="/api/v1/upload", tags=["Uploads"])
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-@router.post("/imagen", response_model=dict, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_role(["ADMIN"]))])
+@router.post(
+    "/imagen",
+    response_model=dict,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_role(["ADMIN", "COCINA_STOCK"]))],
+)
 async def upload_imagen(file: UploadFile = File(...)):
     """Sube una imagen y retorna su URL estática."""
     if not file.content_type.startswith("image/"):
@@ -18,14 +22,14 @@ async def upload_imagen(file: UploadFile = File(...)):
     # Generar nombre único
     ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
     unique_filename = f"{uuid.uuid4().hex}.{ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    file_path = UPLOAD_DIR / unique_filename
     
     # Guardar archivo
     try:
-        with open(file_path, "wb") as buffer:
+        with file_path.open("wb") as buffer:
             content = await file.read()
             buffer.write(content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al guardar la imagen: {str(e)}")
         
-    return {"url": f"/static/uploads/{unique_filename}"}
+    return {"url": f"{STATIC_UPLOADS_URL}/{unique_filename}"}

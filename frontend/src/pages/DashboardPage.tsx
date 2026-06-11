@@ -1,5 +1,8 @@
+
 import React, { useState } from "react";
-import { Package, ShieldCheck, Tags, ShoppingBag, ClipboardList, Users, TrendingUp, DollarSign, ShoppingCart, X } from "lucide-react";
+
+import { ChefHat, Package, ShieldCheck, Tags, ShoppingBag, ClipboardList, Users } from "lucide-react";
+
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useDashboardEstadisticas } from "../hooks/useEstadisticas";
@@ -95,11 +98,18 @@ export default function DashboardPage() {
       color: "bg-green-main",
     },
     {
-      title: "Pedidos",
-      description: "Gestión y seguimiento de pedidos con avance de estado",
+      title: "Cajero",
+      description: "Confirmacion y cierre operativo de pedidos",
       icon: ClipboardList,
       to: "/pedidos",
       color: "bg-purple-500",
+    },
+    {
+      title: "Cocina",
+      description: "Preparacion de pedidos confirmados y control de cocina",
+      icon: ChefHat,
+      to: "/cocina",
+      color: "bg-emerald-500",
     },
     {
       title: "Usuarios",

@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 
 from app.core.uow import UnitOfWork
+from app.core.websocket import manager
 from app.modules.pedidos.model import DetallePedido, HistorialEstadoPedido, Pedido
 from app.modules.pedidos.schemas import (
     AvanzarEstadoRequest,
@@ -20,13 +21,54 @@ from app.modules.usuarios.model import Usuario
 
 # Mapa de transiciones válidas. Si el estado no está → es terminal (RN-01)
 FSM_TRANSITIONS: dict[str, list[str]] = {
-    "PENDIENTE":  ["CONFIRMADO", "CANCELADO"],
-    "CONFIRMADO": ["EN_PREP",    "CANCELADO"],
-    "EN_PREP":    ["EN_CAMINO",  "CANCELADO"],
-    "EN_CAMINO":  ["ENTREGADO"],
+    "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
+    "CONFIRMADO": ["EN_PREP", "CANCELADO"],
+    "EN_PREP": ["LISTO", "CANCELADO"],
+    "LISTO": ["EN_CAMINO", "ENTREGADO"],
+    "EN_CAMINO": ["ENTREGADO"],
+}
+
+ROLE_TRANSITIONS: dict[str, dict[str, list[str]]] = {
+    "ADMIN": FSM_TRANSITIONS,
+    "CAJERO": {
+        "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
+        "LISTO": ["EN_CAMINO", "ENTREGADO"],
+        "EN_CAMINO": ["ENTREGADO"],
+    },
+    "COCINA_STOCK": {
+        "CONFIRMADO": ["EN_PREP"],
+        "EN_PREP": ["LISTO"],
+    },
 }
 
 COSTO_ENVIO_DEFAULT = Decimal("50.00")
+COSTO_RETIRO_LOCAL = Decimal("0.00")
+
+EVENTOS_WS: dict[str, str] = {
+    "PENDIENTE": "NUEVO_PEDIDO",
+    "CONFIRMADO": "PEDIDO_CONFIRMADO",
+    "EN_PREP": "PEDIDO_EN_PREPARACION",
+    "LISTO": "PEDIDO_LISTO",
+    "EN_CAMINO": "PEDIDO_EN_CAMINO",
+    "ENTREGADO": "PEDIDO_ENTREGADO",
+    "CANCELADO": "PEDIDO_CANCELADO",
+}
+
+ROLES_POR_ESTADO: dict[str, list[str]] = {
+    "PENDIENTE": ["CAJERO", "ADMIN"],
+    "CONFIRMADO": ["COCINA_STOCK", "ADMIN"],
+    "EN_PREP": ["COCINA_STOCK", "ADMIN"],
+    "LISTO": ["CAJERO", "ADMIN"],
+    "EN_CAMINO": ["CAJERO", "ADMIN"],
+    "ENTREGADO": ["CAJERO", "ADMIN"],
+    "CANCELADO": ["CAJERO", "COCINA_STOCK", "ADMIN"],
+}
+
+ESTADOS_COCINA = ("CONFIRMADO", "EN_PREP")
+ESTADOS_VISIBLES_POR_ROL: dict[str, list[str]] = {
+    "CAJERO": ["PENDIENTE", "LISTO", "EN_CAMINO", "ENTREGADO", "CANCELADO"],
+    "COCINA_STOCK": ["CONFIRMADO", "EN_PREP"],
+}
 
 
 class PedidoService:
@@ -34,7 +76,7 @@ class PedidoService:
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
-    def crear_pedido(self, data: PedidoCreate, usuario: Usuario) -> PedidoResponse:
+    async def crear_pedido(self, data: PedidoCreate, usuario: Usuario) -> PedidoResponse:
         """Crea un pedido desde el carrito con transacción atómica (Unit of Work)."""
         with self.uow:
             forma_pago = self.uow.formas_pago.get_by_codigo(data.forma_pago_codigo)
@@ -98,7 +140,8 @@ class PedidoService:
                 })
                 productos_a_decrementar.append((producto, item.cantidad, es_elaborable))
 
-            total = subtotal - Decimal("0.00") + COSTO_ENVIO_DEFAULT
+            costo_envio = COSTO_RETIRO_LOCAL if data.direccion_id is None else COSTO_ENVIO_DEFAULT
+            total = subtotal - Decimal("0.00") + costo_envio
 
             pedido = Pedido(
                 usuario_id=usuario.id,
@@ -107,7 +150,7 @@ class PedidoService:
                 forma_pago_codigo=data.forma_pago_codigo,
                 subtotal=subtotal,
                 descuento=Decimal("0.00"),
-                costo_envio=COSTO_ENVIO_DEFAULT,
+                costo_envio=costo_envio,
                 total=total,
                 notas=data.notas,
             )
@@ -140,7 +183,10 @@ class PedidoService:
                 motivo="Pedido creado",
             ))
 
-            return PedidoResponse.model_validate(pedido)
+            result = PedidoResponse.model_validate(pedido)
+
+        await self._emit_ws_events(result)
+        return result
 
     def listar_pedidos(
         self,
@@ -153,14 +199,20 @@ class PedidoService:
         fecha_hasta: Optional[str] = None,
         forma_pago_codigo: Optional[str] = None,
     ) -> PaginatedPedidos:
-        """CLIENT ve solo sus pedidos. ADMIN/PEDIDOS ven todos."""
+        """CLIENT ve solo sus pedidos. ADMIN/CAJERO/COCINA_STOCK ven todos."""
         with self.uow:
             filtro_usuario = usuario.id if usuario.role == "CLIENT" else None
+            estados_visibles = ESTADOS_VISIBLES_POR_ROL.get(usuario.role)
+            if estados_visibles and estado_codigo and estado_codigo not in estados_visibles:
+                result = {"items": [], "total": 0, "page": page, "per_page": per_page, "pages": 1}
+                return PaginatedPedidos(**result)
+
             result = self.uow.pedidos.get_paginated(
                 page=page,
                 per_page=per_page,
                 usuario_id=filtro_usuario,
                 estado_codigo=estado_codigo,
+                estados_codigos=estados_visibles,
                 pedido_id=pedido_id,
                 fecha_desde=fecha_desde,
                 fecha_hasta=fecha_hasta,
@@ -178,7 +230,7 @@ class PedidoService:
                 raise HTTPException(status_code=403, detail="No tenés permiso para ver este pedido")
             return PedidoDetail.model_validate(pedido)
 
-    def avanzar_estado(self, pedido_id: int, data: AvanzarEstadoRequest, usuario: Usuario) -> PedidoResponse:
+    async def avanzar_estado(self, pedido_id: int, data: AvanzarEstadoRequest, usuario: Usuario) -> PedidoResponse:
         """Avanza el estado validando la FSM. La validación ocurre en el Service, nunca en el Router."""
         with self.uow:
             pedido = self.uow.pedidos.get_by_id_with_relations(pedido_id)
@@ -203,6 +255,24 @@ class PedidoService:
                     status_code=409,
                     detail=f"Transición inválida: '{estado_actual}' → '{estado_destino}'. Válidas: {transiciones_validas}",
                 )
+
+            if pedido.direccion_id is None and estado_actual == "LISTO" and estado_destino == "EN_CAMINO":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Los pedidos con retiro en local no pueden pasar a 'EN_CAMINO'. Usar 'ENTREGADO'.",
+                )
+
+            if usuario.role != "CLIENT":
+                transiciones_por_rol = ROLE_TRANSITIONS.get(usuario.role, {})
+                transiciones_permitidas = transiciones_por_rol.get(estado_actual, [])
+                if estado_destino not in transiciones_permitidas:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=(
+                            f"Tu rol '{usuario.role}' no puede realizar la transicion "
+                            f"'{estado_actual}' -> '{estado_destino}'"
+                        ),
+                    )
 
             if not self.uow.estados_pedido.get_by_codigo(estado_destino):
                 raise HTTPException(status_code=400, detail=f"Estado '{estado_destino}' no existe")
@@ -232,15 +302,23 @@ class PedidoService:
                 motivo=data.motivo,
             ))
 
-            return PedidoResponse.model_validate(pedido)
+            result = PedidoResponse.model_validate(pedido)
 
-    def cancelar_pedido(self, pedido_id: int, motivo: str, usuario: Usuario) -> PedidoResponse:
+        await self._emit_ws_events(result)
+        return result
+
+    async def cancelar_pedido(self, pedido_id: int, motivo: str, usuario: Usuario) -> PedidoResponse:
         """Atajo de cancelación para el cliente. Delega a avanzar_estado()."""
-        return self.avanzar_estado(
+        return await self.avanzar_estado(
             pedido_id,
             AvanzarEstadoRequest(estado_hacia="CANCELADO", motivo=motivo),
             usuario,
         )
+
+    def listar_pedidos_cocina(self) -> list[PedidoResponse]:
+        with self.uow:
+            pedidos = self.uow.pedidos.get_by_estados(ESTADOS_COCINA, sort_order="asc")
+            return [PedidoResponse.model_validate(pedido) for pedido in pedidos]
 
     def listar_estados(self):
         with self.uow:
@@ -249,3 +327,12 @@ class PedidoService:
     def listar_formas_pago(self):
         with self.uow:
             return self.uow.formas_pago.get_habilitadas()
+
+    async def _emit_ws_events(self, pedido: PedidoResponse) -> None:
+        event = EVENTOS_WS.get(pedido.estado_codigo)
+        if event is None:
+            return
+
+        data = pedido.model_dump(mode="json")
+        await manager.broadcast_to_order(pedido.id, event, data)
+        await manager.broadcast_to_roles(ROLES_POR_ESTADO.get(pedido.estado_codigo, []), event, data)

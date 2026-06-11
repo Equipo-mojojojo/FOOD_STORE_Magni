@@ -2,11 +2,13 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { usePedido } from "../../hooks/usePedidos";
+import PedidoTimeline from "../../components/PedidoTimeline";
 
 const ESTADO_BADGE: Record<string, string> = {
   PENDIENTE: "bg-yellow-100 text-yellow-800",
   CONFIRMADO: "bg-blue-100 text-blue-800",
   EN_PREP: "bg-orange-100 text-orange-800",
+  LISTO: "bg-emerald-100 text-emerald-800",
   EN_CAMINO: "bg-purple-100 text-purple-800",
   ENTREGADO: "bg-green-100 text-green-800",
   CANCELADO: "bg-red-100 text-red-800",
@@ -16,6 +18,7 @@ const ESTADO_LABEL: Record<string, string> = {
   PENDIENTE: "Pendiente",
   CONFIRMADO: "Confirmado",
   EN_PREP: "En preparación",
+  LISTO: "Listo",
   EN_CAMINO: "En camino",
   ENTREGADO: "Entregado",
   CANCELADO: "Cancelado",
@@ -23,9 +26,11 @@ const ESTADO_LABEL: Record<string, string> = {
 
 interface Props {
   pedidoId: number;
+  backTo?: string;
+  backLabel?: string;
 }
 
-export default function PedidoDetalleGrid({ pedidoId }: Props) {
+export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volver" }: Props) {
   const { data: pedido, isLoading, isError } = usePedido(pedidoId);
   const navigate = useNavigate();
 
@@ -51,10 +56,10 @@ export default function PedidoDetalleGrid({ pedidoId }: Props) {
     <div className="space-y-6">
       {/* Volver */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => (backTo ? navigate(backTo) : navigate(-1))}
         className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
       >
-        <ArrowLeft size={16} /> Volver
+        <ArrowLeft size={16} /> {backLabel}
       </button>
 
       {/* Cabecera */}
@@ -80,6 +85,7 @@ export default function PedidoDetalleGrid({ pedidoId }: Props) {
             {ESTADO_LABEL[pedido.estado_codigo] || pedido.estado_codigo}
           </span>
         </div>
+        <PedidoTimeline estado={pedido.estado_codigo} isRetiro={pedido.direccion_id === null} />
 
         {/* Info de pago */}
         <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">

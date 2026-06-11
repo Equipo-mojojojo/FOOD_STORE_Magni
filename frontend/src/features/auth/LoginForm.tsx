@@ -26,9 +26,9 @@ export default function LoginForm() {
 
       if (hasRole("ADMIN")) {
         navigate("/dashboard");
-      } else if (hasRole("STOCK")) {
-        navigate("/productos");
-      } else if (hasRole("PEDIDOS")) {
+      } else if (hasRole("COCINA_STOCK")) {
+        navigate("/cocina");
+      } else if (hasRole("CAJERO")) {
         navigate("/pedidos");
       } else {
         navigate("/");

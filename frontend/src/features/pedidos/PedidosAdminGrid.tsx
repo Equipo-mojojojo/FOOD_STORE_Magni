@@ -1,8 +1,10 @@
 /** Grilla de gestión de pedidos — filtros, paginación y botones FSM. */
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { usePedidos, useAvanzarEstado, useFormasPago } from "../../hooks/usePedidos";
+import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedidosWebSocket";
 import { useAuthStore } from "../../store/authStore";
 import Pagination from "../../components/Pagination";
 import type { PedidoResponse, PedidosFilters } from "../../types";
@@ -11,6 +13,7 @@ const ESTADO_BADGE: Record<string, string> = {
   PENDIENTE: "bg-yellow-100 text-yellow-800",
   CONFIRMADO: "bg-blue-100 text-blue-800",
   EN_PREP: "bg-orange-100 text-orange-800",
+  LISTO: "bg-emerald-100 text-emerald-800",
   EN_CAMINO: "bg-purple-100 text-purple-800",
   ENTREGADO: "bg-green-100 text-green-800",
   CANCELADO: "bg-red-100 text-red-800",
@@ -20,6 +23,7 @@ export const ESTADO_LABEL: Record<string, string> = {
   PENDIENTE: "Pendiente",
   CONFIRMADO: "Confirmado",
   EN_PREP: "En preparación",
+  LISTO: "Listo",
   EN_CAMINO: "En camino",
   ENTREGADO: "Entregado",
   CANCELADO: "Cancelado",
@@ -27,14 +31,16 @@ export const ESTADO_LABEL: Record<string, string> = {
 
 const FSM: Record<string, string[]> = {
   PENDIENTE: ["CONFIRMADO", "CANCELADO"],
-  CONFIRMADO: ["EN_PREP", "CANCELADO"],
-  EN_PREP: ["EN_CAMINO", "CANCELADO"],
+  CONFIRMADO: ["CANCELADO"],
+  LISTO: ["EN_CAMINO", "ENTREGADO"],
   EN_CAMINO: ["ENTREGADO"],
 };
 
 function AccionButtons({ pedido }: { pedido: PedidoResponse }) {
   const avanzar = useAvanzarEstado();
-  const siguientes = FSM[pedido.estado_codigo] ?? [];
+  const siguientes = (FSM[pedido.estado_codigo] ?? []).filter(
+    (estado) => !(pedido.direccion_id === null && estado === "EN_CAMINO"),
+  );
 
   if (siguientes.length === 0) return <span className="text-xs text-gray-400">—</span>;
 
@@ -74,9 +80,27 @@ export default function PedidosAdminGrid() {
   const [idInput, setIdInput] = useState("");
 
   const hasRole = useAuthStore((s) => s.hasRole);
-  const canManagePedidos = hasRole("ADMIN") || hasRole("PEDIDOS");
+  const canManagePedidos = hasRole("ADMIN") || hasRole("CAJERO");
+  const estadoOptions = hasRole("ADMIN")
+    ? Object.entries(ESTADO_LABEL)
+    : Object.entries(ESTADO_LABEL).filter(([estado]) =>
+        ["PENDIENTE", "LISTO", "EN_CAMINO", "ENTREGADO", "CANCELADO"].includes(estado),
+      );
+  const queryClient = useQueryClient();
   const { data, isLoading } = usePedidos(filters);
   const { data: formasPago } = useFormasPago();
+
+  usePedidosWebSocket({
+    enabled: canManagePedidos,
+    onMessage: useCallback(
+      (msg: PedidoWsMessage) => {
+        if (msg.event !== "ERROR") {
+          queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+        }
+      },
+      [queryClient],
+    ),
+  });
 
   const handleFilter = (key: keyof PedidosFilters, value: string) => {
     setFilters((f) => ({ ...f, [key]: value || undefined, page: 1 }));
@@ -90,8 +114,8 @@ export default function PedidosAdminGrid() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-green-dark">Gestión de Pedidos</h1>
-        <p className="text-sm text-gray-500 mt-1">Administrá y avanzá el estado de los pedidos.</p>
+        <h1 className="text-2xl font-bold text-green-dark">Cajero</h1>
+        <p className="text-sm text-gray-500 mt-1">Confirma pedidos y gestiona entrega o envio.</p>
       </div>
 
       {/* Filtros */}
@@ -119,7 +143,7 @@ export default function PedidosAdminGrid() {
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
           >
             <option value="">Todos los estados</option>
-            {Object.entries(ESTADO_LABEL).map(([k, v]) => (
+            {estadoOptions.map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
           </select>
@@ -207,7 +231,8 @@ export default function PedidosAdminGrid() {
                       <div className="flex items-center gap-2 flex-wrap">
                         {canManagePedidos && <AccionButtons pedido={pedido} />}
                         <Link
-                          to={`/pedidos/${pedido.id}`}
+                          to={`/gestion/pedidos/${pedido.id}`}
+                          state={{ from: "/pedidos", backLabel: "Volver a pedidos" }}
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
                         >
                           Ver detalle

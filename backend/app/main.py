@@ -12,7 +12,11 @@ from app.modules.pedidos.router import router as pedidos_router
 from app.modules.usuarios.router import router as usuarios_router
 from app.modules.direcciones.router import router as direcciones_router
 from app.modules.upload.router import router as upload_router
+
 from app.modules.estadisticas.router import router as estadisticas_router
+
+from app.core.media import UPLOAD_DIR
+
 
 app = FastAPI(
     title="🍔 Food Store API",
@@ -33,9 +37,8 @@ app.add_middleware(
 )
 
 # Servir archivos estáticos (uploads)
-import os
-os.makedirs("uploads", exist_ok=True)
-app.mount("/static/uploads", StaticFiles(directory="uploads"), name="static_uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="static_uploads")
 
 
 @app.on_event("startup")

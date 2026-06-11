@@ -3,7 +3,7 @@ import { X, Check, UploadCloud, Trash2 } from "lucide-react";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
 import { useIngredientes } from "../../hooks/useIngredientes";
 import { useUnidadesMedida } from "../../hooks/useUnidadesMedida";
-import type { Producto, ProductoCreate, ProductoIngredienteCreate } from "../../types";
+import type { Producto, ProductoCategoriaCreate, ProductoCreate, ProductoIngredienteCreate } from "../../types";
 import { uploadApi } from "../../api/uploadApi";
 
 interface Props {
@@ -13,8 +13,22 @@ interface Props {
   onSave: (data: ProductoCreate, id?: number) => Promise<void>;
 }
 
+interface ProductoFormData {
+  nombre: string;
+  descripcion: string;
+  precio_base: number | string;
+  stock_cantidad: number | string;
+  margen_ganancia: number | string;
+  disponible: boolean;
+  activo: boolean;
+  unidad_venta_id: number | null;
+  imagenes: string[];
+  categorias: ProductoCategoriaCreate[];
+  ingredientes: ProductoIngredienteCreate[];
+}
+
 export default function ProductoForm({ isOpen, producto, onClose, onSave }: Props) {
-  const [formData, setFormData] = useState<any>({
+  const [formData, setFormData] = useState<ProductoFormData>({
     nombre: "",
     descripcion: "",
     precio_base: "",
@@ -204,7 +218,11 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
     });
   };
 
-  const updateIngrediente = (id: number, field: keyof ProductoIngredienteCreate, value: any) => {
+  const updateIngrediente = (
+    id: number,
+    field: keyof ProductoIngredienteCreate,
+    value: string | number | boolean,
+  ) => {
     setFormData(prev => ({
       ...prev,
       ingredientes: prev.ingredientes.map(i => i.ingrediente_id === id ? { ...i, [field]: value } : i)
@@ -227,11 +245,17 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         margen_ganancia: Number(formData.margen_ganancia || 0),
         activo: formData.disponible, // Sincronizamos activo con disponible
         descripcion: formData.descripcion?.trim() || null,
-        ingredientes: formData.ingredientes.map((i: any) => ({ ...i, cantidad: Number(i.cantidad || 0) }))
-      };
+        ingredientes: formData.ingredientes.map((i) => ({ ...i, cantidad: Number(i.cantidad || 0) }))
+      } satisfies ProductoCreate;
       await onSave(dataToSend, producto?.id);
-    } catch (err: any) {
-      setError(err.response?.data?.detail?.[0]?.msg || err.response?.data?.detail || "Error al guardar el producto");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string | { msg?: string }[] } } };
+      const detail = axiosErr.response?.data?.detail;
+      setError(
+        Array.isArray(detail)
+          ? detail[0]?.msg || "Error al guardar el producto"
+          : detail || "Error al guardar el producto",
+      );
     } finally {
       setLoading(false);
     }
@@ -319,8 +343,9 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                             setLoading(true);
                             const url = await uploadApi.uploadImagen(file);
                             setFormData({ ...formData, imagenes: [...(formData.imagenes || []), url] });
-                          } catch (err: any) {
-                            setError(err.response?.data?.detail || "Error al subir la imagen");
+                          } catch (err: unknown) {
+                            const axiosErr = err as { response?: { data?: { detail?: string } } };
+                            setError(axiosErr.response?.data?.detail || "Error al subir la imagen");
                           } finally {
                             setLoading(false);
                           }
