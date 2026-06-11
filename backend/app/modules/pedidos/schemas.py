@@ -64,12 +64,6 @@ class PedidoCreate(BaseModel):
         if len(ids) != len(set(ids)):
             raise ValueError("El carrito contiene productos duplicados")
             
-        # Validación de dirección (NULL para efectivo/retiro en local)
-        if self.forma_pago_codigo == "EFECTIVO":
-            self.direccion_id = None
-        elif self.direccion_id is None:
-            raise ValueError("Se requiere una dirección de entrega válida")
-            
         return self
 
 

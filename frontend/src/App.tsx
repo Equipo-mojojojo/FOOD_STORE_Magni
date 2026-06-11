@@ -31,6 +31,8 @@ import PedidoDetallePage from "./pages/PedidoDetallePage";
 import StorefrontCatalogoPage from "./pages/StorefrontCatalogoPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import CategoriaDetailPage from "./pages/CategoriaDetailPage";
+import PaymentResultPage from "./pages/PaymentResultPage";
+
 
 function AppLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
@@ -196,7 +198,16 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/orders/:id/:status"
+            element={
+              <ProtectedRoute>
+                <PaymentResultPage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
+
 
         {/* Admin — layout con Sidebar + Navbar admin */}
         <Route

@@ -101,7 +101,9 @@ ESTADOS_PEDIDO_INICIALES = [
 FORMAS_PAGO_INICIALES = [
     {"codigo": "EFECTIVO",      "descripcion": "Efectivo al retirar en local", "habilitado": True},
     {"codigo": "TRANSFERENCIA", "descripcion": "Transferencia bancaria",       "habilitado": True},
+    {"codigo": "MERCADOPAGO",   "descripcion": "Mercado Pago",                 "habilitado": True},
 ]
+
 
 CATEGORIAS_INICIALES = [
     {"nombre": "Comidas", "descripcion": "Productos elaborados", "padre": None},

@@ -82,3 +82,12 @@ backend/uploads/*
 !backend/uploads/seed/
 !backend/uploads/seed/**
 /uploads/
+
+# ══════════════════════════════════════════════
+#  AI & AGENT TEAMS
+# ══════════════════════════════════════════════
+
+.gemini/
+.atl/
+.cursor/
+.cursorrules

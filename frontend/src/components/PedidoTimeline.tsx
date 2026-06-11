@@ -56,7 +56,7 @@ export default function PedidoTimeline({ estado, compact = false, isRetiro = fal
                     compact ? "h-3 w-3" : "h-4 w-4"
                   } ${
                     isCurrent
-                      ? "border-green-main bg-white ring-4 ring-green-main/15"
+                      ? "border-green-main bg-green-main ring-4 ring-green-main/15"
                       : isCompleted
                       ? "border-green-main bg-green-main"
                       : "border-gray-300 bg-white"

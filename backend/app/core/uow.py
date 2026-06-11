@@ -31,6 +31,8 @@ from app.modules.pedidos.repository import (
     EstadoPedidoRepository,
     FormaPagoRepository,
 )
+from app.modules.pagos.repository import PagoRepository
+
 from app.modules.direcciones.repository import DireccionEntregaRepository
 
 class UnitOfWork:
@@ -68,6 +70,8 @@ class UnitOfWork:
         self.historial_estados  = HistorialEstadoRepository(self.session)
         self.estados_pedido     = EstadoPedidoRepository(self.session)
         self.formas_pago        = FormaPagoRepository(self.session)
+        self.pagos              = PagoRepository(self.session)
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
