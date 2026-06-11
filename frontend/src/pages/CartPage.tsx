@@ -23,6 +23,7 @@ export default function CartPage() {
   const crearPedido = useCrearPedido();
 
   const [formaPago, setFormaPago] = useState("");
+  const [tipoEntrega, setTipoEntrega] = useState<"ENVIO" | "RETIRO">("ENVIO");
   const [direccionId, setDireccionId] = useState<number | null>(null);
   const [notas, setNotas] = useState("");
   const [error, setError] = useState("");
@@ -49,8 +50,7 @@ export default function CartPage() {
     }
   }, [direcciones, direccionId]);
 
-  const isEfectivo = formaPago === "EFECTIVO";
-  const costoEnvio = isEfectivo ? 0 : COSTO_ENVIO;
+  const costoEnvio = tipoEntrega === "RETIRO" ? 0 : COSTO_ENVIO;
 
   const handleConfirmar = () => {
     if (!isAuthenticated) {
@@ -61,7 +61,7 @@ export default function CartPage() {
       setError("Seleccioná una forma de pago.");
       return;
     }
-    if (!isEfectivo && !direccionId) {
+    if (tipoEntrega === "ENVIO" && !direccionId) {
       setError("Tenés que elegir una dirección de entrega.");
       return;
     }
@@ -75,16 +75,29 @@ export default function CartPage() {
           personalizacion: [],
         })),
         forma_pago_codigo: formaPago,
-        direccion_id: isEfectivo ? null : direccionId,
+        direccion_id: tipoEntrega === "RETIRO" ? null : direccionId,
         notas: notas || undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: (pedidoCreado) => {
           clearCart();
-          navigate("/mis-pedidos");
+          if (formaPago === "MERCADOPAGO") {
+            navigate(`/pedidos/${pedidoCreado.id}`);
+          } else {
+            navigate("/mis-pedidos");
+          }
         },
         onError: (err: any) => {
-          setError(err.response?.data?.detail || "Error al crear el pedido.");
+          const detail = err.response?.data?.detail;
+          if (typeof detail === "string") {
+            setError(detail);
+          } else if (Array.isArray(detail)) {
+            setError(detail.map((d: any) => d.msg).join(", "));
+          } else if (detail && typeof detail === "object") {
+            setError(JSON.stringify(detail));
+          } else {
+            setError("Error al crear el pedido.");
+          }
         },
       }
     );
@@ -157,7 +170,21 @@ export default function CartPage() {
                 </select>
               </div>
 
-              {!isEfectivo && isAuthenticated && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Método de entrega
+                </label>
+                <select
+                  value={tipoEntrega}
+                  onChange={(e) => setTipoEntrega(e.target.value as "ENVIO" | "RETIRO")}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main"
+                >
+                  <option value="ENVIO">Envío a domicilio</option>
+                  <option value="RETIRO">Retiro en el local</option>
+                </select>
+              </div>
+
+              {tipoEntrega === "ENVIO" && isAuthenticated && (
                 <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-gray-700">
@@ -287,6 +314,13 @@ export default function CartPage() {
                   )}
                 </div>
               )}
+
+              {tipoEntrega === "RETIRO" && (
+                <div className="mb-4 bg-green-50 p-3 rounded-lg border border-green-200/50 text-green-800 text-xs font-medium">
+                  📍 Te esperamos en nuestro local (Av. Siempreviva 742) para retirar tu pedido.
+                </div>
+              )}
+
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">

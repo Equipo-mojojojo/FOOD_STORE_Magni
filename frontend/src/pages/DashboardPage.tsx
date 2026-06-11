@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 
-import { ChefHat, Package, ShieldCheck, Tags, ShoppingBag, ClipboardList, Users } from "lucide-react";
+import { ChefHat, Package, ShieldCheck, Tags, ShoppingBag, ClipboardList, Users, X, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";

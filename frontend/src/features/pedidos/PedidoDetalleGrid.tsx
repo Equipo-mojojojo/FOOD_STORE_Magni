@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { usePedido } from "../../hooks/usePedidos";
 import PedidoTimeline from "../../components/PedidoTimeline";
+import { PaymentButton } from "../../components/PaymentButton";
+
 
 const ESTADO_BADGE: Record<string, string> = {
   PENDIENTE: "bg-yellow-100 text-yellow-800",
@@ -119,7 +121,15 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
             <p className="text-gray-800 text-sm mt-1">{pedido.notas}</p>
           </div>
         )}
+
+        {pedido.forma_pago_codigo === "MERCADOPAGO" && pedido.estado_codigo === "PENDIENTE" && (
+          <div className="mt-6 pt-4 border-t border-gray-100 max-w-sm">
+            <h4 className="text-sm font-semibold text-gray-700 mb-2">Pago requerido</h4>
+            <PaymentButton pedidoId={pedido.id} monto={Number(pedido.total)} />
+          </div>
+        )}
       </div>
+
 
       {/* Ítems del pedido */}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">

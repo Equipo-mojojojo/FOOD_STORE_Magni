@@ -6,6 +6,7 @@ con @computed_field para construir DATABASE_URL automáticamente.
 Los valores sensibles (SECRET_KEY, POSTGRES_PASSWORD) viven en .env.
 """
 
+from typing import Optional
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
@@ -36,6 +37,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     COOKIE_SECURE: bool = False
+
+    # ─── Mercado Pago ─────────────────────────────────────────────────────────
+    MP_ACCESS_TOKEN:    Optional[str] = None
+    MP_PUBLIC_KEY:      Optional[str] = None
+    MP_WEBHOOK_URL:     Optional[str] = None
+    NGROK_URL:          Optional[str] = None
+    VITE_FRONTEND_URL:  str = "http://localhost:5173"
 
     model_config = {
         "env_file":          ".env",
