@@ -13,9 +13,9 @@ export const ingredientesApi = {
     const params: Record<string, string | number> = {
       page: filters.page,
       per_page: filters.per_page,
-      sort_by: filters.sort_by,
-      sort_order: filters.sort_order,
     };
+    if (filters.sort_by) params.sort_by = filters.sort_by;
+    if (filters.sort_order) params.sort_order = filters.sort_order;
     if (filters.search) params.search = filters.search;
     if (filters.estado) params.estado = filters.estado;
     if (filters.es_alergeno !== "") params.es_alergeno = filters.es_alergeno;
