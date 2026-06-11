@@ -11,4 +11,18 @@ export const direccionesApi = {
     const res = await axiosClient.post<DireccionResponse>("/direcciones", data);
     return res.data;
   },
+
+  actualizar: async (id: number, data: DireccionCreate): Promise<DireccionResponse> => {
+    const res = await axiosClient.put<DireccionResponse>(`/direcciones/${id}`, data);
+    return res.data;
+  },
+
+  eliminar: async (id: number): Promise<void> => {
+    await axiosClient.delete(`/direcciones/${id}`);
+  },
+
+  marcarPrincipal: async (id: number): Promise<DireccionResponse> => {
+    const res = await axiosClient.patch<DireccionResponse>(`/direcciones/${id}/principal`);
+    return res.data;
+  },
 };
