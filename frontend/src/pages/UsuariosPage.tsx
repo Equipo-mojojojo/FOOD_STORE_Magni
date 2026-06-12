@@ -1,6 +1,6 @@
 /** Página de administración de usuarios — solo ADMIN. */
 import { useState, useEffect } from "react";
-import { Search, Shield, RotateCcw, UserX, Eye, X, MapPin, ShoppingBag, User } from "lucide-react";
+import { Search, Shield, RotateCcw, UserX, Eye, X, MapPin, ShoppingBag, User, ChevronDown, ChevronUp } from "lucide-react";
 import {
   useActualizarRolesUsuario,
   useEliminarUsuario,
@@ -8,6 +8,7 @@ import {
   useRoles,
   useUsuarios,
 } from "../hooks/useUsuarios";
+import { usePedido } from "../hooks/usePedidos";
 import { usuariosApi } from "../api/usuariosApi";
 import type { UsuarioAdmin } from "../types";
 
@@ -25,6 +26,9 @@ export default function UsuariosPage() {
   const [detailData, setDetailData] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailTab, setDetailTab] = useState<"datos" | "direcciones" | "pedidos">("datos");
+
+  const [expandedPedidoId, setExpandedPedidoId] = useState<number | null>(null);
+  const { data: expandedPedido, isLoading: expandedPedidoLoading } = usePedido(expandedPedidoId || 0);
 
   const [searchInput, setSearchInput] = useState("");
 
@@ -64,6 +68,7 @@ export default function UsuariosPage() {
   };
 
   useEffect(() => {
+    setExpandedPedidoId(null);
     if (!detailUserId) {
       setDetailData(null);
       return;
@@ -304,7 +309,7 @@ export default function UsuariosPage() {
                     const icons = { datos: <User size={14} />, direcciones: <MapPin size={14} />, pedidos: <ShoppingBag size={14} /> };
                     const labels = { datos: "Datos", direcciones: `Direcciones (${detailData.direcciones?.length || 0})`, pedidos: `Pedidos (${detailData.pedidos?.length || 0})` };
                     return (
-                      <button key={tab} onClick={() => setDetailTab(tab)}
+                      <button key={tab} onClick={() => { setDetailTab(tab); setExpandedPedidoId(null); }}
                         className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                           detailTab === tab ? "border-green-main text-green-dark" : "border-transparent text-gray-500 hover:text-gray-700"
                         }`}
@@ -352,20 +357,114 @@ export default function UsuariosPage() {
                     <div className="space-y-3">
                       {!detailData.pedidos?.length ? (
                         <p className="text-gray-500 text-sm text-center py-8">Este usuario no tiene pedidos.</p>
-                      ) : detailData.pedidos.map((p: any) => (
-                        <div key={p.id} className="border border-gray-100 rounded-xl p-4 text-sm flex items-center justify-between">
-                          <div>
-                            <span className="font-semibold">Pedido #{p.id}</span>
-                            <span className={`ml-2 inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              p.estado_codigo === "ENTREGADO" ? "bg-green-50 text-green-700" :
-                              p.estado_codigo === "CANCELADO" ? "bg-red-100 text-red-700" :
-                              "bg-yellow-50 text-yellow-700"
-                            }`}>{p.estado_codigo}</span>
-                            <p className="text-gray-500 mt-1">{new Date(p.created_at).toLocaleDateString("es-AR")} · {p.forma_pago_codigo}</p>
+                      ) : detailData.pedidos.map((p: any) => {
+                        const isExpanded = expandedPedidoId === p.id;
+                        return (
+                          <div key={p.id} className="border border-gray-100 rounded-xl p-4 text-sm flex flex-col transition-all duration-200">
+                            <div 
+                              onClick={() => setExpandedPedidoId(isExpanded ? null : p.id)}
+                              className="flex items-center justify-between cursor-pointer hover:opacity-80 select-none"
+                            >
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-gray-900">Pedido #{p.id}</span>
+                                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                    p.estado_codigo === "ENTREGADO" ? "bg-green-50 text-green-700" :
+                                    p.estado_codigo === "CANCELADO" ? "bg-red-100 text-red-700" :
+                                    "bg-yellow-50 text-yellow-700"
+                                  }`}>{p.estado_codigo}</span>
+                                </div>
+                                <p className="text-gray-500 mt-1">{new Date(p.created_at).toLocaleDateString("es-AR")} · {p.forma_pago_codigo}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="font-bold text-green-dark text-base">${Number(p.total).toFixed(2)}</span>
+                                <div className="text-gray-400">
+                                  {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                </div>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="border-t border-gray-100 pt-4 mt-3 space-y-3 animate-in fade-in duration-200">
+                                {expandedPedidoLoading ? (
+                                  <div className="flex items-center justify-center py-6">
+                                    <div className="w-5 h-5 border-2 border-green-main border-t-transparent rounded-full animate-spin" />
+                                  </div>
+                                ) : expandedPedido ? (
+                                  <div className="space-y-4">
+                                    {/* Lista de productos */}
+                                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                      <h4 className="font-bold text-gray-700 text-xs uppercase tracking-wider mb-2">Productos</h4>
+                                      <div className="divide-y divide-gray-100 text-xs">
+                                        {expandedPedido.detalles?.map((item: any, idx: number) => (
+                                          <div key={idx} className="py-2.5 flex justify-between items-start">
+                                            <div className="flex flex-col">
+                                              <span className="font-semibold text-gray-800 capitalize">{item.nombre_snapshot}</span>
+                                              {item.personalizacion && item.personalizacion.length > 0 && (
+                                                <span className="text-[10px] text-red-500 font-semibold mt-0.5">
+                                                  Personalizado (Ingredientes removidos)
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                              <span className="text-gray-500">x{item.cantidad}</span>
+                                              <span className="font-semibold text-gray-700 w-16 text-right">${Number(item.subtotal_snap).toFixed(2)}</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Información adicional */}
+                                    <div className="grid grid-cols-2 gap-3 text-xs bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
+                                      <div>
+                                        <span className="block text-gray-400 font-medium">Forma de Pago</span>
+                                        <span className="font-semibold text-gray-700 mt-0.5 block">
+                                          {expandedPedido.forma_pago?.descripcion || expandedPedido.forma_pago_codigo}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="block text-gray-400 font-medium">Método de Entrega</span>
+                                        <span className="font-semibold text-gray-700 mt-0.5 block">
+                                          {expandedPedido.direccion_id ? "Envío a Domicilio" : "Retiro en Local"}
+                                        </span>
+                                      </div>
+                                      {expandedPedido.notas && (
+                                        <div className="col-span-2 border-t border-gray-100 pt-2 mt-1">
+                                          <span className="block text-gray-400 font-medium">Notas del pedido</span>
+                                          <span className="italic text-gray-600 mt-0.5 block bg-white p-2 rounded border border-gray-100">
+                                            "{expandedPedido.notas}"
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Totales */}
+                                    <div className="border-t border-gray-100 pt-3 flex flex-col gap-1.5 text-xs text-gray-600 px-1">
+                                      <div className="flex justify-between">
+                                        <span>Subtotal:</span>
+                                        <span className="font-medium text-gray-700">${Number(expandedPedido.subtotal).toFixed(2)}</span>
+                                      </div>
+                                      {Number(expandedPedido.costo_envio) > 0 && (
+                                        <div className="flex justify-between">
+                                          <span>Costo de Envío:</span>
+                                          <span className="font-medium text-gray-700">${Number(expandedPedido.costo_envio).toFixed(2)}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between font-bold text-gray-900 border-t border-gray-100 pt-2 text-sm mt-1">
+                                        <span className="text-gray-800">Total:</span>
+                                        <span className="text-green-main text-base">${Number(expandedPedido.total).toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-red-500 text-center py-2">Error al cargar detalles del pedido.</p>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <span className="font-bold text-green-dark">${Number(p.total).toFixed(2)}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
