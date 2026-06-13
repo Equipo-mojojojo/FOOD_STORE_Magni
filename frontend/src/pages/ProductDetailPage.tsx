@@ -11,6 +11,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const [cantidad, setCantidad] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [removidos, setRemovidos] = useState<number[]>([]);
   
   const { addItem } = useCartStore();
 
@@ -45,9 +46,12 @@ export default function ProductDetailPage() {
   }
 
   const handleAddToCart = () => {
-    // casteamos a unknown -> Producto ya que ProductoDetail y Producto son muy similares y compatibles para el carrito
-    addItem(producto as any, cantidad);
+    addItem(producto as any, cantidad, removidos);
     toast.success(`${producto.nombre} agregado al carrito`);
+  };
+
+  const toggleRemovable = (ingId: number) => {
+    setRemovidos(prev => prev.includes(ingId) ? prev.filter(i => i !== ingId) : [...prev, ingId]);
   };
 
   // Color de placeholder según ID
@@ -59,43 +63,43 @@ export default function ProductDetailPage() {
   const colorClass = colors[producto.id % colors.length];
 
   return (
-    <div className="max-w-5xl mx-auto pb-20">
+    <div className="max-w-4xl mx-auto pb-6 md:pb-10">
       {/* Botón Volver */}
       <button 
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-gray-500 hover:text-green-main transition-colors mb-6 font-medium bg-white px-4 py-2 rounded-full shadow-sm w-fit"
+        className="flex items-center gap-2 text-gray-500 hover:text-green-main transition-colors mb-4 font-medium bg-white px-4 py-2 rounded-full shadow-sm w-fit text-sm"
       >
-        <ArrowLeft size={18} /> Volver
+        <ArrowLeft size={16} /> Volver
       </button>
 
-      <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row">
+      <div className="bg-white rounded-3xl shadow-md border border-gray-100/80 overflow-hidden flex flex-col md:flex-row md:h-[500px]">
         
         {/* Lado Izquierdo: Imagen / Color Placeholder */}
-        <div className="md:w-1/2 flex flex-col">
-          <div className={`flex-1 min-h-[300px] md:min-h-[400px] flex items-center justify-center relative overflow-hidden ${colorClass}`}>
+        <div className="md:w-1/2 flex flex-col h-[260px] md:h-full relative bg-gray-50/50">
+          <div className={`flex-1 flex items-center justify-center relative overflow-hidden ${colorClass} transition-colors duration-300`}>
             {producto.imagenes && producto.imagenes.length > 0 ? (
               <img 
                 src={`http://localhost:8000${producto.imagenes[activeImage]}`} 
                 alt={producto.nombre} 
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
               />
             ) : (
-              <span className="text-[10rem] md:text-[15rem] font-black opacity-20 transform -rotate-12 scale-150">
+              <span className="text-[8rem] md:text-[12rem] font-black opacity-15 transform -rotate-12 scale-150 select-none">
                 {producto.nombre.substring(0, 2).toUpperCase()}
               </span>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"></div>
           </div>
           
           {/* Thumbnails si hay más de 1 imagen */}
           {producto.imagenes && producto.imagenes.length > 1 && (
-            <div className="flex gap-2 p-4 bg-gray-50 border-t border-gray-100 justify-center">
+            <div className="flex gap-2 p-3 bg-white border-t border-gray-100 justify-center">
               {producto.imagenes.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImage(idx)}
-                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                    activeImage === idx ? 'border-green-main shadow-md scale-105' : 'border-transparent opacity-70 hover:opacity-100'
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                    activeImage === idx ? 'border-green-main shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
                   <img src={`http://localhost:8000${img}`} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
@@ -106,82 +110,102 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Lado Derecho: Detalles */}
-        <div className="md:w-1/2 p-8 md:p-12 flex flex-col">
+        <div className="md:w-1/2 flex flex-col justify-between h-full md:max-h-[500px]">
           
-          <div className="flex-1">
+          {/* Contenido Principal con Scroll Interno si es necesario */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 md:p-6 lg:p-8 scrollbar-thin">
             {/* Categorías */}
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {producto.categorias.map(cat => (
-                <span key={cat.categoria.id} className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                <span key={cat.categoria.id} className="text-[9px] font-extrabold uppercase tracking-widest bg-green-50 text-green-main border border-green-100 px-2.5 py-0.5 rounded-full">
                   {cat.categoria.nombre}
                 </span>
               ))}
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight mb-4">
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-2">
               {producto.nombre}
             </h1>
 
-            <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+            <p className="text-gray-500 text-sm mb-4 leading-relaxed">
               {producto.descripcion || "Este producto no tiene una descripción detallada, pero te aseguramos que es riquísimo."}
             </p>
 
             {/* Ingredientes / Info */}
-            <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Info size={18} className="text-green-main" /> ¿Qué trae?
+            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100/80">
+              <h3 className="font-bold text-gray-900 text-sm mb-2.5 flex items-center gap-1.5">
+                <Info size={16} className="text-green-main" /> ¿Qué trae?
               </h3>
               
               {producto.ingredientes.length > 0 ? (
-                <ul className="space-y-3">
-                  {producto.ingredientes.map(ing => (
-                    <li key={ing.ingrediente.id} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700 font-medium capitalize">
-                        {ing.ingrediente.nombre}
-                      </span>
-                      {ing.ingrediente.es_alergeno && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-danger-main bg-danger-50 px-2 py-0.5 rounded-md">
-                          <AlertTriangle size={12} /> Alérgeno
+                <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
+                  {producto.ingredientes.map(ing => {
+                    const isRemoved = removidos.includes(ing.ingrediente.id);
+                    return (
+                      <div 
+                        key={ing.ingrediente.id} 
+                        onClick={() => ing.es_removible && toggleRemovable(ing.ingrediente.id)}
+                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border shadow-sm text-xs transition-all ${
+                          ing.es_removible ? 'cursor-pointer hover:shadow-md' : 'cursor-default'
+                        } ${
+                          isRemoved 
+                            ? 'bg-red-50 border-red-100 opacity-70' 
+                            : 'bg-white border-gray-100'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isRemoved ? 'bg-red-400' : 'bg-green-main'}`} />
+                        <span className={`text-gray-700 font-medium capitalize truncate ${isRemoved ? 'line-through text-gray-400' : ''}`} title={ing.ingrediente.nombre}>
+                          {ing.ingrediente.nombre}
                         </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                        {ing.es_removible && (
+                          <span className={`ml-auto text-[10px] font-bold ${isRemoved ? 'text-red-500' : 'text-gray-400'}`}>
+                            {isRemoved ? 'Sin' : 'Con'}
+                          </span>
+                        )}
+                        {ing.ingrediente.es_alergeno && !ing.es_removible && (
+                          <span className="text-danger-main text-[9px] font-extrabold ml-auto bg-danger-50 px-1.5 py-0.5 rounded" title="Alérgeno">
+                            Alerg.
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
-                <p className="text-sm text-gray-500 italic">No hay información detallada de ingredientes.</p>
+                <p className="text-xs text-gray-500 italic">No hay información detallada de ingredientes.</p>
               )}
             </div>
           </div>
 
-          {/* Footer: Precio y Controles */}
-          <div className="pt-6 border-t border-gray-100">
-            <div className="flex justify-between items-end mb-6">
+          {/* Footer Fijo en la Base */}
+          <div className="p-5 md:p-6 lg:p-8 pt-4 border-t border-gray-100 bg-white">
+            <div className="flex justify-between items-center mb-4">
               <div className="flex flex-col">
-                <span className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Precio</span>
-                <span className="text-4xl font-black text-green-main">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Precio Unitario</span>
+                <span className="text-3xl font-black text-green-main">
                   ${producto.precio_base}
                 </span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-3">
               {/* Selector de cantidad */}
-              <div className="flex items-center justify-between bg-gray-100 rounded-2xl p-2 sm:w-1/3">
+              <div className="flex items-center justify-between bg-gray-100 rounded-xl p-1 w-1/3 min-w-[110px]">
                 <button 
                   onClick={() => setCantidad(Math.max(1, cantidad - 1))}
-                  className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-gray-600 hover:text-green-main transition-colors"
+                  className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-600 hover:text-green-main hover:scale-105 active:scale-95 transition-all"
                 >
-                  <Minus size={20} />
+                  <Minus size={14} />
                 </button>
-                <span className="text-xl font-bold text-gray-900 w-12 text-center">
+                <span className="text-base font-bold text-gray-800 w-8 text-center select-none">
                   {cantidad}
                 </span>
                 <button 
                   onClick={() => setCantidad(cantidad + 1)}
                   disabled={cantidad >= producto.stock_disponible}
-                  className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm text-gray-600 hover:text-green-main transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-600 hover:text-green-main hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <Plus size={20} />
+                  <Plus size={14} />
                 </button>
               </div>
 
@@ -189,9 +213,9 @@ export default function ProductDetailPage() {
               <button 
                 onClick={handleAddToCart}
                 disabled={producto.stock_disponible === 0}
-                className="flex-1 bg-green-main text-white font-bold text-lg rounded-2xl flex items-center justify-center gap-3 hover:bg-green-dark transition-all shadow-lg shadow-green-main/30 active:scale-95 py-4 sm:py-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:shadow-none"
+                className="flex-1 bg-green-main text-white font-bold text-base rounded-xl flex items-center justify-center gap-2 hover:bg-green-dark transition-all shadow-md hover:shadow-lg shadow-green-main/20 active:scale-[0.98] py-2.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:shadow-none"
               >
-                <ShoppingCart size={24} className="fill-current" />
+                <ShoppingCart size={18} className="fill-current" />
                 {producto.stock_disponible === 0 ? "Sin stock" : "Agregar al Pedido"}
               </button>
             </div>

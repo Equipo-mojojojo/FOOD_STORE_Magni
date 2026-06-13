@@ -199,7 +199,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
           return {
             ...prev,
             ingredientes: [
-              { ingrediente_id: id, cantidad: 1, unidad_medida_id: unidadesMedida?.[0]?.id || 1, es_removible: false }
+              { ingrediente_id: id, cantidad: 1, unidad_medida_id: ingInfo?.unidad_medida?.id || unidadesMedida?.[0]?.id || 1, es_removible: false }
             ]
           };
         }
@@ -211,7 +211,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
           ...prev,
           ingredientes: [
             ...prev.ingredientes,
-            { ingrediente_id: id, cantidad: 1, unidad_medida_id: unidadesMedida?.[0]?.id || 1, es_removible: false }
+            { ingrediente_id: id, cantidad: 1, unidad_medida_id: ingInfo?.unidad_medida?.id || unidadesMedida?.[0]?.id || 1, es_removible: false }
           ]
         };
       }
@@ -520,7 +520,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                           <span className="text-sm font-medium text-gray-700">
                             {i.nombre}
                             {esTerminado && <span className="ml-1 text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">TERMINADO</span>}
-                            {' '}<span className="text-[10px] text-gray-400 font-normal">($ {i.precio_costo}/unid)</span>
+                            {' '}<span className="text-[10px] text-gray-400 font-normal">($ {i.precio_costo}/{i.unidad_medida?.simbolo || 'unid'})</span>
                           </span>
                         </label>
 
@@ -536,7 +536,12 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                               <select
                                 value={ingredienteData.unidad_medida_id}
                                 onChange={(e) => updateIngrediente(i.id, 'unidad_medida_id', Number(e.target.value))}
-                                className="flex-1 text-xs px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-green-main outline-none bg-white"
+                                disabled={i.unidad_medida?.nombre?.toLowerCase().includes('gramo') || i.unidad_medida?.simbolo?.toLowerCase() === 'gr' || i.unidad_medida?.simbolo?.toLowerCase() === 'g'}
+                                className={`flex-1 text-xs px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-green-main outline-none ${
+                                  (i.unidad_medida?.nombre?.toLowerCase().includes('gramo') || i.unidad_medida?.simbolo?.toLowerCase() === 'gr' || i.unidad_medida?.simbolo?.toLowerCase() === 'g') 
+                                    ? 'bg-gray-100 cursor-not-allowed opacity-70' 
+                                    : 'bg-white'
+                                }`}
                               >
                                 {unidadesMedida?.map(u => (
                                   <option key={u.id} value={u.id}>{u.simbolo}</option>

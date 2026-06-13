@@ -73,8 +73,9 @@ class DetallePedido(SQLModel, table=True):
     """Línea de detalle inmutable (Snapshot Pattern). Sin updated_at por diseño."""
     __tablename__ = "detalles_pedido"
  
-    pedido_id: int = Field(foreign_key="pedidos.id", primary_key=True)
-    producto_id: int = Field(foreign_key="productos.id", primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    pedido_id: int = Field(foreign_key="pedidos.id")
+    producto_id: int = Field(foreign_key="productos.id")
     cantidad: int = Field(sa_column=Column(SmallInteger, nullable=False))
  
     # Snapshot — valores al momento de la compra, nunca se modifican

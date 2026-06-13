@@ -104,7 +104,7 @@ class PedidoService:
                 if es_elaborable:
                     unidades_posibles = []
                     for pi in producto.ingredientes:
-                        if pi.ingrediente:
+                        if pi.ingrediente and (item.personalizacion is None or pi.ingrediente.id not in item.personalizacion):
                             f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
                             f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
                             qty_base = pi.cantidad * Decimal(str(f_receta))
@@ -138,7 +138,7 @@ class PedidoService:
                     "subtotal_snap": subtotal_item,
                     "personalizacion": item.personalizacion,
                 })
-                productos_a_decrementar.append((producto, item.cantidad, es_elaborable))
+                productos_a_decrementar.append((producto, item.cantidad, es_elaborable, item.personalizacion))
 
             costo_envio = COSTO_RETIRO_LOCAL if data.direccion_id is None else COSTO_ENVIO_DEFAULT
             total = subtotal - Decimal("0.00") + costo_envio
@@ -160,10 +160,10 @@ class PedidoService:
                 self.uow.detalles_pedido.add(DetallePedido(pedido_id=pedido.id, **d))
 
             # Decrementar stock de cada producto incluido en el pedido
-            for producto, cantidad, es_elaborable in productos_a_decrementar:
+            for producto, cantidad, es_elaborable, personalizacion in productos_a_decrementar:
                 if es_elaborable:
                     for pi in producto.ingredientes:
-                        if pi.ingrediente:
+                        if pi.ingrediente and (personalizacion is None or pi.ingrediente.id not in personalizacion):
                             f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
                             f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
                             qty_base_total = pi.cantidad * Decimal(str(f_receta)) * Decimal(str(cantidad))

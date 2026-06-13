@@ -11,6 +11,14 @@ export const useIngredientes = (filters: IngredientesFilters) => {
   });
 };
 
+export const useIngredientesPublicos = () => {
+  return useQuery({
+    queryKey: ["ingredientes-public"],
+    queryFn: () => ingredientesApi.getPublicList(),
+    placeholderData: (previousData) => previousData,
+  });
+};
+
 // 2. Hooks para mutaciones (Crear, Actualizar, Eliminar) de ingredientes
 export const useCrearIngrediente = () => {
   const queryClient = useQueryClient();

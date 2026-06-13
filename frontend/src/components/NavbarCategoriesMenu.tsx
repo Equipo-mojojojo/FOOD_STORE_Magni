@@ -56,7 +56,7 @@ export default function NavbarCategoriesMenu() {
                 {categorias.map((padre) => (
                   <div key={padre.id} className="group/item relative">
                     <Link 
-                      to={`/categoria/${padre.id}`} 
+                      to={`/catalogo?categoria=${padre.id}`} 
                       className="w-full text-left px-5 py-2.5 hover:bg-green-50 flex items-center justify-between transition-colors text-gray-800 font-medium"
                       onClick={() => setIsOpen(false)}
                     >
@@ -73,7 +73,7 @@ export default function NavbarCategoriesMenu() {
                           {padre.subcategorias.map((sub) => (
                             <Link 
                               key={sub.id}
-                              to={`/categoria/${sub.id}`} 
+                              to={`/catalogo?categoria=${sub.id}`} 
                               className="block px-5 py-2 hover:bg-green-50 transition-colors text-sm text-gray-600 hover:text-green-main font-medium"
                               onClick={() => setIsOpen(false)}
                             >

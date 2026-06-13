@@ -129,6 +129,9 @@ def register_user(uow: UnitOfWork, data: UserCreate) -> UserPublic:
 
         # Guardar la dirección
         direccion_data = data.direccion.model_dump(exclude_unset=True)
+        alias = direccion_data.get("alias")
+        if not alias or not alias.strip():
+            direccion_data["alias"] = "Casa"
         direccion_data["es_principal"] = True
         direccion = DireccionEntrega(
             usuario_id=user.id,

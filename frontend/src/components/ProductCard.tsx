@@ -1,9 +1,9 @@
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Settings2 } from "lucide-react";
 import type { Producto } from "../types";
 import { useCartStore } from '../store/cartStore';
 import { Link } from "react-router-dom";
-
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
   producto: Producto;
@@ -12,16 +12,25 @@ interface ProductCardProps {
 
 export default function ProductCard({ producto, className }: ProductCardProps) {
   const { addItem, items } = useCartStore();
+  const navigate = useNavigate();
 
   const inCart = items.find((i) => i.producto.id === producto.id);
   const sinStock = producto.stock_disponible === 0;
   const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_disponible;
   const bloqueado = sinStock || stockAgotado;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const tieneRemovibles = producto.ingredientes?.some(i => i.es_removible);
+
+  const handleAction = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (bloqueado) return;
+    if (bloqueado && !tieneRemovibles) return;
+    
+    if (tieneRemovibles) {
+      navigate(`/producto/${producto.id}`);
+      return;
+    }
+
     addItem(producto, 1);
     toast.success(`${producto.nombre} agregado al carrito`);
   };
@@ -85,16 +94,25 @@ export default function ProductCard({ producto, className }: ProductCardProps) {
           </div>
 
           <button
-            onClick={handleAddToCart}
-            disabled={bloqueado}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm z-10 ${
-              bloqueado
-                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                : "bg-green-50 text-green-main hover:bg-green-main hover:text-white hover:shadow-md active:scale-95"
+            onClick={handleAction}
+            disabled={bloqueado && !tieneRemovibles}
+            className={`px-4 h-10 rounded-xl flex items-center justify-center gap-2 font-bold transition-all shadow-sm z-10 ${
+              bloqueado && !tieneRemovibles
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : tieneRemovibles
+                ? "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
+                : "bg-green-50 text-green-main hover:bg-green-main hover:text-white"
             }`}
-            title={sinStock ? "Sin stock" : stockAgotado ? "Stock máximo alcanzado" : "Agregar al carrito"}
+            title={sinStock && !tieneRemovibles ? "Sin stock" : stockAgotado && !tieneRemovibles ? "Stock máximo" : tieneRemovibles ? "Personalizar ingredientes" : "Agregar al carrito"}
           >
-            <ShoppingCart size={20} className="fill-current" />
+            {tieneRemovibles ? (
+              <>
+                <Settings2 size={18} />
+                <span className="text-xs">Personalizar</span>
+              </>
+            ) : (
+              <ShoppingCart size={20} className="fill-current" />
+            )}
           </button>
         </div>
       </div>

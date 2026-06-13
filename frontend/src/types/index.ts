@@ -19,6 +19,7 @@ export interface RegisterRequest {
   celular: string;
   password: string;
   direccion: {
+    alias?: string;
     linea1: string;
     linea2?: string;
     ciudad: string;
@@ -376,7 +377,9 @@ export interface PaginatedUsuarios {
 
 // --- CARRITO ---
 export interface CartItem {
+  cartItemId: string; // Unique ID composed of producto.id + personalizacion
   producto: Producto;
   cantidad: number;
+  personalizacion?: number[]; // IDs of removed ingredients
 }
 

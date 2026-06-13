@@ -55,6 +55,7 @@ export default function RegisterForm() {
       const payload = {
         ...formData,
         direccion: {
+          alias: "Casa",
           linea1: `${formData.direccion.calle} ${formData.direccion.altura}`.trim(),
           linea2: formData.direccion.linea2 || undefined,
           ciudad: formData.direccion.ciudad,

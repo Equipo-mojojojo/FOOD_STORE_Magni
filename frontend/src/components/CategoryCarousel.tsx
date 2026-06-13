@@ -64,7 +64,7 @@ export default function CategoryCarousel({ id, categoriaId, titulo }: CategoryCa
           <p className="text-gray-500">Descubrí nuestras opciones</p>
         </div>
         <Link
-          to={`/categoria/${categoriaId}`} // O a donde definamos la vista completa
+          to={`/catalogo?categoria=${categoriaId}`} // O a donde definamos la vista completa
           className="text-green-main font-medium hover:text-green-dark flex items-center gap-1 transition-colors"
         >
           Ver todos <ArrowRight size={18} />
@@ -82,7 +82,7 @@ export default function CategoryCarousel({ id, categoriaId, titulo }: CategoryCa
         {productos.length >= 5 && (
           <div className="w-64 shrink-0 snap-start flex items-center justify-center">
             <Link
-              to={`/categoria/${categoriaId}`}
+              to={`/catalogo?categoria=${categoriaId}`}
               className="flex flex-col items-center justify-center h-40 w-40 rounded-full bg-green-50 text-green-main hover:bg-green-100 hover:scale-105 transition-all duration-300"
             >
               <ArrowRight size={32} className="mb-2" />

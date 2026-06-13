@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { usePedido } from "../../hooks/usePedidos";
 import PedidoTimeline from "../../components/PedidoTimeline";
 import { PaymentButton } from "../../components/PaymentButton";
+import { useIngredientesPublicos } from "../../hooks/useIngredientes";
 
 
 const ESTADO_BADGE: Record<string, string> = {
@@ -35,6 +36,9 @@ interface Props {
 export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volver" }: Props) {
   const { data: pedido, isLoading, isError } = usePedido(pedidoId);
   const navigate = useNavigate();
+  
+  // Fetch public ingredients to map IDs to names for personalizacion
+  const { data: ingredientes } = useIngredientesPublicos();
 
   if (isLoading) {
     return (
@@ -146,9 +150,21 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {pedido.detalles.map((detalle) => (
-              <tr key={detalle.producto_id}>
-                <td className="px-6 py-4 font-medium text-gray-900">{detalle.nombre_snapshot}</td>
+            {pedido.detalles.map((detalle, idx) => {
+              const removidosNombres = detalle.personalizacion 
+                ? detalle.personalizacion.map(id => (ingredientes || []).find(i => i.id === id)?.nombre).filter(Boolean)
+                : [];
+              
+              return (
+              <tr key={`${detalle.producto_id}-${idx}`}>
+                <td className="px-6 py-4 font-medium text-gray-900">
+                  {detalle.nombre_snapshot}
+                  {removidosNombres.length > 0 && (
+                    <div className="text-[11px] font-bold text-red-500 mt-0.5 leading-tight">
+                      Sin: {removidosNombres.join(", ")}
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-4 text-center text-gray-600">{detalle.cantidad}</td>
                 <td className="px-4 py-4 text-right text-gray-600">
                   ${Number(detalle.precio_snapshot).toLocaleString("es-AR")}
@@ -157,7 +173,8 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
                   ${Number(detalle.subtotal_snap).toLocaleString("es-AR")}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>
