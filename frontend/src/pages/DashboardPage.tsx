@@ -7,8 +7,6 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useDashboardEstadisticas } from "../hooks/useEstadisticas";
 import {
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,8 +17,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line
 } from 'recharts';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -289,7 +285,7 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </div>
               <div className="grid grid-cols-2 gap-2 mt-4">
-                {stats.pedidos_por_estado.map((entry, index) => (
+                {stats.pedidos_por_estado.map((entry) => (
                   <div key={entry.estado} className="flex items-center gap-2 text-xs text-gray-600">
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[entry.estado] || '#6b7280' }}></span>
                     {entry.estado} ({entry.cantidad})

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ShoppingCart, Loader, AlertTriangle, Info, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Loader, Info, Plus, Minus } from 'lucide-react';
 import { useState } from 'react';
 import { productosApi } from '../api/productosApi';
 import { useCartStore } from '../store/cartStore';

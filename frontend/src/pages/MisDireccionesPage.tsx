@@ -137,9 +137,6 @@ export default function MisDireccionesPage() {
   const [editando, setEditando] = useState<DireccionResponse | null>(null);
 
   const abrirEditar = (dir: DireccionResponse) => {
-    const partes = dir.linea1.split(" ");
-    const altura = partes.pop() ?? "";
-    const calle  = partes.join(" ");
     setEditando(dir);
     setModo("editar");
     window.scrollTo({ top: 0, behavior: "smooth" });
