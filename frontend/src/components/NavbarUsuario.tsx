@@ -1,5 +1,6 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, ShoppingBag, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
+import { ShoppingCart, ShoppingBag, User, Menu, X } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useUiStore } from "../store/uiStore";
 import { useCartStore } from "../store/cartStore";
@@ -15,6 +16,13 @@ export default function NavbarUsuario() {
   const itemCount = useCartStore((s) => s.itemCount());
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Cerrar menú móvil al cambiar de ruta
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -52,75 +60,171 @@ export default function NavbarUsuario() {
             </div>
 
             {/* Acciones */}
-            <div className="flex items-center gap-4">
-              {/* Carrito */}
+            <div className="flex items-center gap-3">
+              {/* Acciones de Usuario (Desktop) */}
+              <div className="hidden md:flex items-center gap-4">
+                {isAuthenticated ? (
+                  <>
+                    <div className="flex items-center gap-2 mr-2">
+                      <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-main">
+                        <User size={16} />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">
+                        Hola, <span className="font-bold text-green-dark">{usuario?.nombre?.split(" ")[0]}</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <Link
+                        to="/mis-pedidos"
+                        className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
+                      >
+                        Mis Pedidos
+                      </Link>
+                      <Link
+                        to="/mis-direcciones"
+                        className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
+                      >
+                        Mis Direcciones
+                      </Link>
+                    </div>
+
+                    {isAdmin && (
+                      <Link
+                        to="/dashboard"
+                        className="text-sm bg-green-main text-white px-3 py-1.5 rounded-lg hover:bg-green-dark transition-colors"
+                      >
+                        Dashboard
+                      </Link>
+                    )}
+
+                    <button
+                      onClick={handleLogout}
+                      className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Salir
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3 mr-2">
+                    <Link
+                      to="/login"
+                      className="text-sm font-medium text-gray-600 hover:text-green-main"
+                    >
+                      Ingresar
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="text-sm font-medium bg-green-main text-white px-4 py-2 rounded-lg hover:bg-green-dark transition-colors"
+                    >
+                      Crear cuenta
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="h-6 w-px bg-gray-200 hidden md:block mx-1" />
+
+              {/* Carrito (Siempre visible) */}
               <button
                 onClick={openCart}
                 className="relative p-2 text-gray-600 hover:text-green-main transition-colors"
               >
                 <ShoppingCart size={24} />
                 {itemCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-yellow-banner text-green-dark text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
+                  <span className="absolute top-0 right-0 bg-yellow-banner text-green-dark text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1 shadow-sm">
                     {itemCount > 99 ? "99+" : itemCount}
                   </span>
                 )}
               </button>
 
-              <div className="h-6 w-px bg-gray-200 hidden md:block" />
+              {/* Botón de Hamburguesa para Mobile */}
+              <button
+                className="md:hidden p-2 text-gray-600 hover:text-green-main"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+          </div>
+        </div>
 
+        {/* Menú Móvil Desplegable */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-100 bg-white p-4 space-y-4 shadow-lg absolute w-full left-0 animate-in slide-in-from-top-2 duration-200">
+
+
+            {/* Opciones de usuario */}
+            <div className="flex flex-col space-y-3">
               {isAuthenticated ? (
-                <div className="flex items-center gap-4">
-                  <div className="hidden md:flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-main">
+                <>
+                  <div className="flex items-center gap-2 mb-2 p-2 bg-green-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-green-main shadow-sm">
                       <User size={16} />
                     </div>
                     <span className="text-sm font-medium text-gray-700">
                       Hola, <span className="font-bold text-green-dark">{usuario?.nombre?.split(" ")[0]}</span>
                     </span>
                   </div>
-
-                  <div className="hidden md:flex items-center gap-4">
+                  {/* Links de navegación */}
+                  <div className="flex flex-col space-y-3 pb-3 border-b border-gray-100">
                     <Link
-                      to="/mis-pedidos"
-                      className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
+                      to="/catalogo"
+                      className="text-gray-700 font-medium flex items-center gap-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      Mis Pedidos
+                      <ShoppingBag size={18} className="text-green-main" />
+                      Catálogo de Productos
                     </Link>
-                    <Link
-                      to="/mis-direcciones"
-                      className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
-                    >
-                      Mis Direcciones
-                    </Link>
+                    <div className="pl-1">
+                      <NavbarCategoriesMenu />
+                    </div>
                   </div>
+                  <Link
+                    to="/mis-pedidos"
+                    className="text-gray-600 font-medium py-1"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Mis Pedidos
+                  </Link>
+                  <Link
+                    to="/mis-direcciones"
+                    className="text-gray-600 font-medium py-1"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Mis Direcciones
+                  </Link>
 
                   {isAdmin && (
                     <Link
                       to="/dashboard"
-                      className="text-sm bg-green-main text-white px-3 py-1.5 rounded-lg hover:bg-green-dark transition-colors"
+                      className="text-green-main font-bold py-1"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      Dashboard
+                      Panel de Administración
                     </Link>
                   )}
 
                   <button
-                    onClick={handleLogout}
-                    className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                    className="text-red-500 font-medium text-left pt-2 mt-2 border-t border-gray-100"
                   >
-                    Salir
+                    Cerrar Sesión
                   </button>
-                </div>
+                </>
               ) : (
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 pt-2">
                   <Link
                     to="/login"
-                    className="text-sm font-medium text-gray-600 hover:text-green-main"
+                    className="text-center text-green-main font-bold py-2 border border-green-main rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Ingresar
                   </Link>
                   <Link
                     to="/register"
-                    className="text-sm font-medium bg-green-main text-white px-4 py-2 rounded-lg hover:bg-green-dark transition-colors"
+                    className="text-center bg-green-main text-white font-bold py-2 rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Crear cuenta
                   </Link>
@@ -128,7 +232,7 @@ export default function NavbarUsuario() {
               )}
             </div>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Panel lateral del carrito */}

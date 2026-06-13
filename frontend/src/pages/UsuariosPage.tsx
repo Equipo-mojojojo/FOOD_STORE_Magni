@@ -1,6 +1,7 @@
 /** Página de administración de usuarios — solo ADMIN. */
 import { useState, useEffect } from "react";
-import { Search, Shield, RotateCcw, UserX, Eye, X, MapPin, ShoppingBag, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Shield, RotateCcw, UserX, Eye, X, MapPin, ShoppingBag, User, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   useActualizarRolesUsuario,
   useEliminarUsuario,
@@ -15,6 +16,7 @@ import type { UsuarioAdmin } from "../types";
 type EstadoFiltro = "activo" | "inactivo" | "todos";
 
 export default function UsuariosPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     page: 1,
     per_page: 10,
@@ -29,6 +31,7 @@ export default function UsuariosPage() {
 
   const [expandedPedidoId, setExpandedPedidoId] = useState<number | null>(null);
   const { data: expandedPedido, isLoading: expandedPedidoLoading } = usePedido(expandedPedidoId || 0);
+
 
   const [searchInput, setSearchInput] = useState("");
 
@@ -439,21 +442,36 @@ export default function UsuariosPage() {
                                       )}
                                     </div>
 
-                                    {/* Totales */}
+                                    {/* Totales y Link */}
                                     <div className="border-t border-gray-100 pt-3 flex flex-col gap-1.5 text-xs text-gray-600 px-1">
-                                      <div className="flex justify-between">
-                                        <span>Subtotal:</span>
-                                        <span className="font-medium text-gray-700">${Number(expandedPedido.subtotal).toFixed(2)}</span>
-                                      </div>
-                                      {Number(expandedPedido.costo_envio) > 0 && (
-                                        <div className="flex justify-between">
-                                          <span>Costo de Envío:</span>
-                                          <span className="font-medium text-gray-700">${Number(expandedPedido.costo_envio).toFixed(2)}</span>
+                                      <div className="flex justify-between items-end">
+                                        <div className="flex-1 space-y-1.5 pr-4">
+                                          <div className="flex justify-between">
+                                            <span>Subtotal:</span>
+                                            <span className="font-medium text-gray-700">${Number(expandedPedido.subtotal).toFixed(2)}</span>
+                                          </div>
+                                          {Number(expandedPedido.costo_envio) > 0 && (
+                                            <div className="flex justify-between">
+                                              <span>Costo de Envío:</span>
+                                              <span className="font-medium text-gray-700">${Number(expandedPedido.costo_envio).toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                          <div className="flex justify-between font-bold text-gray-900 border-t border-gray-100 pt-2 text-sm mt-1">
+                                            <span className="text-gray-800">Total:</span>
+                                            <span className="text-green-main text-base">${Number(expandedPedido.total).toFixed(2)}</span>
+                                          </div>
                                         </div>
-                                      )}
-                                      <div className="flex justify-between font-bold text-gray-900 border-t border-gray-100 pt-2 text-sm mt-1">
-                                        <span className="text-gray-800">Total:</span>
-                                        <span className="text-green-main text-base">${Number(expandedPedido.total).toFixed(2)}</span>
+                                        
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDetailUserId(null);
+                                            navigate(`/gestion/pedidos/${p.id}`);
+                                          }}
+                                          className="shrink-0 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-green-dark bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors"
+                                        >
+                                          Gestionar pedido <ExternalLink size={12} />
+                                        </button>
                                       </div>
                                     </div>
                                   </div>

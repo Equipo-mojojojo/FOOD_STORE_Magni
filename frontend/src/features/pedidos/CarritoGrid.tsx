@@ -1,5 +1,6 @@
 /** Grilla de ítems del carrito con controles de cantidad. */
 import { Trash2, Plus, Minus } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useCartStore } from "../../store/cartStore";
 
 export default function CarritoGrid() {
@@ -14,28 +15,30 @@ export default function CarritoGrid() {
           key={item.producto.id}
           className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3"
         >
-          <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
-              <img
-                src={`http://localhost:8000${item.producto.imagenes[0]}`}
-                alt={item.producto.nombre}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-2xl font-bold text-green-main opacity-50">
-                {item.producto.nombre.charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
+          <Link to={`/producto/${item.producto.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+            <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
+                <img
+                  src={`http://localhost:8000${item.producto.imagenes[0]}`}
+                  alt={item.producto.nombre}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl font-bold text-green-main opacity-50">
+                  {item.producto.nombre.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
 
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900">
-              {item.producto.nombre}
-            </h3>
-            <p className="text-green-dark font-medium text-sm whitespace-nowrap">
-              ${Number(item.producto.precio_base).toLocaleString("es-AR")} c/u
-            </p>
-          </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 line-clamp-1 hover:underline">
+                {item.producto.nombre}
+              </h3>
+              <p className="text-green-dark font-medium text-sm whitespace-nowrap">
+                ${Number(item.producto.precio_base).toLocaleString("es-AR")} c/u
+              </p>
+            </div>
+          </Link>
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <button

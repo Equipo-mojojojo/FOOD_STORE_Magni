@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { productosApi } from "../api/productosApi";
 import { categoriasApi } from "../api/categoriasApi";
@@ -7,10 +8,14 @@ import ProductCard from "../components/ProductCard";
 import { useDebounce } from "../hooks/useDebounce";
 
 export default function StorefrontCatalogoPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryCategoria = searchParams.get("categoria");
+  
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  const [selectedCategoria, setSelectedCategoria] = useState<number | undefined>();
+  const selectedCategoria = queryCategoria ? Number(queryCategoria) : undefined;
+  
   const [sortOption, setSortOption] = useState<string>("destacados");
   const [page, setPage] = useState(1);
   const perPage = 12;
@@ -93,7 +98,12 @@ export default function StorefrontCatalogoPage() {
   };
 
   const handleCategoriaSelect = (id?: number) => {
-    setSelectedCategoria(id);
+    if (id) {
+      searchParams.set("categoria", String(id));
+    } else {
+      searchParams.delete("categoria");
+    }
+    setSearchParams(searchParams);
     setPage(1);
   };
 
@@ -226,7 +236,8 @@ export default function StorefrontCatalogoPage() {
             <button
               onClick={() => {
                 setSearchTerm("");
-                setSelectedCategoria(undefined);
+                searchParams.delete("categoria");
+                setSearchParams(searchParams);
               }}
               className="mt-6 px-6 py-2 bg-green-50 text-green-main font-bold rounded-xl hover:bg-green-100 transition-colors"
             >

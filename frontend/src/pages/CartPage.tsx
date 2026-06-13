@@ -158,7 +158,13 @@ export default function CartPage() {
                 </label>
                 <select
                   value={formaPago}
-                  onChange={(e) => setFormaPago(e.target.value)}
+                  onChange={(e) => {
+                    const newFormaPago = e.target.value;
+                    setFormaPago(newFormaPago);
+                    if (newFormaPago === "EFECTIVO") {
+                      setTipoEntrega("RETIRO");
+                    }
+                  }}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main"
                 >
                   <option value="">Seleccioná...</option>
@@ -179,7 +185,8 @@ export default function CartPage() {
                 <select
                   value={tipoEntrega}
                   onChange={(e) => setTipoEntrega(e.target.value as "ENVIO" | "RETIRO")}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main"
+                  disabled={formaPago === "EFECTIVO"}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-main disabled:bg-gray-100 disabled:text-gray-500"
                 >
                   <option value="ENVIO">Envío a domicilio</option>
                   <option value="RETIRO">Retiro en el local</option>

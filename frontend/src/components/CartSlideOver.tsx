@@ -1,5 +1,5 @@
 import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useUiStore } from '../store/uiStore';
 import { useCartStore } from '../store/cartStore';
 
@@ -67,26 +67,28 @@ export default function CartSlideOver() {
               {items.map((item) => (
                 <li key={item.producto.id} className="flex gap-4 p-3 bg-white border border-gray-100 shadow-sm rounded-2xl">
                   {/* Imagen del Producto */}
-                  <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
-                    {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
-                      <img 
-                        src={`http://localhost:8000${item.producto.imagenes[0]}`} 
-                        alt={item.producto.nombre} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <span className="text-2xl font-bold text-green-main opacity-50">
-                        {item.producto.nombre.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
+                  <Link to={`/producto/${item.producto.id}`} className="shrink-0 hover:opacity-80 transition-opacity" onClick={closeCart}>
+                    <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center overflow-hidden">
+                      {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
+                        <img 
+                          src={`http://localhost:8000${item.producto.imagenes[0]}`} 
+                          alt={item.producto.nombre} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <span className="text-2xl font-bold text-green-main opacity-50">
+                          {item.producto.nombre.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
 
                   {/* Info */}
                   <div className="flex flex-col flex-1">
                     <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-bold text-gray-800 leading-tight line-clamp-2">
+                      <Link to={`/producto/${item.producto.id}`} className="font-bold text-gray-800 leading-tight line-clamp-2 hover:underline" onClick={closeCart}>
                         {item.producto.nombre}
-                      </h3>
+                      </Link>
                       <button 
                         onClick={() => removeItem(item.producto.id)}
                         className="text-gray-400 hover:text-danger-main transition-colors p-1"
