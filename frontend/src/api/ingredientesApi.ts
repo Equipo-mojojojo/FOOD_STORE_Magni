@@ -50,6 +50,11 @@ export const ingredientesApi = {
     return res.data;
   },
 
+  getPublicList: async (): Promise<{ id: number; nombre: string; es_alergeno: boolean }[]> => {
+    const res = await axiosClient.get<{ id: number; nombre: string; es_alergeno: boolean }[]>('/productos/ingredientes-public');
+    return res.data;
+  },
+
   getById: async (id: number): Promise<Ingrediente> => {
     const res = await axiosClient.get<Ingrediente>(`/ingredientes/${id}`);
     return res.data;

@@ -72,7 +72,7 @@ export default function CartPage() {
         items: items.map((i) => ({
           producto_id: i.producto.id,
           cantidad: i.cantidad,
-          personalizacion: [],
+          personalizacion: i.personalizacion || [],
         })),
         forma_pago_codigo: formaPago,
         direccion_id: tipoEntrega === "RETIRO" ? null : direccionId,

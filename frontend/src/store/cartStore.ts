@@ -5,10 +5,10 @@ import type { CartItem, Producto } from "../types";
 
 interface CartState {
   items: CartItem[];
-  addItem: (producto: Producto, cantidad?: number) => void;
-  removeItem: (productoId: number) => void;
-  updateCantidad: (productoId: number, cantidad: number) => void;
-  updateQuantity: (productoId: number, cantidad: number) => void;
+  addItem: (producto: Producto, cantidad?: number, personalizacion?: number[]) => void;
+  removeItem: (cartItemId: string) => void;
+  updateCantidad: (cartItemId: string, cantidad: number) => void;
+  updateQuantity: (cartItemId: string, cantidad: number) => void;
   clearCart: () => void;
   total: () => number;
   itemCount: () => number;
@@ -21,42 +21,46 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
 
-      addItem: (producto, cantidad = 1) => {
+      addItem: (producto, cantidad = 1, personalizacion = []) => {
         set((state) => {
-          const existing = state.items.find((i) => i.producto.id === producto.id);
+          // Generar cartItemId único basado en ID y personalización ordenada
+          const sortedPers = [...personalizacion].sort();
+          const cartItemId = `${producto.id}-${sortedPers.join(',')}`;
+
+          const existing = state.items.find((i) => i.cartItemId === cartItemId);
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.producto.id === producto.id
+                i.cartItemId === cartItemId
                   ? { ...i, cantidad: i.cantidad + cantidad }
                   : i
               ),
             };
           }
-          return { items: [...state.items, { producto, cantidad }] };
+          return { items: [...state.items, { cartItemId, producto, cantidad, personalizacion }] };
         });
       },
 
-      removeItem: (productoId) => {
+      removeItem: (cartItemId) => {
         set((state) => ({
-          items: state.items.filter((i) => i.producto.id !== productoId),
+          items: state.items.filter((i) => (i.cartItemId || `legacy-${i.producto.id}`) !== cartItemId),
         }));
       },
 
-      updateCantidad: (productoId, cantidad) => {
+      updateCantidad: (cartItemId, cantidad) => {
         if (cantidad < 1) return;
         set((state) => ({
           items: state.items.map((i) =>
-            i.producto.id === productoId ? { ...i, cantidad } : i
+            (i.cartItemId || `legacy-${i.producto.id}`) === cartItemId ? { ...i, cantidad } : i
           ),
         }));
       },
 
-      updateQuantity: (productoId, cantidad) => {
+      updateQuantity: (cartItemId, cantidad) => {
         if (cantidad < 1) return;
         set((state) => ({
           items: state.items.map((i) =>
-            i.producto.id === productoId ? { ...i, cantidad } : i
+            (i.cartItemId || `legacy-${i.producto.id}`) === cartItemId ? { ...i, cantidad } : i
           ),
         }));
       },

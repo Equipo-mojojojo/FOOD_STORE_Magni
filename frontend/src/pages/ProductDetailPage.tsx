@@ -11,6 +11,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const [cantidad, setCantidad] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [removidos, setRemovidos] = useState<number[]>([]);
   
   const { addItem } = useCartStore();
 
@@ -45,9 +46,12 @@ export default function ProductDetailPage() {
   }
 
   const handleAddToCart = () => {
-    // casteamos a unknown -> Producto ya que ProductoDetail y Producto son muy similares y compatibles para el carrito
-    addItem(producto as any, cantidad);
+    addItem(producto as any, cantidad, removidos);
     toast.success(`${producto.nombre} agregado al carrito`);
+  };
+
+  const toggleRemovable = (ingId: number) => {
+    setRemovidos(prev => prev.includes(ingId) ? prev.filter(i => i !== ingId) : [...prev, ingId]);
   };
 
   // Color de placeholder según ID
@@ -135,19 +139,37 @@ export default function ProductDetailPage() {
               
               {producto.ingredientes.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
-                  {producto.ingredientes.map(ing => (
-                    <div key={ing.ingrediente.id} className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-xl border border-gray-100 shadow-sm text-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-main shrink-0" />
-                      <span className="text-gray-700 font-medium capitalize truncate" title={ing.ingrediente.nombre}>
-                        {ing.ingrediente.nombre}
-                      </span>
-                      {ing.ingrediente.es_alergeno && (
-                        <span className="text-danger-main text-[9px] font-extrabold ml-auto bg-danger-50 px-1.5 py-0.5 rounded" title="Alérgeno">
-                          Alerg.
+                  {producto.ingredientes.map(ing => {
+                    const isRemoved = removidos.includes(ing.ingrediente.id);
+                    return (
+                      <div 
+                        key={ing.ingrediente.id} 
+                        onClick={() => ing.es_removible && toggleRemovable(ing.ingrediente.id)}
+                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border shadow-sm text-xs transition-all ${
+                          ing.es_removible ? 'cursor-pointer hover:shadow-md' : 'cursor-default'
+                        } ${
+                          isRemoved 
+                            ? 'bg-red-50 border-red-100 opacity-70' 
+                            : 'bg-white border-gray-100'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isRemoved ? 'bg-red-400' : 'bg-green-main'}`} />
+                        <span className={`text-gray-700 font-medium capitalize truncate ${isRemoved ? 'line-through text-gray-400' : ''}`} title={ing.ingrediente.nombre}>
+                          {ing.ingrediente.nombre}
                         </span>
-                      )}
-                    </div>
-                  ))}
+                        {ing.es_removible && (
+                          <span className={`ml-auto text-[10px] font-bold ${isRemoved ? 'text-red-500' : 'text-gray-400'}`}>
+                            {isRemoved ? 'Sin' : 'Con'}
+                          </span>
+                        )}
+                        {ing.ingrediente.es_alergeno && !ing.es_removible && (
+                          <span className="text-danger-main text-[9px] font-extrabold ml-auto bg-danger-50 px-1.5 py-0.5 rounded" title="Alérgeno">
+                            Alerg.
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-xs text-gray-500 italic">No hay información detallada de ingredientes.</p>

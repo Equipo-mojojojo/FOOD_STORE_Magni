@@ -64,8 +64,13 @@ export default function CartSlideOver() {
             </div>
           ) : (
             <ul className="space-y-4">
-              {items.map((item) => (
-                <li key={item.producto.id} className="flex gap-4 p-3 bg-white border border-gray-100 shadow-sm rounded-2xl">
+              {items.map((item) => {
+                const removidosNames = item.personalizacion && item.personalizacion.length > 0
+                  ? item.personalizacion.map(id => item.producto.ingredientes.find(i => i.ingrediente.id === id)?.ingrediente.nombre).filter(Boolean)
+                  : [];
+
+                return (
+                <li key={item.cartItemId || `legacy-${item.producto.id}`} className="flex gap-4 p-3 bg-white border border-gray-100 shadow-sm rounded-2xl">
                   {/* Imagen del Producto */}
                   <Link to={`/producto/${item.producto.id}`} className="shrink-0 hover:opacity-80 transition-opacity" onClick={closeCart}>
                     <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center overflow-hidden">
@@ -90,12 +95,18 @@ export default function CartSlideOver() {
                         {item.producto.nombre}
                       </Link>
                       <button 
-                        onClick={() => removeItem(item.producto.id)}
+                        onClick={() => removeItem(item.cartItemId)}
                         className="text-gray-400 hover:text-danger-main transition-colors p-1"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
+
+                    {removidosNames && removidosNames.length > 0 && (
+                      <div className="text-xs font-bold text-red-500 mb-1">
+                        Sin: {removidosNames.join(", ")}
+                      </div>
+                    )}
                     
                     <div className="text-sm font-bold text-gray-900 mb-2">
                       {formatPrice(item.producto.precio_base)}
@@ -105,7 +116,7 @@ export default function CartSlideOver() {
                     <div className="mt-auto flex items-center gap-3">
                       <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
                         <button 
-                          onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
+                          onClick={() => updateQuantity(item.cartItemId, item.cantidad - 1)}
                           className="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-green-main transition-colors"
                         >
                           <Minus size={14} />
@@ -114,7 +125,7 @@ export default function CartSlideOver() {
                           {item.cantidad}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
+                          onClick={() => updateQuantity(item.cartItemId, item.cantidad + 1)}
                           disabled={item.cantidad >= item.producto.stock_disponible}
                           className="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-green-main transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                         >
@@ -124,7 +135,8 @@ export default function CartSlideOver() {
                     </div>
                   </div>
                 </li>
-              ))}
+              );
+              })}
             </ul>
           )}
         </div>

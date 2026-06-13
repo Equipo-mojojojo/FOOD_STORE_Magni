@@ -4,6 +4,7 @@ from typing import Optional, List, Annotated
 from app.core.deps import require_role
 from app.core.uow import UnitOfWork
 from app.modules.productos import service
+from pydantic import BaseModel
 from app.modules.productos.schemas import (
     ProductoCreate,
     ProductoUpdate,
@@ -24,6 +25,19 @@ def list_unidades_medida():
     """Obtiene el catálogo de unidades de medida (kg, L, etc.)."""
     with UnitOfWork() as uow:
         return service.get_unidades_medida(uow)
+
+# ── Ingredientes Públicos ─────────────────────────────────────────────────────
+
+class IngredientePublico(BaseModel):
+    id: int
+    nombre: str
+    es_alergeno: bool
+
+@router.get("/ingredientes-public", response_model=List[IngredientePublico])
+def list_ingredientes_public():
+    """Obtiene una lista pública de ingredientes (solo ID, nombre y alérgeno)."""
+    with UnitOfWork() as uow:
+        return uow.ingredientes.get_all()
 
 # ── Productos ────────────────────────────────────────────────────────────────
 

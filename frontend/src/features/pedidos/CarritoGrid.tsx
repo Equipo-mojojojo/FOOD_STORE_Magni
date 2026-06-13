@@ -10,9 +10,14 @@ export default function CarritoGrid() {
 
   return (
     <div className="space-y-4">
-      {items.map((item) => (
+      {items.map((item) => {
+        const removidosNames = item.personalizacion && item.personalizacion.length > 0
+          ? item.personalizacion.map(id => item.producto.ingredientes.find(i => i.ingrediente.id === id)?.ingrediente.nombre).filter(Boolean)
+          : [];
+
+        return (
         <div
-          key={item.producto.id}
+          key={item.cartItemId || `legacy-${item.producto.id}`}
           className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3"
         >
           <Link to={`/producto/${item.producto.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
@@ -34,6 +39,11 @@ export default function CarritoGrid() {
               <h3 className="font-semibold text-gray-900 line-clamp-1 hover:underline">
                 {item.producto.nombre}
               </h3>
+              {removidosNames && removidosNames.length > 0 && (
+                <div className="text-[11px] font-bold text-red-500 mt-0.5 mb-1 leading-tight">
+                  Sin: {removidosNames.join(", ")}
+                </div>
+              )}
               <p className="text-green-dark font-medium text-sm whitespace-nowrap">
                 ${Number(item.producto.precio_base).toLocaleString("es-AR")} c/u
               </p>
@@ -43,7 +53,7 @@ export default function CarritoGrid() {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() =>
-                updateCantidad(item.producto.id, item.cantidad - 1)
+                updateCantidad(item.cartItemId, item.cantidad - 1)
               }
               className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors"
             >
@@ -54,7 +64,7 @@ export default function CarritoGrid() {
             </span>
             <button
               onClick={() =>
-                updateCantidad(item.producto.id, item.cantidad + 1)
+                updateCantidad(item.cartItemId, item.cantidad + 1)
               }
               disabled={item.cantidad >= item.producto.stock_disponible}
               className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -73,13 +83,14 @@ export default function CarritoGrid() {
           </div>
 
           <button
-            onClick={() => removeItem(item.producto.id)}
+            onClick={() => removeItem(item.cartItemId)}
             className="text-red-400 hover:text-red-600 transition-colors ml-1 flex-shrink-0"
           >
             <Trash2 size={18} />
           </button>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

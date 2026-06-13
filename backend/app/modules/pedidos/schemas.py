@@ -56,16 +56,6 @@ class PedidoCreate(BaseModel):
     forma_pago_codigo: str = Field(max_length=20)
     direccion_id: Optional[int] = None
     notas: Optional[str] = None
- 
-    @model_validator(mode="after")
-    def validar_pedido(self) -> "PedidoCreate":
-        # Productos duplicados
-        ids = [item.producto_id for item in self.items]
-        if len(ids) != len(set(ids)):
-            raise ValueError("El carrito contiene productos duplicados")
-            
-        return self
-
 
 class AvanzarEstadoRequest(BaseModel):
     """Datos para avanzar el estado de un pedido."""

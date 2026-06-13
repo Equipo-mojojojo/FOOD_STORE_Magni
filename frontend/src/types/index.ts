@@ -377,7 +377,9 @@ export interface PaginatedUsuarios {
 
 // --- CARRITO ---
 export interface CartItem {
+  cartItemId: string; // Unique ID composed of producto.id + personalizacion
   producto: Producto;
   cantidad: number;
+  personalizacion?: number[]; // IDs of removed ingredients
 }
 
