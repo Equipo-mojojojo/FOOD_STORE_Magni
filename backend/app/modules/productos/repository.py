@@ -77,7 +77,17 @@ class ProductoRepository(BaseRepository[Producto]):
             query = query.where(Producto.disponible == disponible)
         
         if categoria_id:
-            query = query.join(ProductoCategoria).where(ProductoCategoria.categoria_id == categoria_id)
+            from app.modules.categorias.model import Categoria
+            
+            # CTE recursiva para obtener la categoría solicitada y todos sus descendientes
+            cte = select(Categoria.id).where(Categoria.id == categoria_id).cte(name="cat_hierarchy", recursive=True)
+            cte = cte.union_all(
+                select(Categoria.id).where(Categoria.padre_id == cte.c.id)
+            )
+            
+            query = query.join(ProductoCategoria).where(
+                ProductoCategoria.categoria_id.in_(select(cte.c.id))
+            )
 
         if search:
             query = query.where(
