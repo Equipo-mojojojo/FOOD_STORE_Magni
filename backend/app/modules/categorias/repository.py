@@ -116,10 +116,18 @@ class CategoriaRepository(BaseRepository[Categoria]):
     def has_active_products(self, categoria_id: int) -> bool:
         """Verifica si la categoría tiene productos activos asociados."""
         from app.modules.productos.model import ProductoCategoria, Producto
+        from app.modules.categorias.model import Categoria
+        
+        # CTE para incluir todas las subcategorías en la verificación
+        cte = select(Categoria.id).where(Categoria.id == categoria_id).cte(name="cat_hierarchy", recursive=True)
+        cte = cte.union_all(
+            select(Categoria.id).where(Categoria.padre_id == cte.c.id)
+        )
+
         stmt = (
             select(ProductoCategoria)
             .join(Producto)
-            .where(ProductoCategoria.categoria_id == categoria_id)
+            .where(ProductoCategoria.categoria_id.in_(select(cte.c.id)))
             .where(Producto.deleted_at.is_(None))
             .limit(1)
         )
