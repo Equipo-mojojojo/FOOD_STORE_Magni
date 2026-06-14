@@ -145,7 +145,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Pancho simple",
         "descripcion": "Pancho simple",
-        "imagen": "",
+        "imagen": "pancho_simple.jpg",
         "precio_base": "3900.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -162,7 +162,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Pancho doble con cheddar",
         "descripcion": "Pancho doble con cheddar: doble salchicha y mucho cheddar",
-        "imagen": "",
+        "imagen": "pancho_doble.jpg",
         "precio_base": "7200.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -180,7 +180,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Papas fritas con mayo",
         "descripcion": "Papas fritas con mayonesa",
-        "imagen": "",
+        "imagen": "papas_con_mayo.jpg",         
         "precio_base": "5800.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -194,7 +194,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Papas fritas con cheddar",
         "descripcion": "Papas fritas con cheddar",
-        "imagen": "",
+        "imagen": "papas_cheddar.jpeg",
         "precio_base": "7200.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -208,7 +208,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "hhss",
         "descripcion": "ss",
-        "imagen": "",
+        "imagen": "hamburguesa_queso.jpeg",
         "precio_base": "9000.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -235,7 +235,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Sprite 500ml",
         "descripcion": "",
-        "imagen": "",
+        "imagen": "sprite500ml.jpeg",
         "precio_base": "2000.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -279,7 +279,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Docena de empanadas de jamón y queso",
         "descripcion": "Docena de empanadas de jamón y queso",
-        "imagen": "",
+        "imagen": "empanada_jamon_queso.jpeg",
         "precio_base": "27000.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -294,7 +294,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Hamburguesa de queso",
         "descripcion": "queso carne",
-        "imagen": "",
+        "imagen": "hamburguesa_queso.jpeg",
         "precio_base": "379.08",
         "stock": 0.0,
         "unidad": "pieza",
@@ -382,7 +382,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Coca cola 1.5L",
         "descripcion": "Coca cola 1.5L",
-        "imagen": "",
+        "imagen": "coca1.5.jpg",
         "precio_base": "3700.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -395,7 +395,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Fanta 500ml",
         "descripcion": "",
-        "imagen": "",
+        "imagen": "fanta500ml.jpeg",
         "precio_base": "1500.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -408,7 +408,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Sprite 1.5L",
         "descripcion": "Sprite 1.5L",
-        "imagen": "",
+        "imagen": "sprite1.5l.jpg",
         "precio_base": "3600.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -421,7 +421,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Sprite lata 350ml.",
         "descripcion": "Sprite lata 350ml.",
-        "imagen": "",
+        "imagen": "sprite_lata.jpeg",
         "precio_base": "2100.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -434,7 +434,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Docena de empanadas de carne",
         "descripcion": "Docena de empanadas de carne molida",
-        "imagen": "",
+        "imagen": "empanada_carne.jpeg",
         "precio_base": "20700.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -460,7 +460,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Pizzas de jamón crudo y rúcula",
         "descripcion": "Pizzas de jamón crudo y rúcula",
-        "imagen": "",
+        "imagen": "pizza_jamon_rucula.jpeg",
         "precio_base": "19350.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -478,7 +478,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Pizza especial jamon cocido y morrón",
         "descripcion": "Pizza especial jamon cocido y morrón",
-        "imagen": "",
+        "imagen": "pizza_especial.jpeg",
         "precio_base": "18770.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -497,7 +497,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Pizza margarita",
         "descripcion": "Pizza margarita",
-        "imagen": "",
+        "imagen": "pizza_margarita.jpeg",
         "precio_base": "8070.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -527,7 +527,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Hamburguesa con roquefort",
         "descripcion": "Hamburguesa de carne con queso roquefort",
-        "imagen": "",
+        "imagen": "hamburguesa_roquefort.jpeg",
         "precio_base": "7506.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -544,7 +544,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Hamburguesa triple con cheddar",
         "descripcion": "Hamburguesa con cheddar: pan de hamburguesa, 3 medallones de carne y abundante cheddar.",
-        "imagen": "",
+        "imagen": "hamburguesa_triple.jpeg",
         "precio_base": "10350.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -554,12 +554,12 @@ PRODUCTOS_INICIALES = [
             {"nombre": "Medallon de Carne", "cantidad": "3.000", "unidad": "pieza", "removible": False},
             {"nombre": "Pan de Hamburguesa", "cantidad": "1.000", "unidad": "pieza", "removible": False},
             {"nombre": "Queso chedar", "cantidad": "0.300", "unidad": "kilogramo", "removible": False},
-        ],
+        ],  
     },
     {
         "nombre": "Pizza peperoni ",
         "descripcion": "Pizza peperoni",
-        "imagen": "",
+        "imagen": "pizza_peperoni.jpeg",
         "precio_base": "14281.25",
         "stock": 0.0,
         "unidad": "pieza",
@@ -576,7 +576,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Pizza hawaii",
         "descripcion": "Pizza hawaii con jamón cocido y ananá",
-        "imagen": "",
+        "imagen": "pizza_hawaii.jpeg",
         "precio_base": "22270.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -595,7 +595,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Docena de empanadas de quesos",
         "descripcion": "Docena de empanadas de quesos : mozzarella y roquefort",
-        "imagen": "",
+        "imagen": "empanada_queso.jpeg",
         "precio_base": "27000.00",
         "stock": 0.0,
         "unidad": "pieza",
@@ -610,7 +610,7 @@ PRODUCTOS_INICIALES = [
     {
         "nombre": "Docena de empanada árabes",
         "descripcion": "Docena de empanada árabes de carne",
-        "imagen": "",
+        "imagen": "empanada_arabe.jpeg",
         "precio_base": "23600.00",
         "stock": 0.0,
         "unidad": "pieza",
