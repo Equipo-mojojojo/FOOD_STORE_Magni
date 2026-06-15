@@ -27,6 +27,7 @@ export default function UsuariosPage() {
   const [detailTab, setDetailTab] = useState<"datos" | "direcciones" | "pedidos">("datos");
 
   const [searchInput, setSearchInput] = useState("");
+  const [usuarioAConfirmar, setUsuarioAConfirmar] = useState<UsuarioAdmin | null>(null);
 
   const { data, isLoading } = useUsuarios(filters);
   const { data: roles } = useRoles();
@@ -54,9 +55,8 @@ export default function UsuariosPage() {
     });
   };
 
-  const handleDesactivar = async (usuario: UsuarioAdmin) => {
-    if (!confirm(`¿Desactivar el usuario ${usuario.email}?`)) return;
-    await eliminarUsuario.mutateAsync(usuario.id);
+  const handleDesactivar = (usuario: UsuarioAdmin) => {
+    setUsuarioAConfirmar(usuario);
   };
 
   const handleRestaurar = async (usuario: UsuarioAdmin) => {
@@ -409,6 +409,34 @@ export default function UsuariosPage() {
             Siguiente
           </button>
         </div>
+      )}
+
+      {usuarioAConfirmar && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setUsuarioAConfirmar(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
+              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Desactivar usuario</h2>
+              <p className="text-sm text-gray-500 text-center mb-6">
+                ¿Desactivar el usuario <span className="font-semibold text-gray-700">{usuarioAConfirmar.email}</span>?
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setUsuarioAConfirmar(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    await eliminarUsuario.mutateAsync(usuarioAConfirmar.id);
+                    setUsuarioAConfirmar(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white font-medium text-sm hover:bg-danger-dark transition-colors"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
