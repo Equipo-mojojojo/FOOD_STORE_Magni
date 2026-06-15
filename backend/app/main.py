@@ -16,6 +16,9 @@ from app.modules.upload.router import router as upload_router
 from app.modules.estadisticas.router import router as estadisticas_router
 from app.modules.pagos.router import router as pagos_router
 
+from app.rate_limit.rate_limit_middleware import RateLimitMiddleware
+from app.middleware.logging_middleware import LoggingMiddleware
+from app.middleware.timing_middleware import TimingMiddleware
 
 from app.core.media import UPLOAD_DIR
 
@@ -25,6 +28,10 @@ app = FastAPI(
     description="API del sistema Food Store — Programación 4 — TUP",
     version="1.0.0",
 )
+#middlewares
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(LoggingMiddleware)
+app.add_middleware(TimingMiddleware)
 
 # CORS 
 app.add_middleware(

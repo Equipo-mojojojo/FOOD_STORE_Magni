@@ -50,7 +50,32 @@ class Settings(BaseSettings):
         "env_file_encoding": "utf-8",
         "extra":             "ignore",
     }
+    
+    # ─── Rate Limiting ────────────────────────────────────────────────────────
+    RATE_LIMIT_DEFAULT_PER_MINUTE: int = 60
+    RATE_LIMIT_DEFAULT_BURST: int = 10
+    RATE_LIMIT_AUTH_PER_MINUTE: int = 5
+    RATE_LIMIT_AUTH_BURST: int = 3
 
+    @computed_field
+    @property
+    def rate_limit_default_burst(self) -> int:
+        return self.RATE_LIMIT_DEFAULT_BURST
+
+    @computed_field
+    @property
+    def rate_limit_default_per_minute(self) -> int:
+        return self.RATE_LIMIT_DEFAULT_PER_MINUTE
+
+    @computed_field
+    @property
+    def rate_limit_auth_burst(self) -> int:
+        return self.RATE_LIMIT_AUTH_BURST
+
+    @computed_field
+    @property
+    def rate_limit_auth_per_minute(self) -> int:
+        return self.RATE_LIMIT_AUTH_PER_MINUTE
 
 # Instancia global — importar desde aquí en toda la app
 settings = Settings()
