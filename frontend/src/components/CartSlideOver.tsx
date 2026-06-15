@@ -76,7 +76,7 @@ export default function CartSlideOver() {
                     <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center overflow-hidden">
                       {item.producto.imagenes && item.producto.imagenes.length > 0 ? (
                         <img 
-                          src={`http://localhost:8000${item.producto.imagenes[0]}`} 
+                          src={item.producto.imagenes[0].startsWith('http') ? item.producto.imagenes[0] : `http://localhost:8000${item.producto.imagenes[0]}`} 
                           alt={item.producto.nombre} 
                           className="w-full h-full object-cover" 
                         />

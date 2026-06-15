@@ -11,7 +11,7 @@ from app.modules.categorias.router import router as categorias_router
 from app.modules.pedidos.router import router as pedidos_router
 from app.modules.usuarios.router import router as usuarios_router
 from app.modules.direcciones.router import router as direcciones_router
-from app.modules.upload.router import router as upload_router
+from app.modules.uploads.router import router as uploads_router
 
 from app.modules.estadisticas.router import router as estadisticas_router
 from app.modules.pagos.router import router as pagos_router
@@ -46,6 +46,8 @@ app.add_middleware(
 )
 
 # Servir archivos estáticos (uploads)
+# OJO: Se mantiene esta ruta SÓLO para que las imágenes del seed sigan funcionando localmente.
+# Los nuevos uploads usarán Cloudinary.
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="static_uploads")
 
@@ -64,7 +66,7 @@ app.include_router(categorias_router)
 app.include_router(pedidos_router)
 app.include_router(usuarios_router)
 app.include_router(direcciones_router)
-app.include_router(upload_router)
+app.include_router(uploads_router)
 app.include_router(estadisticas_router)
 app.include_router(pagos_router)
 

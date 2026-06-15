@@ -79,7 +79,7 @@ export default function ProductDetailPage() {
           <div className={`flex-1 flex items-center justify-center relative overflow-hidden ${colorClass} transition-colors duration-300`}>
             {producto.imagenes && producto.imagenes.length > 0 ? (
               <img 
-                src={`http://localhost:8000${producto.imagenes[activeImage]}`} 
+                src={producto.imagenes[activeImage].startsWith('http') ? producto.imagenes[activeImage] : `http://localhost:8000${producto.imagenes[activeImage]}`} 
                 alt={producto.nombre} 
                 className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
               />
@@ -102,7 +102,7 @@ export default function ProductDetailPage() {
                     activeImage === idx ? 'border-green-main shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={`http://localhost:8000${img}`} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                  <img src={img.startsWith('http') ? img : `http://localhost:8000${img}`} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

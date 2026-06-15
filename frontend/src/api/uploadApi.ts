@@ -5,12 +5,12 @@ export const uploadApi = {
     const formData = new FormData();
     formData.append("file", file);
     
-    const res = await axiosClient.post<{ url: string }>("/upload/imagen", formData, {
+    const res = await axiosClient.post<{ secure_url: string; public_id: string }>("/uploads/imagen", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
     
-    return res.data.url;
+    return res.data.secure_url;
   },
 };

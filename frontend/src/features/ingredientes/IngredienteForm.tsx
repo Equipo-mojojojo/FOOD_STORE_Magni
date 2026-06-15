@@ -271,7 +271,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const precioSugerido = calculatedCosto * (1 + Number(margenGanancia || 0));
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl p-6 animate-scale-in max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -415,18 +415,18 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                   onChange={(e) => setEsProductoTerminado(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-green-main rounded-full peer peer-checked:bg-blue-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-green-main rounded-full peer peer-checked:bg-green-main transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
               </label>
             </div>
 
             {/* Sección de producto vinculado — visible siempre que sea terminado */}
             {esProductoTerminado && (
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-4 animate-in fade-in duration-200">
-                <div className="flex items-center gap-2 text-blue-700">
+              <div className="bg-green-50 p-4 rounded-xl border border-green-200 space-y-4 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2 text-green-700">
                   <Package size={16} />
                   <span className="text-sm font-bold">Producto Automático</span>
                 </div>
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-green-600">
                   {ingrediente
                     ? "Editá la categoría y el monto extra. Al guardar, se actualizará el producto vinculado automáticamente."
                     : "Al guardar, se creará un producto de venta directa con este insumo. Solo necesitás elegir la categoría y cuánto querés sumarle al costo."
@@ -439,7 +439,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                     <select
                       value={categoriaId}
                       onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : "")}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm bg-white"
                     >
                       <option value="">Seleccionar...</option>
                       {categorias
@@ -450,10 +450,10 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                     </select>
                   </div>
 
-                  <div className="bg-white p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-3 border-b border-blue-50 pb-2 mb-2 flex items-center justify-between">
-                      <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wider">Rentabilidad y Precio</h3>
-                      <div className="text-[10px] text-blue-600 font-medium">Cálculo basado en insumo</div>
+                  <div className="bg-white p-4 rounded-xl border border-green-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-3 border-b border-green-50 pb-2 mb-2 flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-green-800 uppercase tracking-wider">Rentabilidad y Precio</h3>
+                      <div className="text-[10px] text-green-600 font-medium">Cálculo basado en insumo</div>
                     </div>
 
                     <div>
@@ -468,7 +468,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                           type="number" step="0.1"
                           value={margenGanancia === "" ? "" : Number(margenGanancia) * 100}
                           onChange={(e) => setMargenGanancia(e.target.value === "" ? "" : Number(e.target.value) / 100)}
-                          className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm"
+                          className="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
                         />
                         <span className="text-sm font-bold text-gray-400">%</span>
                       </div>
@@ -476,7 +476,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
 
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Precio Sugerido</label>
-                      <div className="text-lg font-bold text-blue-600">${precioSugerido.toFixed(2)}</div>
+                      <div className="text-lg font-bold text-green-600">${precioSugerido.toFixed(2)}</div>
                     </div>
 
                     <div className="md:col-span-3 pt-2">
@@ -486,12 +486,12 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                           type="number" step="0.01" required
                           value={precioBase}
                           onChange={(e) => setPrecioBase(e.target.value)}
-                          className="flex-1 px-4 py-2.5 border-2 border-blue-400 rounded-xl focus:ring-4 focus:ring-blue-100 outline-none text-lg font-bold text-blue-800"
+                          className="flex-1 px-4 py-2.5 border-2 border-green-main rounded-xl focus:ring-4 focus:ring-green-100 outline-none text-lg font-bold text-green-800"
                         />
                         <button
                           type="button"
                           onClick={() => setPrecioBase(Number(precioSugerido.toFixed(2)))}
-                          className="text-[10px] bg-blue-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                          className="text-[10px] bg-green-main text-white px-3 py-2 rounded-lg font-bold hover:bg-green-dark transition-colors"
                         >
                           USAR SUGERIDO
                         </button>
