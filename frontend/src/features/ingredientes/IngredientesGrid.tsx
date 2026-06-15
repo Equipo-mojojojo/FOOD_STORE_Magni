@@ -42,6 +42,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Ingrediente | null>(null);
   const [searchInput, setSearchInput] = useState("");
+  const [itemAConfirmar, setItemAConfirmar] = useState<{ id: number; tipo: 'eliminar' | 'baja' } | null>(null);
 
   const { data, isLoading: loading } = useIngredientes(filters);
 
@@ -90,14 +91,12 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
     setModalOpen(false);
   };
 
-  const handleEliminar = async (id: number) => {
-    if (!confirm("¿ELIMINAR este ingrediente? Esta acción es IRREVERSIBLE y el ingrediente desaparecerá del sistema.")) return;
-    await eliminarMut.mutateAsync(id);
+  const handleEliminar = (id: number) => {
+    setItemAConfirmar({ id, tipo: 'eliminar' });
   };
 
-  const handleDarDeBaja = async (id: number) => {
-    if (!confirm("¿Dar de baja este ingrediente? Podrás restaurarlo después.")) return;
-    await darDeBajaMut.mutateAsync(id);
+  const handleDarDeBaja = (id: number) => {
+    setItemAConfirmar({ id, tipo: 'baja' });
   };
 
   const handleExportCsv = async () => {
@@ -411,6 +410,42 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
         onClose={() => { setModalOpen(false); setEditingItem(null); }}
         onSave={handleSave}
       />
+
+      {itemAConfirmar && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setItemAConfirmar(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
+              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">
+                {itemAConfirmar.tipo === 'eliminar' ? 'Eliminar ingrediente' : 'Dar de baja ingrediente'}
+              </h2>
+              <p className="text-sm text-gray-500 text-center mb-6">
+                {itemAConfirmar.tipo === 'eliminar'
+                  ? 'Esta acción es IRREVERSIBLE y el ingrediente desaparecerá del sistema.'
+                  : 'Podrás restaurarlo después.'}
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setItemAConfirmar(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (itemAConfirmar.tipo === 'eliminar') {
+                      await eliminarMut.mutateAsync(itemAConfirmar.id);
+                    } else {
+                      await darDeBajaMut.mutateAsync(itemAConfirmar.id);
+                    }
+                    setItemAConfirmar(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white font-medium text-sm hover:bg-danger-dark transition-colors"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
