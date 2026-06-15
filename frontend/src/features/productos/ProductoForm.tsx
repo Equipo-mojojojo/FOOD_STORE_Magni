@@ -319,7 +319,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
               <div className="flex gap-4">
                 {formData.imagenes?.map((img, idx) => (
                   <div key={idx} className="relative w-24 h-24 rounded-lg border border-gray-200 overflow-hidden group shadow-sm">
-                    <img src={`http://localhost:8000${img}`} alt="Preview" className="w-full h-full object-cover" />
+                    <img src={img.startsWith('http') ? img : `http://localhost:8000${img}`} alt="Preview" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, imagenes: formData.imagenes?.filter((_, i) => i !== idx) })}
@@ -519,7 +519,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                           <input type="checkbox" className="hidden" checked={isSelected} onChange={() => !bloqueado && toggleIngrediente(i.id)} disabled={bloqueado} />
                           <span className="text-sm font-medium text-gray-700">
                             {i.nombre}
-                            {esTerminado && <span className="ml-1 text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">TERMINADO</span>}
+                            {esTerminado && <span className="ml-1 text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold">TERMINADO</span>}
                             {' '}<span className="text-[10px] text-gray-400 font-normal">($ {i.precio_costo}/{i.unidad_medida?.simbolo || 'unid'})</span>
                           </span>
                         </label>

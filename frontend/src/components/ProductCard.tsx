@@ -61,7 +61,7 @@ export default function ProductCard({ producto, className }: ProductCardProps) {
         
         {producto.imagenes && producto.imagenes.length > 0 ? (
           <img 
-            src={`http://localhost:8000${producto.imagenes[0]}`} 
+            src={producto.imagenes[0].startsWith('http') ? producto.imagenes[0] : `http://localhost:8000${producto.imagenes[0]}`} 
             alt={producto.nombre} 
             className="w-full h-full object-cover" 
           />

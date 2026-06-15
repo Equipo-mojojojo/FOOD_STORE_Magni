@@ -326,7 +326,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
                     </td>
                     <td className="px-4 py-3">
                       {item.es_producto_terminado ? (
-                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase border border-blue-100">Venta</span>
+                        <span className="px-2 py-0.5 rounded bg-green-50 text-green-700 text-[10px] font-bold uppercase border border-green-100">Venta</span>
                       ) : (
                         <span className="px-2 py-0.5 rounded bg-gray-50 text-gray-500 text-[10px] font-bold uppercase border border-gray-100">Insumo</span>
                       )}

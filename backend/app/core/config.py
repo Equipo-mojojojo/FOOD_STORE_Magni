@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     NGROK_URL:          Optional[str] = None
     VITE_FRONTEND_URL:  str = "http://localhost:5173"
 
+    # ─── Cloudinary ───────────────────────────────────────────────────────────
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY:    Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
+
     model_config = {
         "env_file":          ".env",
         "env_file_encoding": "utf-8",
