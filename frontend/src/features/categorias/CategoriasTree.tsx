@@ -12,6 +12,7 @@ export default function CategoriasTree() {
   const [editingItem, setEditingItem] = useState<Categoria | null>(null);
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [idAEliminar, setIdAEliminar] = useState<number | null>(null);
   const navigate = useNavigate();
 
   const crearMut = useCrearCategoria();
@@ -28,13 +29,8 @@ export default function CategoriasTree() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Eliminar esta categoría? Solo se puede si no tiene productos asociados.")) return;
-    try {
-      await eliminarMut.mutateAsync(id);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || "Error al eliminar");
-    }
+  const handleDelete = (id: number) => {
+    setIdAEliminar(id);
   };
 
   const handleRestore = async (id: number) => {
@@ -138,6 +134,36 @@ export default function CategoriasTree() {
         onClose={() => { setModalOpen(false); setEditingItem(null); setSelectedParentId(null); }}
         onSave={handleSave}
       />
+
+      {idAEliminar !== null && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setIdAEliminar(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
+              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Eliminar categoría</h2>
+              <p className="text-sm text-gray-500 text-center mb-6">Solo se puede si no tiene productos asociados.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setIdAEliminar(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await eliminarMut.mutateAsync(idAEliminar);
+                    } catch (err: any) {
+                      alert(err.response?.data?.detail || "Error al eliminar");
+                    }
+                    setIdAEliminar(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white font-medium text-sm hover:bg-danger-dark transition-colors"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

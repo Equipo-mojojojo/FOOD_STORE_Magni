@@ -23,6 +23,7 @@ export default function CategoriasGrid() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Categoria | null>(null);
   const [searchInput, setSearchInput] = useState("");
+  const [idAConfirmar, setIdAConfirmar] = useState<number | null>(null);
 
   // Debounce para búsqueda
   useEffect(() => {
@@ -52,9 +53,8 @@ export default function CategoriasGrid() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Dar de baja esta categoría?")) return;
-    await eliminarMut.mutateAsync(id);
+  const handleDelete = (id: number) => {
+    setIdAConfirmar(id);
   };
 
   const handleRestore = async (id: number) => {
@@ -244,6 +244,32 @@ export default function CategoriasGrid() {
         onClose={() => { setModalOpen(false); setEditingItem(null); }}
         onSave={handleSave}
       />
+
+      {idAConfirmar !== null && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setIdAConfirmar(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
+              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Dar de baja categoría</h2>
+              <p className="text-sm text-gray-500 text-center mb-6">Podrás restaurarla después desde la vista de dados de baja.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setIdAConfirmar(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors">
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    await eliminarMut.mutateAsync(idAConfirmar);
+                    setIdAConfirmar(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white font-medium text-sm hover:bg-danger-dark transition-colors"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
