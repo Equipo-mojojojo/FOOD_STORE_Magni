@@ -120,5 +120,5 @@ Mercado Pago requiere una URL pública HTTPS para enviarte las notificaciones de
 * Contienen credenciales privadas como `MP_ACCESS_TOKEN`. Si se filtran en GitHub, tu cuenta de Mercado Pago puede ser hackeada o sufrir estafas. 
 * Si querés compartir credenciales de test con tu equipo, hacelo por canal privado, **nunca comitees archivos `.env`**.
 
-
-
+## Video de presentación
+https://youtu.be/8ESTjpLc_oQ
