@@ -47,6 +47,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
         "/docs",
         "/redoc",
+        "/static/", 
     }
 
     def __init__(self, app: ASGIApp) -> None:
@@ -86,7 +87,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         Aplica rate limiting y agrega headers X-RateLimit-* a la response.
         """
         # 1) Excluir paths que no queremos rate-limitar.
-        if request.url.path in self.EXCLUDED_PATHS:
+        if request.url.path in self.EXCLUDED_PATHS or \
+        any(request.url.path.startswith(p) for p in ("/static/", "/docs", "/redoc")):
             return await call_next(request)
 
         # 2) Determinar qué limiter usar según el path.
