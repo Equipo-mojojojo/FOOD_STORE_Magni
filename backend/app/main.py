@@ -20,6 +20,8 @@ from app.rate_limit.rate_limit_middleware import RateLimitMiddleware
 from app.middleware.logging_middleware import LoggingMiddleware
 from app.middleware.timing_middleware import TimingMiddleware
 
+from app.core.exception_handlers import register_exception_handlers
+
 from app.core.media import UPLOAD_DIR
 
 
@@ -28,6 +30,8 @@ app = FastAPI(
     description="API del sistema Food Store — Programación 4 — TUP",
     version="1.0.0",
 )
+register_exception_handlers(app)
+
 #middlewares
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(LoggingMiddleware)
