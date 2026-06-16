@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY:    Optional[str] = None
     CLOUDINARY_API_SECRET: Optional[str] = None
 
+     # ─── Logging ──────────────────────────────────────────────────────────────
+    LOG_LEVEL: str = "INFO" 
+    
     model_config = {
         "env_file":          ".env",
         "env_file_encoding": "utf-8",
