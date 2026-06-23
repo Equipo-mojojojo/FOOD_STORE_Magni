@@ -144,7 +144,7 @@ INGREDIENTES_INICIALES = [
     {"nombre": "Tomate fresco", "descripcion": "Tomate fresco en rodajas", "es_alergeno": False, "unidad": "kilogramo", "stock": 3.0, "precio": 1500.0},
     {"nombre": "Uva Malbec", "descripcion": "Uva Malbec para vino", "es_alergeno": False, "unidad": "litro", "stock": 50.0, "precio": 3000.0},
     {"nombre": "Naranja", "descripcion": "Naranja para jugo", "es_alergeno": False, "unidad": "kilogramo", "stock": 10.0, "precio": 1200.0},
-    {"nombre": "Agua con gas", "descripcion": "Agua mineral con gas 500ml", "es_alergeno": False, "unidad": "pieza", "stock": 30.0, "precio": 900.0},
+    {"nombre": "Agua con gas", "descripcion": "Agua mineral con gas 500ml", "es_alergeno": False, "unidad": "pieza", "stock": 30.0, "precio": 900.0, "es_producto_terminado": True},
     {"nombre": "Crema", "descripcion": "Crema de leche", "es_alergeno": True, "unidad": "litro", "stock": 3.0, "precio": 2500.0},
     {"nombre": "Cacao en polvo", "descripcion": "Cacao amargo en polvo", "es_alergeno": False, "unidad": "gramo", "stock": 500.0, "precio": 80.0},
     {"nombre": "Esencia de vainilla", "descripcion": "Esencia de vainilla líquida", "es_alergeno": False, "unidad": "mililitro", "stock": 200.0, "precio": 15.0},
@@ -157,6 +157,18 @@ INGREDIENTES_INICIALES = [
     {"nombre": "Manteca", "descripcion": "Manteca para repostería", "es_alergeno": True, "unidad": "kilogramo", "stock": 2.0, "precio": 3500.0},
     {"nombre": "Cafe", "descripcion": "Café fuerte para tiramisú", "es_alergeno": False, "unidad": "mililitro", "stock": 500.0, "precio": 10.0},
     {"nombre": "Bizcochuelo", "descripcion": "Bizcochuelo para tiramisú", "es_alergeno": True, "unidad": "pieza", "stock": 5.0, "precio": 800.0},
+    {"nombre": "Vino Estancia", "descripcion": "Vino tinto", "es_alergeno": False, "unidad": "pieza", "stock": 30.0, "precio": 12500.0, "es_producto_terminado": True},
+    {"nombre": "Vino Malbec", "descripcion": "Vino Malbec mendocino", "es_alergeno": False, "unidad": "pieza", "stock": 20.0, "precio": 6000.0, "es_producto_terminado": True},
+    {"nombre": "Vino Cabernet Sauvignon", "descripcion": "Vino Cabernet Sauvignon", "es_alergeno": False, "unidad": "pieza", "stock": 15.0, "precio": 5500.0, "es_producto_terminado": True},
+    {"nombre": "Vino Blend Reserva", "descripcion": "Blend de Malbec y Cabernet", "es_alergeno": False, "unidad": "pieza", "stock": 10.0, "precio": 9000.0, "es_producto_terminado": True},
+    {"nombre": "Sprite 500ml", "descripcion": "Sprite 500ml", "es_alergeno": False, "unidad": "pieza", "stock": 59.0, "precio": 1000.0, "es_producto_terminado": True},
+    {"nombre": "Coca Cola lata 350ml.", "descripcion": "Coca Cola lata", "es_alergeno": False, "unidad": "pieza", "stock": 200.0, "precio": 1020.0, "es_producto_terminado": True},
+    {"nombre": "Coca cola 1.5L", "descripcion": "Coca cola 1.5L", "es_alergeno": False, "unidad": "pieza", "stock": 50.0, "precio": 1850.0, "es_producto_terminado": True},
+    {"nombre": "Fanta 500ml", "descripcion": "Fanta 500ml", "es_alergeno": False, "unidad": "pieza", "stock": 50.0, "precio": 750.0, "es_producto_terminado": True},
+    {"nombre": "Sprite 1.5L", "descripcion": "Sprite 1.5L", "es_alergeno": False, "unidad": "pieza", "stock": 50.0, "precio": 1800.0, "es_producto_terminado": True},
+    {"nombre": "Sprite lata 350ml.", "descripcion": "Sprite lata", "es_alergeno": False, "unidad": "pieza", "stock": 50.0, "precio": 1050.0, "es_producto_terminado": True},
+    {"nombre": "Coca-Cola 500ml", "descripcion": "Coca-Cola 500ml", "es_alergeno": False, "unidad": "pieza", "stock": 49.0, "precio": 900.0, "es_producto_terminado": True},
+    {"nombre": "Agua Mineral 500ml", "descripcion": "Agua Mineral 500ml", "es_alergeno": False, "unidad": "pieza", "stock": 50.0, "precio": 600.0, "es_producto_terminado": True},
 ]
 
 PRODUCTOS_INICIALES = [
@@ -171,11 +183,7 @@ PRODUCTOS_INICIALES = [
         "margen": "1.00",
         "categoria": "Panchos",
         "ingredientes": [
-            {"nombre": "Pan de pancho", "cantidad": "1.000", "unidad": "pieza", "removible": False},
-            {"nombre": "Salchica", "cantidad": "1.000", "unidad": "pieza", "removible": False},
-            {"nombre": "Mayonesa", "cantidad": "30.000", "unidad": "gramo", "removible": True},
-            {"nombre": "Mostaza", "cantidad": "20.000", "unidad": "gramo", "removible": True},
-            {"nombre": "Papitas pay", "cantidad": "0.100", "unidad": "kilogramo", "removible": True},
+            {"nombre": "Agua con gas", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     {
@@ -407,6 +415,7 @@ PRODUCTOS_INICIALES = [
         "margen": "0.50",
         "categoria": "Tintos",
         "ingredientes": [
+            {"nombre": "Vino Estancia", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
      {
@@ -419,7 +428,7 @@ PRODUCTOS_INICIALES = [
         "margen": "0.80",
         "categoria": "Tintos",
         "ingredientes": [
-            {"nombre": "Uva Malbec", "cantidad": "0.750", "unidad": "litro", "removible": False},
+            {"nombre": "Vino Malbec", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     {
@@ -431,7 +440,9 @@ PRODUCTOS_INICIALES = [
         "unidad": "pieza",
         "margen": "0.80",
         "categoria": "Tintos",
-        "ingredientes": [],
+        "ingredientes": [
+            {"nombre": "Vino Cabernet Sauvignon", "cantidad": "1.000", "unidad": "pieza", "removible": False}
+        ],
     },
     {
         "nombre": "Vino Blend Reserva",
@@ -442,7 +453,9 @@ PRODUCTOS_INICIALES = [
         "unidad": "pieza",
         "margen": "0.90",
         "categoria": "Tintos",
-        "ingredientes": [],
+        "ingredientes": [
+            {"nombre": "Vino Blend Reserva", "cantidad": "1.000", "unidad": "pieza", "removible": False}
+        ],
     },
     #-----------------------------------------Gaseosas--------------------------------------
     {
@@ -455,6 +468,7 @@ PRODUCTOS_INICIALES = [
         "margen": "1.00",
         "categoria": "Gaseosas",
         "ingredientes": [
+            {"nombre": "Sprite 500ml", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     {
@@ -467,6 +481,7 @@ PRODUCTOS_INICIALES = [
         "margen": "1.00",
         "categoria": "Gaseosas",
         "ingredientes": [
+            {"nombre": "Coca Cola lata 350ml.", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     {
@@ -479,6 +494,7 @@ PRODUCTOS_INICIALES = [
         "margen": "1.00",
         "categoria": "Gaseosas",
         "ingredientes": [
+            {"nombre": "Coca cola 1.5L", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     {
@@ -491,6 +507,7 @@ PRODUCTOS_INICIALES = [
         "margen": "0.50",
         "categoria": "Gaseosas",
         "ingredientes": [
+            {"nombre": "Fanta 500ml", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     {
@@ -503,6 +520,7 @@ PRODUCTOS_INICIALES = [
         "margen": "1.00",
         "categoria": "Gaseosas",
         "ingredientes": [
+            {"nombre": "Sprite 1.5L", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     {
@@ -515,6 +533,7 @@ PRODUCTOS_INICIALES = [
         "margen": "1.00",
         "categoria": "Gaseosas",
         "ingredientes": [
+            {"nombre": "Sprite lata 350ml.", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],    
     },
     {
@@ -527,6 +546,7 @@ PRODUCTOS_INICIALES = [
         "margen": "0.30",
         "categoria": "Gaseosas",
         "ingredientes": [
+            {"nombre": "Coca-Cola 500ml", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     #-----------------------------------------Gaseosas--------------------------------------
@@ -540,6 +560,7 @@ PRODUCTOS_INICIALES = [
         "margen": "0.25",
         "categoria": "Bebidas",
         "ingredientes": [
+            {"nombre": "Agua Mineral 500ml", "cantidad": "1.000", "unidad": "pieza", "removible": False}
         ],
     },
     
@@ -1117,6 +1138,7 @@ def run() -> None:
                     nombre=i_data["nombre"],
                     descripcion=i_data["descripcion"],
                     es_alergeno=i_data["es_alergeno"],
+                    es_producto_terminado=i_data.get("es_producto_terminado", False),
                     unidad_medida_id=unidad_id,
                     stock_actual=i_data["stock"],
                     stock_minimo=i_data.get("stock_minimo", 0.0),
@@ -1129,6 +1151,7 @@ def run() -> None:
                 existing.stock_actual = i_data["stock"]
                 existing.stock_minimo = i_data.get("stock_minimo", 0.0)
                 existing.precio_costo = i_data["precio"]
+                existing.es_producto_terminado = i_data.get("es_producto_terminado", False)
                 session.add(existing)
                 print(f"  [=] Ingrediente actualizado: {existing.nombre}")
 

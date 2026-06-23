@@ -20,6 +20,7 @@ export const ingredientesApi = {
     if (filters.search) params.search = filters.search;
     if (filters.estado) params.estado = filters.estado;
     if (filters.es_alergeno !== "") params.es_alergeno = filters.es_alergeno;
+    if (filters.es_producto_terminado !== "") params.es_producto_terminado = filters.es_producto_terminado;
     if (filters.created_from) params.created_from = filters.created_from;
     if (filters.created_to) params.created_to = filters.created_to;
     if (filters.updated_from) params.updated_from = filters.updated_from;
@@ -38,6 +39,7 @@ export const ingredientesApi = {
     if (filters.search) params.search = filters.search;
     if (filters.estado) params.estado = filters.estado;
     if (filters.es_alergeno !== "") params.es_alergeno = filters.es_alergeno;
+    if (filters.es_producto_terminado !== "") params.es_producto_terminado = filters.es_producto_terminado;
     if (filters.created_from) params.created_from = filters.created_from;
     if (filters.created_to) params.created_to = filters.created_to;
     if (filters.updated_from) params.updated_from = filters.updated_from;

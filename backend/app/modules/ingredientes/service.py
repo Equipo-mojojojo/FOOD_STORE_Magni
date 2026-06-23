@@ -32,6 +32,7 @@ class IngredienteService:
         updated_from=None,
         updated_to=None,
         starts_with: str | None = None,
+        es_producto_terminado: bool | None = None,
     ) -> PaginatedIngredientes:
         """Lista ingredientes activos con filtros y paginación. Eliminados nunca aparecen."""
         with self.uow:
@@ -48,6 +49,7 @@ class IngredienteService:
                 updated_from=updated_from,
                 updated_to=updated_to,
                 starts_with=starts_with,
+                es_producto_terminado=es_producto_terminado,
             )
         return PaginatedIngredientes(**result)
 
@@ -63,6 +65,7 @@ class IngredienteService:
         updated_from=None,
         updated_to=None,
         starts_with: str | None = None,
+        es_producto_terminado: bool | None = None,
     ) -> str:
         """Exporta ingredientes activos a formato CSV aplicando filtros."""
         import csv
@@ -82,6 +85,7 @@ class IngredienteService:
                 updated_from=updated_from,
                 updated_to=updated_to,
                 starts_with=starts_with,
+                es_producto_terminado=es_producto_terminado,
             )
         
         output = io.StringIO()

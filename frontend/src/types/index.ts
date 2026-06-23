@@ -106,6 +106,7 @@ export interface BaseFilters {
 
 export interface IngredientesFilters extends BaseFilters {
   es_alergeno: string;      // "true" | "false" | ""
+  es_producto_terminado: string; // "true" | "false" | ""
 }
 
 // --- CATEGORIAS ---

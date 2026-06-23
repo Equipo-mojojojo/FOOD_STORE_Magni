@@ -30,6 +30,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
     per_page: 10,
     search: "",
     es_alergeno: "",
+    es_producto_terminado: "",
     estado: estado,
     sort_by: "nombre",
     sort_order: "asc",
@@ -152,7 +153,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
 
       {/* Filtros */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {/* 1. Buscar por nombre */}
           <div className="relative xl:col-span-2 flex flex-col justify-end">
             <Search size={16} className="absolute left-3 bottom-3 text-gray-400" />
@@ -163,7 +164,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
               onKeyDown={handleKeyDown}
               onBlur={handleSearch}
               placeholder="Buscar por nombre..."
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
+              className="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
             />
           </div>
 
@@ -172,11 +173,24 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
             <select
               value={filters.es_alergeno}
               onChange={(e) => handleFilterChange("es_alergeno", e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
             >
               <option value="">Todos (Alérgenos)</option>
               <option value="true">Solo Alérgenos</option>
               <option value="false">Sin Alérgenos</option>
+            </select>
+          </div>
+
+          {/* Filtrar por tipo (Insumo / Venta) */}
+          <div className="flex flex-col justify-end">
+            <select
+              value={filters.es_producto_terminado}
+              onChange={(e) => handleFilterChange("es_producto_terminado", e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+            >
+              <option value="">Todos (Tipo)</option>
+              <option value="false">Solo Insumos</option>
+              <option value="true">Solo Venta (Terminados)</option>
             </select>
           </div>
 
@@ -185,7 +199,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
             <select
               value={filters.estado}
               onChange={(e) => handleFilterChange("estado", e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
             >
               <option value="activo">Activos</option>
               <option value="inactivo">Dados de Baja</option>
@@ -200,7 +214,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
               type="date"
               value={filters.created_from}
               onChange={(e) => handleCreatedDateChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none"
             />
           </div>
 
@@ -209,7 +223,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
             <select
               value={filters.sort_by}
               onChange={(e) => handleFilterChange("sort_by", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
             >
               <option value="nombre">Ordenar: Nombre</option>
               <option value="created_at">Ordenar: Creación</option>
@@ -222,7 +236,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
             <select
               value={filters.sort_order}
               onChange={(e) => handleFilterChange("sort_order", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
             >
               <option value="asc">Ascendente</option>
               <option value="desc">Descendente</option>
@@ -234,7 +248,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
             <select
               value={filters.per_page}
               onChange={(e) => handleFilterChange("per_page", Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
             >
               <option value={10}>10 por pág</option>
               <option value={20}>20 por pág</option>

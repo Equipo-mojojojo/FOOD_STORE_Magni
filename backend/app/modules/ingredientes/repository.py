@@ -33,6 +33,7 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         updated_from: date | None = None,
         updated_to: date | None = None,
         starts_with: str | None = None,
+        es_producto_terminado: bool | None = None,
     ) -> dict:
         """Lista ingredientes activos o inactivos. Eliminados lógicos NUNCA aparecen."""
         from sqlalchemy.orm import selectinload
@@ -58,6 +59,9 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
 
         if es_alergeno is not None:
             query = query.where(Ingrediente.es_alergeno == es_alergeno)
+
+        if es_producto_terminado is not None:
+            query = query.where(Ingrediente.es_producto_terminado == es_producto_terminado)
 
         if created_from:
             query = query.where(func.date(Ingrediente.created_at) >= created_from)
