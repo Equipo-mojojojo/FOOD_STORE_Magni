@@ -1,7 +1,10 @@
 /** Detalle completo de un pedido: cabecera, ítems y historial de estados. */
 import { useNavigate } from "react-router-dom";
+import { useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { usePedido } from "../../hooks/usePedidos";
+import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedidosWebSocket";
 import PedidoTimeline from "../../components/PedidoTimeline";
 import { PaymentButton } from "../../components/PaymentButton";
 import { useIngredientesPublicos } from "../../hooks/useIngredientes";
@@ -36,6 +39,25 @@ interface Props {
 export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volver" }: Props) {
   const { data: pedido, isLoading, isError } = usePedido(pedidoId);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { isConnected, subscribeToOrder } = usePedidosWebSocket({
+    enabled: !!pedido,
+    onMessage: useCallback(
+      (msg: PedidoWsMessage) => {
+        if (msg.event !== "ERROR" && msg.event !== "SUBSCRIBED") {
+          queryClient.invalidateQueries({ queryKey: ["pedidos", pedidoId] });
+        }
+      },
+      [queryClient, pedidoId],
+    ),
+  });
+
+  useEffect(() => {
+    if (isConnected && pedido) {
+      subscribeToOrder(pedido.id);
+    }
+  }, [isConnected, pedido, subscribeToOrder]);
   
   // Fetch public ingredients to map IDs to names for personalizacion
   const { data: ingredientes } = useIngredientesPublicos();

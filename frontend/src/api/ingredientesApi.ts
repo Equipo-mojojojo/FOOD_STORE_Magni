@@ -6,6 +6,7 @@ import type {
   IngredienteUpdate,
   PaginatedResponse,
   IngredientesFilters,
+  ProductoAfectadoResponse,
 } from "../types";
 
 export const ingredientesApi = {
@@ -57,6 +58,11 @@ export const ingredientesApi = {
 
   getById: async (id: number): Promise<Ingrediente> => {
     const res = await axiosClient.get<Ingrediente>(`/ingredientes/${id}`);
+    return res.data;
+  },
+
+  getProductosAfectados: async (id: number): Promise<ProductoAfectadoResponse[]> => {
+    const res = await axiosClient.get<ProductoAfectadoResponse[]>(`/ingredientes/${id}/productos-afectados`);
     return res.data;
   },
 

@@ -130,23 +130,40 @@ export default function MisPedidosGrid({ filters }: Props) {
 
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoResponse | null>(null);
 
-  const { subscribeToOrder } = usePedidosWebSocket({
+  const { isConnected, subscribeToOrder } = usePedidosWebSocket({
     enabled: isAuthenticated,
     onMessage: useCallback(
       (msg: PedidoWsMessage) => {
         if (msg.event !== "ERROR" && msg.event !== "SUBSCRIBED") {
-          queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+          const updatedPedido = msg.data as PedidoResponse;
+          
+          if (updatedPedido && updatedPedido.id) {
+            // Actualizar la caché de la lista directamente para respuesta instantánea
+            queryClient.setQueryData(["pedidos", filters], (oldData: any) => {
+              if (!oldData || !oldData.items) return oldData;
+              return {
+                ...oldData,
+                items: oldData.items.map((p: PedidoResponse) =>
+                  p.id === updatedPedido.id ? updatedPedido : p
+                ),
+              };
+            });
+            // También invalidar por las dudas para asegurar consistencia
+            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+          }
         }
       },
-      [queryClient],
+      [queryClient, filters],
     ),
   });
 
   useEffect(() => {
-    data?.items
-      .filter((pedido) => !["ENTREGADO", "CANCELADO"].includes(pedido.estado_codigo))
-      .forEach((pedido) => subscribeToOrder(pedido.id));
-  }, [data?.items, subscribeToOrder]);
+    if (isConnected && data?.items) {
+      data.items
+        .filter((pedido) => !["ENTREGADO", "CANCELADO"].includes(pedido.estado_codigo))
+        .forEach((pedido) => subscribeToOrder(pedido.id));
+    }
+  }, [isConnected, data?.items, subscribeToOrder]);
 
   const confirmarCancelacion = (motivo: string) => {
     if (!pedidoACancelar) return;

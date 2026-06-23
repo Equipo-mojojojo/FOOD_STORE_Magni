@@ -9,8 +9,11 @@ interface WsState {
   isConnected: boolean;
   ws: WebSocket | null;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
-  connect: (apiUrl: string, onMessage?: (msg: PedidoWsMessage) => void) => void;
+  listeners: Set<(msg: PedidoWsMessage) => void>;
+  connect: (apiUrl: string) => void;
   disconnect: () => void;
+  addListener: (listener: (msg: PedidoWsMessage) => void) => void;
+  removeListener: (listener: (msg: PedidoWsMessage) => void) => void;
   subscribeToOrder: (orderId: number) => void;
   unsubscribeFromOrder: (orderId: number) => void;
 }
@@ -19,8 +22,21 @@ export const useWsStore = create<WsState>((set, get) => ({
   isConnected: false,
   ws: null,
   reconnectTimer: null,
+  listeners: new Set(),
 
-  connect: (apiUrl, onMessage) => {
+  addListener: (listener) => {
+    const newListeners = new Set(get().listeners);
+    newListeners.add(listener);
+    set({ listeners: newListeners });
+  },
+
+  removeListener: (listener) => {
+    const newListeners = new Set(get().listeners);
+    newListeners.delete(listener);
+    set({ listeners: newListeners });
+  },
+
+  connect: (apiUrl) => {
     const { ws: currentWs, reconnectTimer } = get();
     if (currentWs) return; // Already connecting/connected
 
@@ -39,15 +55,15 @@ export const useWsStore = create<WsState>((set, get) => ({
 
     ws.onopen = () => {
       set({ isConnected: true });
-      onMessage?.({ event: "WS_CONNECTED", data: null });
+      get().listeners.forEach(l => l({ event: "WS_CONNECTED", data: null }));
     };
 
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data) as PedidoWsMessage;
-        onMessage?.(msg);
+        get().listeners.forEach(l => l(msg));
       } catch {
-        onMessage?.({ event: "ERROR", data: { detail: "Mensaje WebSocket invalido" } });
+        get().listeners.forEach(l => l({ event: "ERROR", data: { detail: "Mensaje WebSocket invalido" } }));
       }
     };
 
@@ -57,14 +73,16 @@ export const useWsStore = create<WsState>((set, get) => ({
 
       // Simple reconnect logic
       const timer = setTimeout(() => {
-        get().connect(apiUrl, onMessage);
+        get().connect(apiUrl);
       }, 3000);
       set({ reconnectTimer: timer });
     };
   },
 
   disconnect: () => {
-    const { ws, reconnectTimer } = get();
+    const { ws, reconnectTimer, listeners } = get();
+    if (listeners.size > 0) return; // Only disconnect if no one is listening
+    
     if (reconnectTimer) clearTimeout(reconnectTimer);
     if (ws) {
       if (ws.readyState === WebSocket.CONNECTING) {

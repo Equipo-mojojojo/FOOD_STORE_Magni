@@ -13,6 +13,7 @@ from app.modules.ingredientes.schemas import (
     IngredienteUpdate,
     IngredienteResponse,
     PaginatedIngredientes,
+    ProductoAfectadoResponse,
 )
 
 router = APIRouter(
@@ -115,6 +116,17 @@ def get_ingrediente(
     """Obtiene un ingrediente por ID."""
     svc = IngredienteService(uow)
     return svc.get_by_id(ingrediente_id)
+
+
+@router.get("/{ingrediente_id}/productos-afectados", response_model=list[ProductoAfectadoResponse])
+def get_productos_afectados(
+    ingrediente_id: int,
+    uow: UnitOfWork = Depends(get_uow),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Devuelve la lista de productos que usan este ingrediente."""
+    svc = IngredienteService(uow)
+    return svc.get_productos_afectados(ingrediente_id)
 
 
 @router.put("/{ingrediente_id}", response_model=IngredienteResponse)

@@ -257,10 +257,10 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
             <p className="text-sm mt-1">Intenta con otros filtros</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50">
+          <div className="overflow-x-auto max-h-[70vh] min-h-[450px] overflow-y-auto">
+            <table className="w-full relative">
+              <thead className="sticky top-0 bg-gray-50/95 backdrop-blur-sm z-10 shadow-sm">
+                <tr className="border-b border-gray-200">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     ID
                   </th>

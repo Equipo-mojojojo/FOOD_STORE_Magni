@@ -395,9 +395,9 @@ export default function PedidosAdminGrid() {
         ) : !data?.items.length ? (
           <div className="text-center py-16 text-gray-500">No hay pedidos con esos filtros.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
+          <div className="overflow-x-auto max-h-[70vh] min-h-[450px] overflow-y-auto">
+            <table className="w-full text-sm relative">
+              <thead className="sticky top-0 bg-gray-50/95 backdrop-blur-sm z-10 shadow-sm border-b border-gray-100">
                 <tr>
                   {["ID","Usuario","Fecha","Pago","Estado","Total","Acciones"].map((h) => (
                     <th key={h} className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">{h}</th>

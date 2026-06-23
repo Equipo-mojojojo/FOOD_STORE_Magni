@@ -26,6 +26,7 @@ export const useCrearIngrediente = () => {
     mutationFn: (data: IngredienteCreate) => ingredientesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredientes"] });
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
     },
   });
 };
@@ -37,6 +38,7 @@ export const useActualizarIngrediente = () => {
       ingredientesApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredientes"] });
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
     },
   });
 };
@@ -47,6 +49,7 @@ export const useEliminarIngrediente = () => {
     mutationFn: (id: number) => ingredientesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredientes"] });
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
     },
   });
 };
@@ -57,6 +60,7 @@ export const useDarDeBajaIngrediente = () => {
     mutationFn: (id: number) => ingredientesApi.darDeBaja(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredientes"] });
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
     },
   });
 };
@@ -67,6 +71,7 @@ export const useRestaurarIngrediente = () => {
     mutationFn: (id: number) => ingredientesApi.restore(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredientes"] });
+      queryClient.invalidateQueries({ queryKey: ["productos"] });
     },
   });
 };
