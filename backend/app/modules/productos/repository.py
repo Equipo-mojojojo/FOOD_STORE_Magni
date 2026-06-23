@@ -32,6 +32,25 @@ class ProductoRepository(BaseRepository[Producto]):
         result = self.session.exec(stmt)
         return result.first()
 
+    def get_by_ingrediente_id(self, ingrediente_id: int) -> List[Producto]:
+        """Devuelve todos los productos (con relaciones) que utilizan un ingrediente específico."""
+        stmt = (
+            select(Producto)
+            .join(ProductoIngrediente)
+            .where(
+                ProductoIngrediente.ingrediente_id == ingrediente_id,
+                Producto.deleted_at.is_(None)
+            )
+            .options(
+                selectinload(Producto.categorias).selectinload(ProductoCategoria.categoria),
+                selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.ingrediente).selectinload(Ingrediente.unidad_medida),
+                selectinload(Producto.ingredientes).selectinload(ProductoIngrediente.unidad_medida),
+                selectinload(Producto.unidad_venta),
+            )
+        )
+        result = self.session.exec(stmt)
+        return list(result.all())
+
     def get_paginated(
         self,
         page: int = 1,

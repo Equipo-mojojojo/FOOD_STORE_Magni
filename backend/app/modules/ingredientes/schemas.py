@@ -27,6 +27,15 @@ class IngredienteUpdate(BaseModel):
     stock_actual: float | None = None
     stock_minimo: float | None = None
     unidad_medida_id: int | None = None
+    actualizar_precios_productos: bool = False
+
+class ProductoAfectadoResponse(BaseModel):
+    """Schema para devolver un producto afectado por cambio de costo."""
+    id: int
+    nombre: str
+    precio_base_actual: float
+    margen_ganancia: float
+    model_config = {"from_attributes": True}
 
 
 class UnidadMedidaSimple(BaseModel):

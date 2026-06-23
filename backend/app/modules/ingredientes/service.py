@@ -7,7 +7,9 @@ from app.modules.ingredientes.schemas import (
     IngredienteCreate,
     IngredienteUpdate,
     PaginatedIngredientes,
+    ProductoAfectadoResponse,
 )
+from app.modules.productos.service import recalcular_precios_base_por_ingrediente
 
 
 class IngredienteService:
@@ -112,6 +114,30 @@ class IngredienteService:
             )
         return ingrediente
 
+    def get_productos_afectados(self, ingrediente_id: int) -> list[ProductoAfectadoResponse]:
+        """Obtiene la lista de productos que dependen de este ingrediente."""
+        with self.uow:
+            ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
+            if not ingrediente:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ingrediente no encontrado",
+                )
+            
+            productos = self.uow.productos.get_by_ingrediente_id(ingrediente_id)
+            
+            afectados = []
+            for p in productos:
+                afectados.append(
+                    ProductoAfectadoResponse(
+                        id=p.id,
+                        nombre=p.nombre,
+                        precio_base_actual=float(p.precio_base),
+                        margen_ganancia=float(p.margen_ganancia),
+                    )
+                )
+            return afectados
+
     def create(self, data: IngredienteCreate):
         """Crea un nuevo ingrediente."""
         from sqlalchemy.exc import IntegrityError
@@ -142,7 +168,7 @@ class IngredienteService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Ingrediente no encontrado",
                 )
-            update_data = data.model_dump(exclude_unset=True, exclude={"activo"})
+            update_data = data.model_dump(exclude_unset=True, exclude={"activo", "actualizar_precios_productos"})
             
             # Manejo de estado (activo/inactivo)
             if data.activo is True:
@@ -158,6 +184,9 @@ class IngredienteService:
                 # Forzar carga de relación para el schema
                 if ingrediente.unidad_medida_id:
                     _ = ingrediente.unidad_medida
+                # Si la bandera está activa y se actualizó correctamente
+                if data.actualizar_precios_productos:
+                    recalcular_precios_base_por_ingrediente(self.uow, ingrediente_id)
             except IntegrityError:
                 self.uow.rollback()
                 raise HTTPException(

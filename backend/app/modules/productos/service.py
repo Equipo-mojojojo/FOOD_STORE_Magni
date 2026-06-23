@@ -11,6 +11,18 @@ from app.modules.productos.schemas import (
 from datetime import datetime, timezone
 
 
+def calcular_costo_total(prod: Producto) -> Decimal:
+    """Calcula el costo total de un producto en base a sus ingredientes actuales."""
+    costo_total = Decimal("0.0")
+    for pi in prod.ingredientes:
+        if pi.ingrediente:
+            f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
+            f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
+            qty_base = pi.cantidad * Decimal(str(f_receta))
+            price_base = pi.ingrediente.precio_costo / Decimal(str(f_ing))
+            costo_total += qty_base * price_base
+    return costo_total
+
 def _build_producto_response(prod: Producto) -> ProductoRead:
     """Calcula costos, stock y sugeridos para un producto dado (Helper)."""
     
@@ -24,25 +36,16 @@ def _build_producto_response(prod: Producto) -> ProductoRead:
         if pc.categoria
     ]
     
-    costo_total = Decimal("0.0")
+    costo_total = calcular_costo_total(prod)
     ingredientes_detail = []
     unidades_posibles = []
     
     for pi in prod.ingredientes:
         if pi.ingrediente:
-            # Factores de conversión (Normalizando a unidad base: g, mL, u)
             f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
             f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
-            
-            # 1. Cantidad de receta llevada a unidad base
             qty_base = pi.cantidad * Decimal(str(f_receta))
-            # 2. Precio de ingrediente por unidad base
-            price_base = pi.ingrediente.precio_costo / Decimal(str(f_ing))
             
-            costo_ingrediente = qty_base * price_base
-            costo_total += costo_ingrediente
-            
-            # 3. Stock Elaborable (Normalizado)
             if qty_base > 0:
                 stock_base = pi.ingrediente.stock_actual * Decimal(str(f_ing))
                 unidades = stock_base / qty_base
@@ -229,6 +232,16 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
             uow.producto_ingredientes.add(pi)
 
     return uow.productos.update(prod)
+
+def recalcular_precios_base_por_ingrediente(uow: UnitOfWork, ingrediente_id: int):
+    """Actualiza el precio_base de todos los productos que usan este ingrediente."""
+    productos = uow.productos.get_by_ingrediente_id(ingrediente_id)
+    for prod in productos:
+        nuevo_costo = calcular_costo_total(prod)
+        nuevo_precio_base = nuevo_costo * (Decimal("1.0") + prod.margen_ganancia)
+        prod.precio_base = nuevo_precio_base
+        prod.updated_at = datetime.now(timezone.utc)
+        uow.productos.update(prod)
 
 def update_stock_producto(uow: UnitOfWork, prod_id: int, stock_cantidad: int) -> Producto:
     """Actualiza solo el stock físico del producto."""

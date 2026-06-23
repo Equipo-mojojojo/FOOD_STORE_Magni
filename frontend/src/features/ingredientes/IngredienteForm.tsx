@@ -20,6 +20,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [esProductoTerminado, setEsProductoTerminado] = useState(false);
   const [precioCosto, setPrecioCosto] = useState<number | string>("");
   const [stockActual, setStockActual] = useState<number | string>("");
+  const [ajusteStock, setAjusteStock] = useState<number | string>("");
   const [stockMinimo, setStockMinimo] = useState<number | string>("");
   const [unidadMedidaId, setUnidadMedidaId] = useState<number | "">("");
   const [activo, setActivo] = useState(true);
@@ -86,6 +87,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       setEsProductoTerminado(false);
       setPrecioCosto("");
       setStockActual("");
+      setAjusteStock("");
       setStockMinimo("");
       setUnidadMedidaId("");
       setActivo(true);
@@ -294,7 +296,12 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {(() => {
+          const selectedUnidad = unidades.find(u => u.id === Number(unidadMedidaId));
+          const stepValue = selectedUnidad?.tipo === "unidad" ? "1" : "0.001";
+
+          return (
+            <form onSubmit={handleSubmit} className="space-y-6">
           {/* SECCIÓN 1: DATOS BÁSICOS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -361,22 +368,59 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Stock Actual</label>
-                <input
-                  type="number"
-                  step="0.001"
-                  value={stockActual}
-                  onChange={(e) => setStockActual(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
-                />
+              <div className={ingrediente ? "col-span-2 md:col-span-2 flex flex-col sm:flex-row gap-4 items-end" : ""}>
+                <div className="flex-1 w-full">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Stock Actual</label>
+                  <input
+                    type="number"
+                    step={stepValue}
+                    value={stockActual}
+                    onChange={(e) => setStockActual(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
+                  />
+                </div>
+
+                {ingrediente && (
+                  <div className="flex-1 w-full bg-green-50/50 p-2 rounded-lg border border-green-100">
+                    <label className="block text-xs font-bold text-green-700 uppercase mb-1">Agregar Stock (+/-)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step={stepValue}
+                        placeholder="Ej: 24 o -5"
+                        value={ajusteStock}
+                        onChange={(e) => setAjusteStock(e.target.value)}
+                        className="w-full px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
+                      />
+                      <button
+                        type="button"
+                        disabled={!ajusteStock}
+                        onClick={() => {
+                          if (ajusteStock) {
+                            const numAjuste = Number(ajusteStock);
+                            if (stepValue === "1" && !Number.isInteger(numAjuste)) {
+                              setError("Este insumo se mide en unidades, el ajuste debe ser un número entero.");
+                              return;
+                            }
+                            setError("");
+                            setStockActual(Number(stockActual || 0) + numAjuste);
+                            setAjusteStock("");
+                          }
+                        }}
+                        className="px-4 py-2 bg-green-main text-white rounded-lg text-sm font-bold hover:bg-green-dark transition-colors disabled:opacity-50"
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Stock Mínimo (Alerta)</label>
                 <input
                   type="number"
-                  step="0.001"
+                  step={stepValue}
                   value={stockMinimo}
                   onChange={(e) => setStockMinimo(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm"
@@ -538,6 +582,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
             </button>
           </div>
         </form>
+          );
+        })()}
       </div>
     </div>
   );

@@ -72,6 +72,14 @@ export interface IngredienteUpdate {
   stock_minimo?: number;
   unidad_medida_id?: number | null;
   activo?: boolean;
+  actualizar_precios_productos?: boolean;
+}
+
+export interface ProductoAfectadoResponse {
+  id: number;
+  nombre: string;
+  precio_base_actual: number;
+  margen_ganancia: number;
 }
 
 export interface PaginatedResponse<T> {
