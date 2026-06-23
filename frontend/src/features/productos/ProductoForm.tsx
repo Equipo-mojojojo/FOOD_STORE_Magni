@@ -49,7 +49,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
   const { data: categorias } = useCategoriasFlat();
   const { data: ingredientesData } = useIngredientes({
     page: 1,
-    per_page: 50,
+    per_page: 500,
     search: "",
     es_alergeno: "",
     estado: "activo",
@@ -502,13 +502,19 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
               </div>
               <div className="border border-gray-200 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1 bg-gray-50/30">
                 {ingredientesData?.items?.filter(i => i.nombre.toLowerCase().includes(searchIng.toLowerCase()))
+                  .sort((a, b) => {
+                    const isSelectedA = formData.ingredientes.some(ing => ing.ingrediente_id === a.id);
+                    const isSelectedB = formData.ingredientes.some(ing => ing.ingrediente_id === b.id);
+                    if (isSelectedA && !isSelectedB) return -1;
+                    if (!isSelectedA && isSelectedB) return 1;
+                    return 0;
+                  })
                   .map(i => {
                     const ingredienteData = formData.ingredientes.find(ing => ing.ingrediente_id === i.id);
                     const isSelected = !!ingredienteData;
                     const esTerminado = i.es_producto_terminado;
-                    // Si ya hay un terminado, bloqueamos los insumos normales.
-                    // Si este es un terminado (pero no el seleccionado), permitimos clickearlo para que REEMPLACE al actual.
-                    const bloqueado = tieneInsumoTerminado && !isSelected && !esTerminado;
+                    // Si el producto ya tiene un insumo terminado, bloqueamos TODO para que no se pueda destildar ni cambiar.
+                    const bloqueado = tieneInsumoTerminado;
 
                     return (
                       <div key={i.id} className={`flex flex-col gap-2 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-green-50/50 border-green-200' : bloqueado ? 'opacity-40 cursor-not-allowed border-transparent' : 'hover:bg-white border-transparent'}`}>
@@ -524,7 +530,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                           </span>
                         </label>
 
-                        {isSelected && ingredienteData && (
+                        {isSelected && ingredienteData && !esTerminado && (
                           <div className="flex flex-col gap-2 pl-8 pt-1">
                             <div className="flex gap-2">
                               <input

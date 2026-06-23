@@ -26,7 +26,7 @@ router = APIRouter(
 @router.get("", response_model=PaginatedIngredientes)
 def list_ingredientes(
     page: int = Query(1, ge=1, description="Número de página"),
-    per_page: int = Query(10, ge=1, le=50, description="Items por página"),
+    per_page: int = Query(10, ge=1, le=1000, description="Items por página"),
     search: str | None = Query(None, description="Buscar por nombre"),
     estado: str = Query("activo", pattern="^(activo|inactivo|todos)$"),
     es_alergeno: bool | None = Query(None, description="Filtrar por alérgeno"),
@@ -37,6 +37,7 @@ def list_ingredientes(
     updated_from: date | None = Query(None, description="Fecha actualización desde (YYYY-MM-DD)"),
     updated_to: date | None = Query(None, description="Fecha actualización hasta (YYYY-MM-DD)"),
     starts_with: str | None = Query(None, max_length=1, description="Filtrar por letra inicial"),
+    es_producto_terminado: bool | None = Query(None, description="Filtrar por tipo (insumo vs venta)"),
     uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -55,6 +56,7 @@ def list_ingredientes(
         updated_from=updated_from,
         updated_to=updated_to,
         starts_with=starts_with,
+        es_producto_terminado=es_producto_terminado,
     )
 
 
@@ -70,6 +72,7 @@ def export_ingredientes_csv(
     updated_from: date | None = Query(None, description="Fecha actualización desde (YYYY-MM-DD)"),
     updated_to: date | None = Query(None, description="Fecha actualización hasta (YYYY-MM-DD)"),
     starts_with: str | None = Query(None, max_length=1, description="Filtrar por letra inicial"),
+    es_producto_terminado: bool | None = Query(None, description="Filtrar por tipo (insumo vs venta)"),
     uow: UnitOfWork = Depends(get_uow),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -86,6 +89,7 @@ def export_ingredientes_csv(
         updated_from=updated_from,
         updated_to=updated_to,
         starts_with=starts_with,
+        es_producto_terminado=es_producto_terminado,
     )
     
     response = StreamingResponse(
