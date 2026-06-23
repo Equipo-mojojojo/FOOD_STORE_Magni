@@ -15,20 +15,26 @@ export function usePedidosWebSocket({
   enabled = true,
   onMessage,
 }: UsePedidosWebSocketOptions = {}) {
-  const { isConnected, connect, disconnect, subscribeToOrder, unsubscribeFromOrder } = useWsStore();
+  const { isConnected, connect, disconnect, subscribeToOrder, unsubscribeFromOrder, addListener, removeListener } = useWsStore();
 
   useEffect(() => {
     if (!enabled) {
-      disconnect();
       return;
     }
 
-    connect(API_URL, onMessage);
+    if (onMessage) {
+      addListener(onMessage);
+    }
+
+    connect(API_URL);
 
     return () => {
+      if (onMessage) {
+        removeListener(onMessage);
+      }
       disconnect();
     };
-  }, [enabled, connect, disconnect, onMessage]);
+  }, [enabled, connect, disconnect, addListener, removeListener, onMessage]);
 
   return { isConnected, subscribeToOrder, unsubscribeFromOrder };
 }

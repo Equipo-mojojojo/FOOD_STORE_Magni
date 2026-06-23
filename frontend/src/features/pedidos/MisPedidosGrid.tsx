@@ -130,7 +130,7 @@ export default function MisPedidosGrid({ filters }: Props) {
 
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoResponse | null>(null);
 
-  const { subscribeToOrder } = usePedidosWebSocket({
+  const { isConnected, subscribeToOrder } = usePedidosWebSocket({
     enabled: isAuthenticated,
     onMessage: useCallback(
       (msg: PedidoWsMessage) => {
@@ -143,10 +143,12 @@ export default function MisPedidosGrid({ filters }: Props) {
   });
 
   useEffect(() => {
-    data?.items
-      .filter((pedido) => !["ENTREGADO", "CANCELADO"].includes(pedido.estado_codigo))
-      .forEach((pedido) => subscribeToOrder(pedido.id));
-  }, [data?.items, subscribeToOrder]);
+    if (isConnected && data?.items) {
+      data.items
+        .filter((pedido) => !["ENTREGADO", "CANCELADO"].includes(pedido.estado_codigo))
+        .forEach((pedido) => subscribeToOrder(pedido.id));
+    }
+  }, [isConnected, data?.items, subscribeToOrder]);
 
   const confirmarCancelacion = (motivo: string) => {
     if (!pedidoACancelar) return;
