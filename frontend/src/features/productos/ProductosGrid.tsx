@@ -244,10 +244,10 @@ export default function ProductosGrid() {
             <p>No se encontraron productos.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50 text-left">
+          <div className="overflow-x-auto max-h-[70vh] min-h-[450px] overflow-y-auto">
+            <table className="w-full text-sm relative">
+              <thead className="sticky top-0 bg-gray-50/95 backdrop-blur-sm z-10 shadow-sm">
+                <tr className="border-b border-gray-200 text-left">
                   <th className="px-4 py-3 font-semibold text-gray-500">ID</th>
                   <th className="px-4 py-3 font-semibold text-gray-500">Producto</th>
                   <th className="px-4 py-3 font-semibold text-gray-500">Categorías</th>
