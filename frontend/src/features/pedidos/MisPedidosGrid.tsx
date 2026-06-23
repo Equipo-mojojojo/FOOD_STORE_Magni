@@ -135,10 +135,25 @@ export default function MisPedidosGrid({ filters }: Props) {
     onMessage: useCallback(
       (msg: PedidoWsMessage) => {
         if (msg.event !== "ERROR" && msg.event !== "SUBSCRIBED") {
-          queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+          const updatedPedido = msg.data as PedidoResponse;
+          
+          if (updatedPedido && updatedPedido.id) {
+            // Actualizar la caché de la lista directamente para respuesta instantánea
+            queryClient.setQueryData(["pedidos", filters], (oldData: any) => {
+              if (!oldData || !oldData.items) return oldData;
+              return {
+                ...oldData,
+                items: oldData.items.map((p: PedidoResponse) =>
+                  p.id === updatedPedido.id ? updatedPedido : p
+                ),
+              };
+            });
+            // También invalidar por las dudas para asegurar consistencia
+            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+          }
         }
       },
-      [queryClient],
+      [queryClient, filters],
     ),
   });
 
