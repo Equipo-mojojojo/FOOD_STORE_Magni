@@ -8,6 +8,7 @@ import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedido
 import PedidoTimeline from "../../components/PedidoTimeline";
 import { PaymentButton } from "../../components/PaymentButton";
 import { useIngredientesPublicos } from "../../hooks/useIngredientes";
+import { parseBackendDate, ARGENTINA_TIME_ZONE } from "../../utils/dates";
 
 
 const ESTADO_BADGE: Record<string, string> = {
@@ -96,7 +97,8 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-1">Pedido #{pedido.id}</h2>
             <p className="text-sm text-gray-500">
-              {new Date(pedido.created_at).toLocaleDateString("es-AR", {
+              {parseBackendDate(pedido.created_at).toLocaleDateString("es-AR", {
+                timeZone: ARGENTINA_TIME_ZONE,
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
@@ -210,7 +212,8 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
               <div key={h.id} className="flex items-center gap-3 text-sm">
                 <div className="w-2 h-2 rounded-full bg-green-main flex-shrink-0" />
                 <span className="text-gray-500 w-36 flex-shrink-0">
-                  {new Date(h.created_at).toLocaleDateString("es-AR", {
+                  {parseBackendDate(h.created_at).toLocaleDateString("es-AR", {
+                    timeZone: ARGENTINA_TIME_ZONE,
                     day: "2-digit",
                     month: "short",
                     hour: "2-digit",

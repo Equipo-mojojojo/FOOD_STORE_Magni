@@ -10,6 +10,7 @@ import { useResumenStockCancelacion } from "../../hooks/useStockCancelacion";
 import { useAuthStore } from "../../store/authStore";
 import Pagination from "../../components/Pagination";
 import type { PedidoResponse, PedidosFilters } from "../../types";
+import { formatArgentinaDate } from "../../utils/dates";
 
 const ESTADO_BADGE: Record<string, string> = {
   PENDIENTE:  "bg-yellow-100 text-yellow-800",
@@ -410,7 +411,7 @@ export default function PedidosAdminGrid() {
                     <td className="px-4 py-3 font-mono text-gray-500">#{pedido.id}</td>
                     <td className="px-4 py-3 text-gray-600">#{pedido.usuario_id}</td>
                     <td className="px-4 py-3 text-gray-500">
-                      {new Date(pedido.created_at).toLocaleDateString("es-AR")}
+                      {formatArgentinaDate(pedido.created_at)}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{pedido.forma_pago_codigo}</td>
                     <td className="px-4 py-3">

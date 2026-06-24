@@ -5,6 +5,7 @@ import { CheckCircle2, RefreshCw, Truck, Wifi } from "lucide-react";
 import { useAvanzarEstado, usePedidosCocina } from "../hooks/usePedidos";
 import { usePedidosWebSocket, type PedidoWsMessage } from "../hooks/usePedidosWebSocket";
 import type { PedidoResponse } from "../types";
+import { formatArgentinaTime } from "../utils/dates";
 
 const ESTADO_LABEL: Record<string, string> = {
   CONFIRMADO: "Confirmados",
@@ -40,10 +41,7 @@ function PedidoKdsCard({
         <div>
           <h3 className="font-bold text-gray-900">Pedido #{pedido.id}</h3>
           <p className="text-xs text-gray-500 mt-1">
-            {new Date(pedido.created_at).toLocaleTimeString("es-AR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatArgentinaTime(pedido.created_at)}
           </p>
         </div>
         <span className="text-sm font-bold text-gray-900">
