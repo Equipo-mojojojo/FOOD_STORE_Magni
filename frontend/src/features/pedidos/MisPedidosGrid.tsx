@@ -137,7 +137,7 @@ export default function MisPedidosGrid({ filters }: Props) {
       (msg: PedidoWsMessage) => {
         if (msg.event !== "ERROR" && msg.event !== "SUBSCRIBED") {
           const updatedPedido = msg.data as PedidoResponse;
-          
+
           if (updatedPedido && updatedPedido.id) {
             // Actualizar la caché de la lista directamente para respuesta instantánea
             queryClient.setQueryData(["pedidos", filters], (oldData: any) => {
