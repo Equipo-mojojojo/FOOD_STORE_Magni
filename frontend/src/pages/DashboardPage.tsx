@@ -37,18 +37,24 @@ export default function DashboardPage() {
   const chartData = React.useMemo(() => {
     if (!stats) return [];
     
+    // "fecha" es un string YYYY-MM-DD (sin hora). Parsearlo con los
+    // componentes numéricos en vez de `new Date(string)` evita que el
+    // motor lo interprete como medianoche UTC y lo corra un día.
+    const parseLocalDateOnly = (value: string) => {
+      const [year, month, day] = value.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     const limite = new Date();
     limite.setHours(0,0,0,0);
     if (diasFiltro === 1) {
-      limite.setDate(limite.getDate()); 
+      limite.setDate(limite.getDate());
     } else {
       limite.setDate(limite.getDate() - diasFiltro + 1);
     }
 
     const filtrados = stats.ventas_por_dia.filter(v => {
-      const vDate = new Date(v.fecha);
-      vDate.setHours(0,0,0,0);
-      vDate.setMinutes(vDate.getMinutes() + vDate.getTimezoneOffset());
+      const vDate = parseLocalDateOnly(v.fecha);
       return vDate.getTime() >= limite.getTime();
     });
 
@@ -230,7 +236,7 @@ export default function DashboardPage() {
                       dataKey="fecha" 
                       tickFormatter={(val) => {
                         const date = new Date(val);
-                        return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+                        return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
                       }}
                       tick={{ fontSize: 12, fill: '#6b7280' }}
                       axisLine={false}
@@ -243,7 +249,7 @@ export default function DashboardPage() {
                       tickLine={false}
                     />
                     <Tooltip 
-                      labelFormatter={(label) => new Date(label).toLocaleDateString('es-AR')}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('es-AR', { timeZone: 'UTC' })}
                       contentStyle={{ borderRadius: '0.5rem', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       cursor={{ fill: '#f3f4f6' }}
                     />

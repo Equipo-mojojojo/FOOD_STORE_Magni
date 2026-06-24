@@ -6,19 +6,7 @@ import Pagination from "../../components/Pagination";
 import IngredienteForm from "./IngredienteForm";
 import type { Ingrediente, IngredientesFilters, IngredienteCreate } from "../../types";
 import { useIngredientes, useCrearIngrediente, useActualizarIngrediente, useEliminarIngrediente, useRestaurarIngrediente, useDarDeBajaIngrediente } from "../../hooks/useIngredientes";
-
-const ARGENTINA_TIME_ZONE = "America/Argentina/Buenos_Aires";
-
-function parseBackendDate(value: string) {
-  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/.test(value);
-  return new Date(hasTimezone ? value : `${value}Z`);
-}
-
-function formatArgentinaDate(value: string) {
-  return parseBackendDate(value).toLocaleDateString("es-AR", {
-    timeZone: ARGENTINA_TIME_ZONE,
-  });
-}
+import { formatArgentinaDate } from "../../utils/dates";
 
 interface Props {
   estado?: string;

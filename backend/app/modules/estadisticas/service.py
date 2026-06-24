@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from sqlalchemy import func, cast, Date, desc
+
+ARGENTINA_TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
 from app.core.uow import UnitOfWork
 from app.modules.pedidos.model import Pedido, DetallePedido
@@ -50,12 +53,17 @@ class EstadisticasService:
             # Agrupar en un diccionario por fecha (string YYYY-MM-DD)
             agrupado_por_fecha = {}
             for (dt,) in pedidos_recientes:
-                fecha_str = dt.strftime("%Y-%m-%d")
+                # created_at se guarda en UTC pero la columna es naive (sin
+                # tzinfo) — hay que marcarlo como UTC y convertir a hora
+                # Argentina antes de agrupar, sino un pedido de la noche
+                # local puede contarse en el día calendario siguiente (UTC).
+                dt_local = dt.replace(tzinfo=timezone.utc).astimezone(ARGENTINA_TZ)
+                fecha_str = dt_local.strftime("%Y-%m-%d")
                 if fecha_str not in agrupado_por_fecha:
                     agrupado_por_fecha[fecha_str] = {"manana": 0, "mediodia": 0, "tarde": 0, "noche": 0}
-                
-                # Calcular turno según la hora del pedido
-                hora = dt.hour
+
+                # Calcular turno según la hora del pedido (hora Argentina)
+                hora = dt_local.hour
                 if 6 <= hora < 12:
                     turno = "manana"
                 elif 12 <= hora < 16:

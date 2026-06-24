@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
+import { useCartStore } from './cartStore';
 import type { LoginRequest, UserResponse } from '../types';
 
 interface AuthState {
@@ -59,6 +60,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         isAuthenticated: false,
         isAuthLoading: false,
       });
+      useCartStore.getState().clearCart();
     }
   },
 

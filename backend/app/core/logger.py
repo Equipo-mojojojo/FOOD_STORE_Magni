@@ -25,11 +25,28 @@ def setup_logging(level_name: str | None = None) -> None:
     handler = logging.StreamHandler(sys.stdout)
 
     # ─── Formatter: cómo se ve cada línea ────────────────────────────────────
-    formatter = logging.Formatter(
-        fmt="%(asctime)s | %(levelname)-8s | %(name)-30s | %(message)s",
+    COLORS = {
+        "DEBUG":    "\033[36m",   
+        "INFO":     "\033[32m",   
+        "WARNING":  "\033[33m",   
+        "ERROR":    "\033[31m",   
+        "CRITICAL": "\033[35m",   
+        "RESET":    "\033[0m",
+    }
+
+    class ColorFormatter(logging.Formatter):
+        def format(self, record: logging.LogRecord) -> str:
+            color = COLORS.get(record.levelname, COLORS["RESET"])
+            reset = COLORS["RESET"]
+            record.levelname = f"{color}{record.levelname:<8}{reset}"
+            return super().format(record)
+
+    formatter = ColorFormatter(
+        fmt="%(asctime)s | %(levelname)s | %(name)-30s | %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%S",
     )
-    handler.setFormatter(formatter)
+    
+    handler.setFormatter(formatter)  
 
     # ─── Logger raíz "app" ──────────────────────────────────────────────────
     app_logger = logging.getLogger("app")

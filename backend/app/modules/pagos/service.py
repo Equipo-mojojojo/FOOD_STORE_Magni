@@ -85,6 +85,7 @@ class PaymentService:
                 "mp_status": response.get("status"),
                 "mp_status_detail": response.get("status_detail"),
                 "mp_merchant_order_id": response.get("merchant_order_id"),
+                "external_reference": response.get("external_reference"),
             }
         except Exception as e:
             logger.exception("Error consultando pago MP %s", payment_id)
@@ -149,6 +150,10 @@ class PaymentService:
                     detail="Mercado Pago no está configurado en el servidor",
                 )
 
+            # La API de MP valida que back_urls.success sea una URL pública
+            # https cuando se usa auto_return — rechaza http://localhost.
+            # Por eso, aunque el navegador del usuario es quien las abre
+            # (no los servidores de MP), igual deben pasar por ngrok.
             ngrok_url = settings.NGROK_URL or "http://localhost:8000"
             back_urls = {
                 "success": f"{ngrok_url}/api/v1/pagos/redirect/{pedido_id}/success",
@@ -202,13 +207,25 @@ class PaymentService:
         if not topic and query_params:
             topic = query_params.get("topic") or query_params.get("type")
 
-        pago_mp_id = payment_id or data_id
+        # data_id es el ID real del pago (viene en data.id en notificaciones
+        # tipo payment.created, o en data.id del querystring). payment_id
+        # (el "id" top-level) es el ID de la NOTIFICACIÓN, no del pago — solo
+        # coincide con el pago real en notificaciones legacy por querystring.
+        pago_mp_id = data_id or payment_id
 
         if not pago_mp_id:
             return {"status": "ignored", "reason": "No payment ID"}
 
-        # Solo procesamos pagos u ordenes de compras
-        if topic not in (None, "payment", "merchant_order"):
+        # Las notificaciones topic=merchant_order traen un merchant_order_id,
+        # no un payment_id: sdk.payment().get() siempre devuelve 404 para ese
+        # ID. MP manda en paralelo una notificación duplicada topic=payment
+        # con el ID correcto, así que esta la ignoramos sin loguear error.
+        if topic == "merchant_order":
+            return {"status": "ignored",
+                    "reason": "merchant_order topic — se espera el duplicado topic=payment"}
+
+        # Solo procesamos pagos
+        if topic not in (None, "payment"):
             return {"status": "ignored", "reason": f"Topic: {topic}"}
 
         try:
@@ -233,10 +250,17 @@ class PaymentService:
                         mp_info["mp_merchant_order_id"]
                     )
                 if not pago:
-                    # Buscar el pago correspondiente usando external_reference/pedido_id
-                    # que se consulta desde la orden o el último pago de ese pedido
-                    pedido_id_str = mp_info.get("mp_merchant_order_id") or pago_mp_id
-                    # Si no lo encontramos, retornamos un ignore
+                    # Última opción: external_reference es el pedido_id que
+                    # seteamos al crear la preferencia (ver _crear_preferencia_mp).
+                    # Cubre el caso del primer webhook, cuando el pago local
+                    # todavía no tiene mp_payment_id seteado.
+                    external_ref = mp_info.get("external_reference")
+                    if external_ref:
+                        try:
+                            pago = self.uow.pagos.get_ultimo_by_pedido(int(external_ref))
+                        except (TypeError, ValueError):
+                            pago = None
+                if not pago:
                     return {"status": "ignored",
                             "reason": "Pago not found in local DB"}
 

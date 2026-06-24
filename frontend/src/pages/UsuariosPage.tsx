@@ -12,6 +12,7 @@ import {
 import { usePedido } from "../hooks/usePedidos";
 import { usuariosApi } from "../api/usuariosApi";
 import type { UsuarioAdmin } from "../types";
+import { formatArgentinaDate } from "../utils/dates";
 
 type EstadoFiltro = "activo" | "inactivo" | "todos";
 
@@ -332,7 +333,7 @@ export default function UsuariosPage() {
                         <div><span className="text-gray-500 block text-xs">Email</span><span className="font-medium">{detailData.usuario.email}</span></div>
                         <div><span className="text-gray-500 block text-xs">Celular</span><span className="font-medium">{detailData.usuario.celular || "—"}</span></div>
                         <div><span className="text-gray-500 block text-xs">Roles</span><div className="flex flex-wrap gap-1 mt-0.5">{detailData.usuario.roles?.map((r: string) => (<span key={r} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-50 text-green-dark"><Shield size={10} />{r}</span>))}</div></div>
-                        <div><span className="text-gray-500 block text-xs">Fecha de registro</span><span className="font-medium">{new Date(detailData.usuario.created_at).toLocaleDateString("es-AR")}</span></div>
+                        <div><span className="text-gray-500 block text-xs">Fecha de registro</span><span className="font-medium">{formatArgentinaDate(detailData.usuario.created_at)}</span></div>
                       </div>
                     </div>
                   )}
@@ -377,7 +378,7 @@ export default function UsuariosPage() {
                                     "bg-yellow-50 text-yellow-700"
                                   }`}>{p.estado_codigo}</span>
                                 </div>
-                                <p className="text-gray-500 mt-1">{new Date(p.created_at).toLocaleDateString("es-AR")} · {p.forma_pago_codigo}</p>
+                                <p className="text-gray-500 mt-1">{formatArgentinaDate(p.created_at)} · {p.forma_pago_codigo}</p>
                               </div>
                               <div className="flex items-center gap-3">
                                 <span className="font-bold text-green-dark text-base">${Number(p.total).toFixed(2)}</span>

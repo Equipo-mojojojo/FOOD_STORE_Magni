@@ -1,10 +1,11 @@
 /** Modal para crear/editar ingrediente. */
 import { useState, useEffect } from "react";
-import { X, Info, Package } from "lucide-react";
+import { X, Info, Package, UploadCloud, Trash2 } from "lucide-react";
 import type { Categoria, Ingrediente, IngredienteCreate, UnidadMedidaSimple } from "../../types";
 import { productosApi } from "../../api/productosApi";
 import { categoriasApi } from "../../api/categoriasApi";
 import { ingredientesApi } from "../../api/ingredientesApi";
+import { uploadApi } from "../../api/uploadApi";
 
 interface Props {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [categoriaId, setCategoriaId] = useState<number | "">("")
   const [margenGanancia, setMargenGanancia] = useState<number | string>("");
   const [precioBase, setPrecioBase] = useState<number | string>("");
+  const [imagenes, setImagenes] = useState<string[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   
   const [unidades, setUnidades] = useState<UnidadMedidaSimple[]>([]);
@@ -79,6 +81,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         setCategoriaId("");
         setMargenGanancia("");
         setPrecioBase("");
+        setImagenes([]);
       }
     } else {
       setNombre("");
@@ -94,6 +97,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       setCategoriaId("");
       setMargenGanancia("");
       setPrecioBase("");
+      setImagenes([]);
     }
     setError("");
   }, [ingrediente, isOpen]);
@@ -117,6 +121,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         if (catPrincipal) setCategoriaId(catPrincipal.categoria.id);
         setMargenGanancia(linked.margen_ganancia ?? "");
         setPrecioBase(linked.precio_base ?? "");
+        setImagenes(linked.imagenes ?? []);
       }
     } catch (err) {
       console.error("Error buscando producto vinculado", err);
@@ -194,7 +199,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                   cantidad: 1,
                   unidad_medida_id: Number(unidadMedidaId),
                   es_removible: false
-                }]
+                }],
+                imagenes
               });
             } else {
               // No había producto vinculado — crear uno nuevo
@@ -213,7 +219,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                   cantidad: 1,
                   unidad_medida_id: Number(unidadMedidaId),
                   es_removible: false
-                }]
+                }],
+                imagenes
               });
             }
           } else {
@@ -250,7 +257,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                   cantidad: 1,
                   unidad_medida_id: Number(unidadMedidaId),
                   es_removible: false
-                }]
+                }],
+                imagenes
               });
             }
           }
@@ -540,6 +548,50 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                           USAR SUGERIDO
                         </button>
                       </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Imágenes del Producto (hasta 3 fotos)</label>
+                    <div className="flex gap-4">
+                      {imagenes.map((img, idx) => (
+                        <div key={idx} className="relative w-24 h-24 rounded-lg border border-green-200 overflow-hidden bg-white">
+                          <img src={img.startsWith('http') ? img : `http://localhost:8000${img}`} alt="Preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setImagenes(imagenes.filter((_, i) => i !== idx))}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {imagenes.length < 3 && (
+                        <label className="w-24 h-24 flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-green-300 cursor-pointer text-green-600 hover:bg-green-100 transition-colors text-center">
+                          <UploadCloud size={24} />
+                          <span className="text-[10px] font-bold">Subir Foto</span>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  setLoading(true);
+                                  const url = await uploadApi.uploadImagen(file);
+                                  setImagenes([...imagenes, url]);
+                                } catch (err) {
+                                  console.error("Error subiendo imagen", err);
+                                  setError("Error al subir la imagen");
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
                     </div>
                   </div>
                 </div>

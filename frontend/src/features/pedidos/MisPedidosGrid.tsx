@@ -8,6 +8,7 @@ import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedido
 import { useAuthStore } from "../../store/authStore";
 import PedidoTimeline from "../../components/PedidoTimeline";
 import type { PedidosFilters, PedidoResponse } from "../../types";
+import { parseBackendDate, ARGENTINA_TIME_ZONE } from "../../utils/dates";
 
 const ESTADO_BADGE: Record<string, string> = {
   PENDIENTE:  "bg-yellow-100 text-yellow-800",
@@ -206,7 +207,8 @@ export default function MisPedidosGrid({ filters }: Props) {
                   </span>
                 </div>
                 <p className="text-sm text-gray-500">
-                  {new Date(pedido.created_at).toLocaleDateString("es-AR", {
+                  {parseBackendDate(pedido.created_at).toLocaleDateString("es-AR", {
+                    timeZone: ARGENTINA_TIME_ZONE,
                     day: "2-digit",
                     month: "long",
                     year: "numeric",
