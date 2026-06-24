@@ -8,13 +8,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['recharts', 'lodash'],
   },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        ws: true, // Enable WebSocket proxy
-      },
-    },
-  },
 })
