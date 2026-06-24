@@ -272,12 +272,17 @@ function AccionButtons({ pedido, onSolicitarCancelacion }: AccionButtonsProps) {
           <button
             key={estado}
             disabled={avanzar.isPending}
-            onClick={() =>
-              avanzar.mutate({
-                id: pedido.id,
-                data: { estado_hacia: estado },
-              })
-            }
+            onClick={() => {
+              avanzar.mutate(
+                { id: pedido.id, data: { estado_hacia: estado } },
+                {
+                  onError: (err: any) => {
+                    const detail = err.response?.data?.detail || "Error al avanzar de estado";
+                    window.alert(detail);
+                  }
+                }
+              );
+            }}
             className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 bg-green-100 text-green-800 hover:bg-green-200"
           >
             → {ESTADO_LABEL[estado] ?? estado}

@@ -45,7 +45,7 @@ export const useWsStore = create<WsState>((set, get) => ({
       set({ reconnectTimer: null });
     }
 
-    const url = new URL(apiUrl);
+    const url = new URL(apiUrl || window.location.origin);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     url.pathname = "/api/v1/pedidos/ws";
     url.search = "";

@@ -131,25 +131,24 @@ export default function MisPedidosGrid({ filters }: Props) {
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoResponse | null>(null);
 
   const { isConnected, subscribeToOrder } = usePedidosWebSocket({
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !!data?.items,
     onMessage: useCallback(
       (msg: PedidoWsMessage) => {
         if (msg.event !== "ERROR" && msg.event !== "SUBSCRIBED") {
           const updatedPedido = msg.data as PedidoResponse;
           
           if (updatedPedido && updatedPedido.id) {
-            // Actualizar la caché de la lista directamente para respuesta instantánea
             queryClient.setQueryData(["pedidos", filters], (oldData: any) => {
               if (!oldData || !oldData.items) return oldData;
               return {
                 ...oldData,
-                items: oldData.items.map((p: PedidoResponse) =>
+                items: oldData.items.map((p: any) =>
                   p.id === updatedPedido.id ? updatedPedido : p
                 ),
               };
             });
-            // También invalidar por las dudas para asegurar consistencia
             queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+            queryClient.invalidateQueries({ queryKey: ["pedidos", filters] });
           }
         }
       },
@@ -158,10 +157,14 @@ export default function MisPedidosGrid({ filters }: Props) {
   });
 
   useEffect(() => {
+    console.log("WebSocket status in MisPedidosGrid:", { isConnected, itemsLength: data?.items?.length });
     if (isConnected && data?.items) {
       data.items
         .filter((pedido) => !["ENTREGADO", "CANCELADO"].includes(pedido.estado_codigo))
-        .forEach((pedido) => subscribeToOrder(pedido.id));
+        .forEach((pedido) => {
+          console.log("Subscribing to order:", pedido.id);
+          subscribeToOrder(pedido.id);
+        });
     }
   }, [isConnected, data?.items, subscribeToOrder]);
 
@@ -214,10 +217,9 @@ export default function MisPedidosGrid({ filters }: Props) {
                   · {pedido.forma_pago_codigo}
                 </p>
               </div>
-              <p className="font-bold text-gray-900 text-lg">
+              <p className="font-bold text-gray-900 text-lg mt-2">
                 ${Number(pedido.total).toLocaleString("es-AR")}
               </p>
-              <PedidoTimeline estado={pedido.estado_codigo} compact isRetiro={pedido.direccion_id === null} />
             </Link>
 
             {/* Botón cancelar — fuera del Link para no propagar el click */}
