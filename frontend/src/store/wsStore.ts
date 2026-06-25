@@ -54,11 +54,15 @@ export const useWsStore = create<WsState>((set, get) => ({
     set({ ws });
 
     ws.onopen = () => {
+      // Ignorar sockets fantasma de un ciclo de connect/disconnect anterior
+      // (p.ej. el doble montaje de React StrictMode) que ya fueron reemplazados.
+      if (get().ws !== ws) return;
       set({ isConnected: true });
       get().listeners.forEach(l => l({ event: "WS_CONNECTED", data: null }));
     };
 
     ws.onmessage = (event) => {
+      if (get().ws !== ws) return;
       try {
         const msg = JSON.parse(event.data) as PedidoWsMessage;
         get().listeners.forEach(l => l(msg));
@@ -68,6 +72,9 @@ export const useWsStore = create<WsState>((set, get) => ({
     };
 
     ws.onclose = (event) => {
+      // Si este socket ya no es el que el store tiene activo, no pisar
+      // el estado de la conexión vigente (evita el bug de carrera).
+      if (get().ws !== ws) return;
       set({ isConnected: false, ws: null });
       if (event.code === 1000 || event.code === 1008) return;
 
