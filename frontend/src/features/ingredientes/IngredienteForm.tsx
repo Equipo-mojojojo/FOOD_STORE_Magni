@@ -1,7 +1,7 @@
 /** Modal para crear/editar ingrediente. */
 import { useState, useEffect } from "react";
-import { X, Info, Package, UploadCloud, Trash2 } from "lucide-react";
-import type { Categoria, Ingrediente, IngredienteCreate, UnidadMedidaSimple } from "../../types";
+import { X, Info, Package, UploadCloud, Trash2, AlertTriangle } from "lucide-react";
+import type { Categoria, Ingrediente, IngredienteCreate, UnidadMedidaSimple, ProductoAfectadoResponse } from "../../types";
 import { productosApi } from "../../api/productosApi";
 import { categoriasApi } from "../../api/categoriasApi";
 import { ingredientesApi } from "../../api/ingredientesApi";
@@ -11,7 +11,7 @@ interface Props {
   isOpen: boolean;
   ingrediente: Ingrediente | null; // null = crear, object = editar
   onClose: () => void;
-  onSave: (data: IngredienteCreate, id?: number) => Promise<void>;
+  onSave: (data: IngredienteCreate & { actualizar_precios_productos?: boolean }, id?: number) => Promise<void>;
 }
 
 export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }: Props) {
@@ -36,6 +36,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [unidades, setUnidades] = useState<UnidadMedidaSimple[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [productosAfectados, setProductosAfectados] = useState<ProductoAfectadoResponse[]>([]);
+  const [mostrarConfirmacionPrecios, setMostrarConfirmacionPrecios] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -130,25 +132,25 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nombre.trim()) {
-      setError("El nombre es obligatorio");
-      return;
-    }
-    if (unidadMedidaId === "") {
-      setError("La unidad de medida es obligatoria");
-      return;
-    }
+  // Resolver categorías ancestras para el producto terminado
+  const getCategoriasPayload = (): { categoria_id: number; es_principal: boolean }[] => {
+    if (categoriaId === "") return [];
+    const payload: { categoria_id: number; es_principal: boolean }[] = [];
+    let currentId: number | null = Number(categoriaId);
+    let esPrincipal = true;
 
-    // Validar campos de producto terminado
-    if (esProductoTerminado) {
-      if (categoriaId === "") {
-        setError("Seleccioná una categoría para el producto");
-        return;
+    while (currentId) {
+      if (!payload.some(c => c.categoria_id === currentId)) {
+        payload.push({ categoria_id: currentId, es_principal: esPrincipal });
       }
+      esPrincipal = false;
+      const catInfo = categorias.find(c => c.id === currentId);
+      currentId = catInfo?.padre_id || null;
     }
+    return payload;
+  };
 
+  const executeSave = async (actualizarPrecios: boolean) => {
     setLoading(true);
     setError("");
     try {
@@ -161,7 +163,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         stock_actual: Number(stockActual),
         stock_minimo: Number(stockMinimo),
         unidad_medida_id: Number(unidadMedidaId),
-        activo 
+        activo,
+        actualizar_precios_productos: actualizarPrecios
       }, ingrediente?.id);
 
       // Si es producto terminado, crear o actualizar el producto vinculado
@@ -193,7 +196,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 disponible: true,
                 activo: true,
                 unidad_venta_id: null,
-                categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
+                categorias: getCategoriasPayload(),
                 ingredientes: [{
                   ingrediente_id: ingId!,
                   cantidad: 1,
@@ -213,7 +216,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 disponible: true,
                 activo: true,
                 unidad_venta_id: null,
-                categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
+                categorias: getCategoriasPayload(),
                 ingredientes: [{
                   ingrediente_id: ingId!,
                   cantidad: 1,
@@ -251,7 +254,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 disponible: true,
                 activo: true,
                 unidad_venta_id: null,
-                categorias: categoriaId !== "" ? [{ categoria_id: Number(categoriaId), es_principal: true }] : [],
+                categorias: getCategoriasPayload(),
                 ingredientes: [{
                   ingrediente_id: nuevoIngId,
                   cantidad: 1,
@@ -275,6 +278,47 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nombre.trim()) {
+      setError("El nombre es obligatorio");
+      return;
+    }
+    if (unidadMedidaId === "") {
+      setError("La unidad de medida es obligatoria");
+      return;
+    }
+
+    // Validar campos de producto terminado
+    if (esProductoTerminado) {
+      if (categoriaId === "") {
+        setError("Seleccioná una categoría para el producto");
+        return;
+      }
+    }
+
+    const nuevoCosto = Number(precioCosto);
+    const costoCambio = ingrediente ? nuevoCosto !== ingrediente.precio_costo : false;
+
+    if (ingrediente && costoCambio) {
+      try {
+        setLoading(true);
+        const afectados = await ingredientesApi.getProductosAfectados(ingrediente.id);
+        if (afectados.length > 0) {
+          setProductosAfectados(afectados);
+          setMostrarConfirmacionPrecios(true);
+          return;
+        }
+      } catch (err) {
+        console.error("Error buscando productos afectados:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    await executeSave(false);
   };
 
   const calculatedCosto = Number(precioCosto || 0);
@@ -637,6 +681,66 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
           );
         })()}
       </div>
+
+      {mostrarConfirmacionPrecios && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100 animate-scale-in">
+            <div className="flex items-center gap-3 text-warning mb-4">
+              <div className="p-2 bg-yellow-50 rounded-xl text-yellow-600">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Actualización de Precios</h3>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              El costo de este insumo cambió. Esto afecta a los siguientes productos:
+            </p>
+
+            <div className="max-h-48 overflow-y-auto mb-6 border border-gray-100 rounded-xl p-3 bg-gray-50/50 space-y-2">
+              {productosAfectados.map(p => (
+                <div key={p.id} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100 last:border-0">
+                  <span className="font-medium text-gray-700">{p.nombre}</span>
+                  <span className="text-gray-500 font-mono">Precio: ${p.precio_base_actual.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-gray-500 mb-6 leading-relaxed bg-blue-50 text-blue-700 p-2.5 rounded-lg">
+              ℹ️ Si elegís <strong>Actualizar Precios</strong>, se recalcularán automáticamente los precios base de venta según el nuevo costo y el margen de ganancia de cada producto.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setMostrarConfirmacionPrecios(false);
+                  await executeSave(true);
+                }}
+                className="w-full py-2.5 bg-green-main text-white font-bold rounded-xl text-sm hover:bg-green-dark transition-colors shadow-sm"
+              >
+                Sí, actualizar precios
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setMostrarConfirmacionPrecios(false);
+                  await executeSave(false);
+                }}
+                className="w-full py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-200 transition-colors"
+              >
+                No, conservar precios actuales
+              </button>
+              <button
+                type="button"
+                onClick={() => setMostrarConfirmacionPrecios(false)}
+                className="w-full py-2 text-gray-400 font-medium text-xs hover:text-gray-600 transition-colors text-center mt-1"
+              >
+                Volver a editar insumo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
