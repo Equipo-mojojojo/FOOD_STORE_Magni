@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { ShoppingCart, ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingCart, ShoppingBag, User, Menu, X, Package, MapPin, LayoutDashboard, LogOut, Home } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useUiStore } from "../store/uiStore";
 import { useCartStore } from "../store/cartStore";
 import NavbarCategoriesMenu from "./NavbarCategoriesMenu";
+import NavbarUserMenu from "./NavbarUserMenu";
 import CartSlideOver from "./CartSlideOver";
 
 export default function NavbarUsuario() {
@@ -32,6 +33,12 @@ export default function NavbarUsuario() {
   const isAdmin = usuario?.roles?.some(
     (r: any) => r === "ADMIN" || r?.rol_codigo === "ADMIN"
   );
+  
+  const isCliente = !usuario?.roles?.length || usuario.roles.some(
+    (r: any) => r === "CLIENTE" || r?.rol_codigo === "CLIENTE" || r === "CLIENT" || r?.rol_codigo === "CLIENT"
+  );
+  
+  const showCustomerLinks = isCliente || isAdmin;
 
   return (
     <div className="min-h-screen bg-cream flex flex-col">
@@ -64,47 +71,11 @@ export default function NavbarUsuario() {
               {/* Acciones de Usuario (Desktop) */}
               <div className="hidden md:flex items-center gap-4">
                 {isAuthenticated ? (
-                  <>
-                    <div className="flex items-center gap-2 mr-2">
-                      <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-main">
-                        <User size={16} />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">
-                        Hola, <span className="font-bold text-green-dark">{usuario?.nombre?.split(" ")[0]}</span>
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <Link
-                        to="/mis-pedidos"
-                        className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
-                      >
-                        Mis Pedidos
-                      </Link>
-                      <Link
-                        to="/mis-direcciones"
-                        className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
-                      >
-                        Mis Direcciones
-                      </Link>
-                    </div>
-
-                    {isAdmin && (
-                      <Link
-                        to="/dashboard"
-                        className="text-sm bg-green-main text-white px-3 py-1.5 rounded-lg hover:bg-green-dark transition-colors"
-                      >
-                        Dashboard
-                      </Link>
-                    )}
-
-                    <button
-                      onClick={handleLogout}
-                      className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      Salir
-                    </button>
-                  </>
+                  <NavbarUserMenu 
+                    usuario={usuario}
+                    isAdmin={isAdmin}
+                    onLogout={handleLogout}
+                  />
                 ) : (
                   <div className="flex items-center gap-3 mr-2">
                     <Link
@@ -149,9 +120,9 @@ export default function NavbarUsuario() {
           </div>
         </div>
 
-        {/* Menú Móvil Desplegable */}
+        {/* Menú Móvil Desplegable (Caja Flotante) */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-100 bg-white p-4 space-y-4 shadow-lg absolute w-full left-0 animate-in slide-in-from-top-2 duration-200">
+          <div className="md:hidden absolute right-4 top-16 w-64 bg-white shadow-xl rounded-2xl border border-gray-100 p-5 space-y-4 z-50 animate-in fade-in slide-in-from-top-3 duration-200 origin-top-right">
 
 
             {/* Opciones de usuario */}
@@ -180,35 +151,61 @@ export default function NavbarUsuario() {
                       <NavbarCategoriesMenu />
                     </div>
                   </div>
-                  <Link
-                    to="/mis-pedidos"
-                    className="text-gray-600 font-medium py-1"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Mis Pedidos
-                  </Link>
-                  <Link
-                    to="/mis-direcciones"
-                    className="text-gray-600 font-medium py-1"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Mis Direcciones
-                  </Link>
+                  {showCustomerLinks && (
+                    <>
+                      <Link
+                        to="/mi-perfil"
+                        className="text-gray-600 font-medium py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <User size={18} className="text-gray-400" />
+                        Mi Perfil
+                      </Link>
+                      <Link
+                        to="/mis-pedidos"
+                        className="text-gray-600 font-medium py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Package size={18} className="text-gray-400" />
+                        Mis Pedidos
+                      </Link>
+                      <Link
+                        to="/mis-direcciones"
+                        className="text-gray-600 font-medium py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <MapPin size={18} className="text-gray-400" />
+                        Mis Direcciones
+                      </Link>
+                    </>
+                  )}
 
                   {isAdmin && (
-                    <Link
-                      to="/dashboard"
-                      className="text-green-main font-bold py-1"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Panel de Administración
-                    </Link>
+                    <>
+                      <Link
+                        to="/"
+                        className="text-green-main font-bold py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Home size={18} className="text-green-main" />
+                        Vista Usuario
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        className="text-green-main font-bold py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <LayoutDashboard size={18} className="text-green-main" />
+                        Panel de Administración
+                      </Link>
+                    </>
                   )}
 
                   <button
                     onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                    className="text-red-500 font-medium text-left pt-2 mt-2 border-t border-gray-100"
+                    className="text-red-500 font-medium text-left pt-2 mt-2 border-t border-gray-100 flex items-center gap-2"
                   >
+                    <LogOut size={18} className="text-red-400" />
                     Cerrar Sesión
                   </button>
                 </>

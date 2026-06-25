@@ -63,6 +63,16 @@ export const useEliminarCategoria = () => {
   });
 };
 
+export const useDarDeBajaCategoria = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => categoriasApi.darDeBaja(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categorias"] });
+    },
+  });
+};
+
 export const useRestaurarCategoria = () => {
   const queryClient = useQueryClient();
   return useMutation({

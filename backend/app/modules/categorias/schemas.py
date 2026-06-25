@@ -9,6 +9,7 @@ class CategoriaCreate(BaseModel):
     nombre: Annotated[str, Field(min_length=2, max_length=100, description="Nombre de la categoría")]
     descripcion: Optional[str] = Field(default=None, max_length=500)
     padre_id: Optional[int] = Field(default=None, description="ID de la categoría padre (jerárquica)")
+    imagen_url: Optional[str] = Field(default=None, description="URL de la imagen en Cloudinary")
 
 
 class CategoriaUpdate(BaseModel):
@@ -16,6 +17,7 @@ class CategoriaUpdate(BaseModel):
     nombre: Optional[str] = Field(default=None, min_length=2, max_length=100)
     descripcion: Optional[str] = Field(default=None, max_length=500)
     padre_id: Optional[int] = None
+    imagen_url: Optional[str] = None
     activo: Optional[bool] = None
 
 
@@ -25,6 +27,7 @@ class CategoriaRead(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
     padre_id: Optional[int] = None
+    imagen_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     active_at: Optional[datetime] = None

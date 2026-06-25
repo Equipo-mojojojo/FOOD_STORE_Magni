@@ -10,7 +10,7 @@ export default function NavbarCategoriesMenu() {
   // Fetch de categorías usando React Query
   // Solo pedimos las activas y con un staleTime alto para no recargar a cada rato
   const { data: categorias, isLoading, isError } = useQuery({
-    queryKey: ['categorias-tree', 'activo'],
+    queryKey: ['categorias', 'tree', 'activo'],
     queryFn: () => categoriasApi.listTree('activo'),
     staleTime: 1000 * 60 * 5, // 5 minutos de caché
   });
@@ -22,7 +22,7 @@ export default function NavbarCategoriesMenu() {
       onMouseLeave={() => setIsOpen(false)}
     >
       <Link 
-        to="/" 
+        to="/catalogo" 
         className="text-gray-600 hover:text-green-main flex items-center gap-2 font-medium transition-colors py-2"
         onClick={() => setIsOpen(false)}
       >

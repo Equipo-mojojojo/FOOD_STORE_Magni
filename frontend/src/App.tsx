@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import NavbarUsuario from "./components/NavbarUsuario";
+import ScrollToTop from "./components/ScrollToTop";
 
 import { Toaster } from "sonner";
 
@@ -31,6 +32,7 @@ import PedidoDetallePage from "./pages/PedidoDetallePage";
 import StorefrontCatalogoPage from "./pages/StorefrontCatalogoPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import PaymentResultPage from "./pages/PaymentResultPage";
+import MiPerfilPage from "./pages/MiPerfilPage";
 
 
 function AppLayout() {
@@ -51,7 +53,7 @@ function AppLayout() {
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main id="dashboard-scroll" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Routes>
             <Route
               path="/dashboard"
@@ -117,6 +119,14 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/perfil"
+              element={
+                <ProtectedRoute roles={["ADMIN", "CAJERO", "COCINA_STOCK"]}>
+                  <MiPerfilPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to={fallbackPath} replace />} />
           </Routes>
         </main>
@@ -155,6 +165,7 @@ export default function App() {
     <>
       <Toaster position="bottom-right" richColors />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* Auth */}
         <Route
@@ -201,6 +212,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <PaymentResultPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mi-perfil"
+            element={
+              <ProtectedRoute>
+                <MiPerfilPage />
               </ProtectedRoute>
             }
           />

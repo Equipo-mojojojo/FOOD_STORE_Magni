@@ -91,6 +91,18 @@ class ProductoRepository(BaseRepository[Producto]):
             selectinload(Producto.unidad_venta),
         )
 
+        # Cuando se listan productos activos sin filtro de categoría,
+        # excluir los que SOLO pertenecen a categorías inactivas/eliminadas
+        if estado == "activo" and not categoria_id:
+            from app.modules.categorias.model import Categoria
+            productos_con_cat_activa = (
+                select(ProductoCategoria.producto_id)
+                .join(Categoria, Categoria.id == ProductoCategoria.categoria_id)
+                .where(Categoria.active_at.is_(None))
+                .where(Categoria.deleted_at.is_(None))
+            )
+            query = query.where(Producto.id.in_(productos_con_cat_activa))
+
         # Filtros específicos
         if disponible is not None:
             query = query.where(Producto.disponible == disponible)
@@ -98,14 +110,51 @@ class ProductoRepository(BaseRepository[Producto]):
         if categoria_id:
             from app.modules.categorias.model import Categoria
             
-            # CTE recursiva para obtener la categoría solicitada y todos sus descendientes
-            cte = select(Categoria.id).where(Categoria.id == categoria_id).cte(name="cat_hierarchy", recursive=True)
-            cte = cte.union_all(
-                select(Categoria.id).where(Categoria.padre_id == cte.c.id)
+            # CTE 1: Categoría solicitada + descendientes ACTIVOS (para incluir productos)
+            cte_active = (
+                select(Categoria.id)
+                .where(Categoria.id == categoria_id)
+                .where(Categoria.deleted_at.is_(None))
+                .where(Categoria.active_at.is_(None))
+                .cte(name="cat_active", recursive=True)
+            )
+            cte_active = cte_active.union_all(
+                select(Categoria.id)
+                .where(Categoria.padre_id == cte_active.c.id)
+                .where(Categoria.deleted_at.is_(None))
+                .where(Categoria.active_at.is_(None))
+            )
+            
+            # CTE 2: TODOS los descendientes (incluidos inactivos) para detectar
+            # categorías hijas dadas de baja
+            cte_all = (
+                select(Categoria.id, Categoria.active_at)
+                .where(Categoria.id == categoria_id)
+                .where(Categoria.deleted_at.is_(None))
+                .cte(name="cat_all", recursive=True)
+            )
+            cte_all = cte_all.union_all(
+                select(Categoria.id, Categoria.active_at)
+                .where(Categoria.padre_id == cte_all.c.id)
+                .where(Categoria.deleted_at.is_(None))
+            )
+            
+            # IDs de categorías inactivas dentro de esta rama
+            inactive_cat_ids = (
+                select(cte_all.c.id)
+                .where(cte_all.c.active_at.isnot(None))
+            )
+            
+            # Productos que pertenecen a alguna categoría inactiva de esta rama → excluir
+            productos_en_cat_inactiva = (
+                select(ProductoCategoria.producto_id)
+                .where(ProductoCategoria.categoria_id.in_(inactive_cat_ids))
             )
             
             query = query.join(ProductoCategoria).where(
-                ProductoCategoria.categoria_id.in_(select(cte.c.id))
+                ProductoCategoria.categoria_id.in_(select(cte_active.c.id))
+            ).where(
+                Producto.id.notin_(productos_en_cat_inactiva)
             )
 
         if search:

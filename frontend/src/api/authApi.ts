@@ -23,6 +23,11 @@ export const authApi = {
     return res.data;
   },
 
+  updateMe: async (data: { nombre: string; apellido: string; celular: string }): Promise<UserResponse> => {
+    const res = await axiosClient.put<UserResponse>("/auth/me", data);
+    return res.data;
+  },
+
   logout: async (): Promise<void> => {
     await axiosClient.post("/auth/logout");
   },
