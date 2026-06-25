@@ -120,9 +120,9 @@ export default function NavbarUsuario() {
           </div>
         </div>
 
-        {/* Menú Móvil Desplegable */}
+        {/* Menú Móvil Desplegable (Caja Flotante) */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-100 bg-white p-4 space-y-4 shadow-lg absolute w-full left-0 animate-in slide-in-from-top-2 duration-200">
+          <div className="md:hidden absolute right-4 top-16 w-64 bg-white shadow-xl rounded-2xl border border-gray-100 p-5 space-y-4 z-50 animate-in fade-in slide-in-from-top-3 duration-200 origin-top-right">
 
 
             {/* Opciones de usuario */}
