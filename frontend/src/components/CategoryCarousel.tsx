@@ -1,4 +1,5 @@
-import { ArrowRight, Loader } from 'lucide-react';
+import { useRef } from 'react';
+import { ArrowRight, Loader, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useProductos } from '../hooks/useProductos';
 import ProductCard from './ProductCard';
@@ -10,6 +11,8 @@ interface CategoryCarouselProps {
 }
 
 export default function CategoryCarousel({ id, categoriaId, titulo }: CategoryCarouselProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // Buscamos solo productos disponibles para esta categoría, máximo 10 para no saturar el home
   const { data, isLoading, isError } = useProductos({
     categoria: categoriaId,
@@ -28,6 +31,16 @@ export default function CategoryCarousel({ id, categoriaId, titulo }: CategoryCa
   });
 
   const productos = data?.items || [];
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 320; // Ancho aproximado de la tarjeta + gap
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -56,40 +69,65 @@ export default function CategoryCarousel({ id, categoriaId, titulo }: CategoryCa
   }
 
   return (
-    <section id={id} className="py-4">
+    <section id={id} className="py-2">
       {/* Header del Carrusel */}
       <div className="flex justify-between items-end mb-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{titulo}</h2>
-          <p className="text-gray-500">Descubrí nuestras opciones</p>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{titulo}</h2>
+          <p className="text-sm text-gray-500">Descubrí nuestras opciones</p>
         </div>
         <Link
-          to={`/catalogo?categoria=${categoriaId}`} // O a donde definamos la vista completa
-          className="text-green-main font-medium hover:text-green-dark flex items-center gap-1 transition-colors"
+          to={`/catalogo?categoria=${categoriaId}`}
+          className="text-sm text-green-main font-bold hover:text-green-dark flex items-center gap-1 transition-colors"
         >
-          Ver todos <ArrowRight size={18} />
+          Ver todos <ArrowRight size={16} />
         </Link>
       </div>
 
-      {/* Contenedor del Carrusel (CSS Scroll Snap) */}
-      {/* Agregamos padding-bottom para que las sombras (shadow-xl) de las cards no se corten */}
-      <div className="flex overflow-x-auto gap-6 pb-8 pt-2 snap-x snap-mandatory hide-scrollbar">
-        {productos.map(producto => (
-          <ProductCard key={producto.id} producto={producto} />
-        ))}
+      {/* Contenedor relativo para posicionar las flechas absolutas */}
+      <div className="relative group">
+        {/* Flecha Izquierda */}
+        <button
+          onClick={() => scroll('left')}
+          className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-md rounded-full p-2 sm:p-2.5 text-gray-600 hover:text-green-main hover:border-green-main transition-all hover:scale-105 active:scale-95"
+          title="Anterior"
+        >
+          <ChevronLeft size={20} />
+        </button>
 
-        {/* Tarjeta de "Ver más" al final del carrusel si hay más productos potenciales */}
-        {productos.length >= 5 && (
-          <div className="w-64 shrink-0 snap-start flex items-center justify-center">
-            <Link
-              to={`/catalogo?categoria=${categoriaId}`}
-              className="flex flex-col items-center justify-center h-40 w-40 rounded-full bg-green-50 text-green-main hover:bg-green-100 hover:scale-105 transition-all duration-300"
-            >
-              <ArrowRight size={32} className="mb-2" />
-              <span className="font-bold">Ver catálogo</span>
-            </Link>
-          </div>
-        )}
+        {/* Contenedor del Carrusel (CSS Scroll Snap) */}
+        <div
+          ref={scrollContainerRef}
+          className="flex overflow-x-auto gap-6 pb-4 pt-1 snap-x snap-mandatory hide-scrollbar scroll-smooth px-4 sm:px-6"
+        >
+          {productos.map(producto => (
+            <div key={producto.id} className="snap-start shrink-0">
+              <ProductCard producto={producto} />
+            </div>
+          ))}
+
+          {/* Tarjeta de "Ver más" al final del carrusel si hay más productos potenciales */}
+          {productos.length >= 5 && (
+            <div className="w-64 shrink-0 snap-start flex items-center justify-center">
+              <Link
+                to={`/catalogo?categoria=${categoriaId}`}
+                className="flex flex-col items-center justify-center h-40 w-40 rounded-full bg-green-50 text-green-main hover:bg-green-100 hover:scale-105 transition-all duration-300 border border-green-100 shadow-sm"
+              >
+                <ArrowRight size={28} className="mb-2 text-green-main" />
+                <span className="font-bold text-sm">Ver catálogo</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Flecha Derecha */}
+        <button
+          onClick={() => scroll('right')}
+          className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-md rounded-full p-2 sm:p-2.5 text-gray-600 hover:text-green-main hover:border-green-main transition-all hover:scale-105 active:scale-95"
+          title="Siguiente"
+        >
+          <ChevronRight size={20} />
+        </button>
       </div>
     </section>
   );

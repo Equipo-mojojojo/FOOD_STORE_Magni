@@ -15,7 +15,7 @@ export default function ProductCard({ producto, className }: ProductCardProps) {
   const navigate = useNavigate();
 
   const inCart = items.find((i) => i.producto.id === producto.id);
-  const sinStock = producto.stock_disponible === 0;
+  const sinStock = producto.stock_disponible === 0 || !producto.disponible;
   const stockAgotado = !!inCart && inCart.cantidad >= producto.stock_disponible;
   const bloqueado = sinStock || stockAgotado;
 
@@ -49,7 +49,11 @@ export default function ProductCard({ producto, className }: ProductCardProps) {
   return (
     <Link
       to={`/producto/${producto.id}`}
-      className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-gray-50 flex flex-col block ${className ?? "w-64 shrink-0 snap-start"}`}
+      className={`group bg-white rounded-3xl shadow-sm transition-all duration-300 overflow-hidden border flex flex-col block ${
+        sinStock 
+          ? "opacity-70 grayscale-[40%] border-gray-200" 
+          : "hover:shadow-xl hover:-translate-y-1 border-gray-50"
+      } ${className ?? "w-64 shrink-0 snap-start"}`}
     >
       {/* Imagen Placeholder o Real */}
       <div className={`h-40 w-full flex flex-col justify-center items-center ${colorClass} relative overflow-hidden`}>
@@ -57,6 +61,12 @@ export default function ProductCard({ producto, className }: ProductCardProps) {
           <span className="absolute top-3 right-3 bg-white/90 text-orange-600 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm z-10">
             ¡Quedan {producto.stock_disponible}!
           </span>
+        )}
+        
+        {sinStock && (
+          <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white text-xs font-black uppercase tracking-wider z-10 backdrop-blur-[1px]">
+            {!producto.disponible ? "No Disponible" : "Sin Stock"}
+          </div>
         )}
         
         {producto.imagenes && producto.imagenes.length > 0 ? (

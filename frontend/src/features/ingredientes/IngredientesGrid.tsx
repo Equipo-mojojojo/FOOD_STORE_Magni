@@ -71,7 +71,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
     }));
   };
 
-  const handleSave = async (formData: IngredienteCreate, id?: number) => {
+  const handleSave = async (formData: IngredienteCreate & { actualizar_precios_productos?: boolean }, id?: number) => {
     if (id) {
       await actualizarMut.mutateAsync({ id, data: formData });
     } else {
