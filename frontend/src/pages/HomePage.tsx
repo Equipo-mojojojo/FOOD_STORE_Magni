@@ -36,37 +36,37 @@ export default function HomePage() {
       </section>
 
       {/* Info de Servicios (Pagos, Envíos, Takeaway) */}
-      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-0 md:divide-x divide-gray-100">
+      <section className="bg-white rounded-xl border border-gray-100 shadow-sm py-3 px-4 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-0 md:divide-x divide-gray-100/80">
         {/* Métodos de Pago */}
-        <div className="flex items-center gap-4 px-2 md:px-6">
-          <div className="p-3 bg-green-50 rounded-2xl text-green-main flex-shrink-0">
-            <CreditCard size={22} />
+        <div className="flex items-center gap-3 px-2 md:px-4">
+          <div className="p-2 bg-green-50 rounded-xl text-green-main flex-shrink-0">
+            <CreditCard size={18} />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-sm">Pagos Flexibles</h3>
-            <p className="text-xs text-gray-500 mt-0.5">MercadoPago, Efectivo o Transferencia</p>
+            <h3 className="font-bold text-gray-900 text-xs sm:text-sm">Pagos Flexibles</h3>
+            <p className="text-[11px] text-gray-500 mt-0.5">MercadoPago, Efectivo o Transferencia</p>
           </div>
         </div>
 
         {/* Envío a domicilio */}
-        <div className="flex items-center gap-4 px-2 md:px-6">
-          <div className="p-3 bg-green-50 rounded-2xl text-green-main flex-shrink-0">
-            <Truck size={22} />
+        <div className="flex items-center gap-3 px-2 md:px-4">
+          <div className="p-2 bg-green-50 rounded-xl text-green-main flex-shrink-0">
+            <Truck size={18} />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-sm">Delivery Express</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Recibí tu comida bien caliente en casa</p>
+            <h3 className="font-bold text-gray-900 text-xs sm:text-sm">Delivery Express</h3>
+            <p className="text-[11px] text-gray-500 mt-0.5">Recibí tu comida bien caliente en casa</p>
           </div>
         </div>
 
         {/* Takeaway / Retiro */}
-        <div className="flex items-center gap-4 px-2 md:px-6">
-          <div className="p-3 bg-green-50 rounded-2xl text-green-main flex-shrink-0">
-            <Store size={22} />
+        <div className="flex items-center gap-3 px-2 md:px-4">
+          <div className="p-2 bg-green-50 rounded-xl text-green-main flex-shrink-0">
+            <Store size={18} />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-sm">Retiro en Local</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Pedí online y retirá sin hacer fila (Takeaway)</p>
+            <h3 className="font-bold text-gray-900 text-xs sm:text-sm">Retiro en Local</h3>
+            <p className="text-[11px] text-gray-500 mt-0.5">Pedí online y retirá sin fila (Takeaway)</p>
           </div>
         </div>
       </section>
