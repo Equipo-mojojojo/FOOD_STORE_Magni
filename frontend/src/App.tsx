@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import NavbarUsuario from "./components/NavbarUsuario";
+import ScrollToTop from "./components/ScrollToTop";
 
 import { Toaster } from "sonner";
 
@@ -155,6 +156,7 @@ export default function App() {
     <>
       <Toaster position="bottom-right" richColors />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* Auth */}
         <Route

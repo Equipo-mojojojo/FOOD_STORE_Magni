@@ -22,7 +22,7 @@ export default function NavbarCategoriesMenu() {
       onMouseLeave={() => setIsOpen(false)}
     >
       <Link 
-        to="/" 
+        to="/catalogo" 
         className="text-gray-600 hover:text-green-main flex items-center gap-2 font-medium transition-colors py-2"
         onClick={() => setIsOpen(false)}
       >

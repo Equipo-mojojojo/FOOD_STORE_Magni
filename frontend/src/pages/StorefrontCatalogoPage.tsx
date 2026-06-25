@@ -257,7 +257,10 @@ export default function StorefrontCatalogoPage() {
       {totalPages > 1 && (
         <section className="flex justify-center items-center gap-4 py-8">
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
+            onClick={() => {
+              setPage(p => Math.max(1, p - 1));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             disabled={page === 1}
             className="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-green-main disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
@@ -272,7 +275,10 @@ export default function StorefrontCatalogoPage() {
           </div>
 
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => {
+              setPage(p => Math.min(totalPages, p + 1));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             disabled={page === totalPages}
             className="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-green-main disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >

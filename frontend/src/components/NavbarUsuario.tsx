@@ -5,6 +5,7 @@ import { useAuthStore } from "../store/authStore";
 import { useUiStore } from "../store/uiStore";
 import { useCartStore } from "../store/cartStore";
 import NavbarCategoriesMenu from "./NavbarCategoriesMenu";
+import NavbarUserMenu from "./NavbarUserMenu";
 import CartSlideOver from "./CartSlideOver";
 
 export default function NavbarUsuario() {
@@ -64,47 +65,11 @@ export default function NavbarUsuario() {
               {/* Acciones de Usuario (Desktop) */}
               <div className="hidden md:flex items-center gap-4">
                 {isAuthenticated ? (
-                  <>
-                    <div className="flex items-center gap-2 mr-2">
-                      <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-main">
-                        <User size={16} />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">
-                        Hola, <span className="font-bold text-green-dark">{usuario?.nombre?.split(" ")[0]}</span>
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <Link
-                        to="/mis-pedidos"
-                        className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
-                      >
-                        Mis Pedidos
-                      </Link>
-                      <Link
-                        to="/mis-direcciones"
-                        className="text-sm text-gray-600 hover:text-green-main font-medium transition-colors"
-                      >
-                        Mis Direcciones
-                      </Link>
-                    </div>
-
-                    {isAdmin && (
-                      <Link
-                        to="/dashboard"
-                        className="text-sm bg-green-main text-white px-3 py-1.5 rounded-lg hover:bg-green-dark transition-colors"
-                      >
-                        Dashboard
-                      </Link>
-                    )}
-
-                    <button
-                      onClick={handleLogout}
-                      className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      Salir
-                    </button>
-                  </>
+                  <NavbarUserMenu 
+                    usuario={usuario}
+                    isAdmin={isAdmin}
+                    onLogout={handleLogout}
+                  />
                 ) : (
                   <div className="flex items-center gap-3 mr-2">
                     <Link
