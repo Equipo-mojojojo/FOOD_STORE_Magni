@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FolderPlus, Plus, ChevronRight, ChevronDown, Edit2, Trash2, Package, Search, ShoppingBag, RotateCcw } from "lucide-react";
-import { useCategoriasTree, useEliminarCategoria, useCrearCategoria, useActualizarCategoria, useRestaurarCategoria } from "../../hooks/useCategorias";
+import { useCategoriasTree, useEliminarCategoria, useCrearCategoria, useActualizarCategoria, useRestaurarCategoria, useDarDeBajaCategoria } from "../../hooks/useCategorias";
 import CategoriaForm from "./CategoriaForm";
 import type { Categoria, CategoriaTree as CategoriaTreeType, CategoriaCreate } from "../../types";
 
@@ -17,6 +17,7 @@ export default function CategoriasTree() {
 
   const crearMut = useCrearCategoria();
   const actualizarMut = useActualizarCategoria();
+  const darDeBajaMut = useDarDeBajaCategoria();
   const eliminarMut = useEliminarCategoria();
   const restaurarMut = useRestaurarCategoria();
 
@@ -140,8 +141,14 @@ export default function CategoriasTree() {
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setIdAEliminar(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
-              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Eliminar categoría</h2>
-              <p className="text-sm text-gray-500 text-center mb-6">Solo se puede si no tiene productos asociados.</p>
+              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">
+                {isDeletedView ? "Eliminar permanentemente" : "Dar de baja categoría"}
+              </h2>
+              <p className="text-sm text-gray-500 text-center mb-6">
+                {isDeletedView 
+                  ? "Esta acción es irreversible y eliminará la categoría definitivamente." 
+                  : "Podrás restaurarla después desde la vista de dados de baja."}
+              </p>
               <div className="flex gap-3">
                 <button onClick={() => setIdAEliminar(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors">
                   Cancelar
@@ -149,9 +156,13 @@ export default function CategoriasTree() {
                 <button
                   onClick={async () => {
                     try {
-                      await eliminarMut.mutateAsync(idAEliminar);
+                      if (isDeletedView) {
+                        await eliminarMut.mutateAsync(idAEliminar);
+                      } else {
+                        await darDeBajaMut.mutateAsync(idAEliminar);
+                      }
                     } catch (err: any) {
-                      alert(err.response?.data?.detail || "Error al eliminar");
+                      alert(err.response?.data?.detail || "Error al procesar la solicitud");
                     }
                     setIdAEliminar(null);
                   }}
@@ -217,6 +228,13 @@ function TreeNode({
         </button>
 
         <div className="flex-1 flex items-center gap-3 ml-1 overflow-hidden">
+          {node.imagen_url ? (
+            <img src={node.imagen_url} alt={node.nombre} className="w-6 h-6 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-gray-400 flex-shrink-0">
+              <Package size={10} />
+            </div>
+          )}
           <span title={node.nombre} className={`font-medium truncate max-w-[150px] ${hasSub ? 'text-gray-900' : 'text-gray-600'} ${isMatch && search ? 'bg-yellow-100 text-yellow-900 px-1 rounded' : ''} ${isDeleted ? 'text-danger line-through' : ''}`}>
             {node.nombre}
           </span>
@@ -232,13 +250,22 @@ function TreeNode({
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {isDeleted ? (
-            <button
-              onClick={() => onRestore(node.id)}
-              className="p-1.5 text-green-main hover:bg-green-pale rounded"
-              title="Restaurar"
-            >
-              <RotateCcw size={14} />
-            </button>
+            <div className="flex gap-1">
+              <button
+                onClick={() => onRestore(node.id)}
+                className="p-1.5 text-green-main hover:bg-green-pale rounded"
+                title="Restaurar"
+              >
+                <RotateCcw size={14} />
+              </button>
+              <button
+                onClick={() => onDelete(node.id)}
+                className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded"
+                title="Eliminar permanentemente"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           ) : (
             <>
               <button
@@ -265,7 +292,7 @@ function TreeNode({
               <button
                 onClick={() => onDelete(node.id)}
                 className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded"
-                title="Eliminar"
+                title="Dar de baja"
               >
                 <Trash2 size={14} />
               </button>

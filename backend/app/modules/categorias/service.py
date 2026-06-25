@@ -96,25 +96,50 @@ def update_categoria(uow: UnitOfWork, cat_id: int, data: CategoriaUpdate) -> Cat
     if data.padre_id == cat_id:
         raise HTTPException(status_code=400, detail="Una categoría no puede ser padre de sí misma")
 
-    # Manejo de estado (activo/inactivo)
-    if data.activo is True:
+    # Manejo de estado (activo/inactivo) con cascada
+    estado_cambiado = False
+    nuevo_estado_activo = None
+    if data.activo is True and cat.active_at is not None:
         cat.active_at = None
-    elif data.activo is False:
+        estado_cambiado = True
+        nuevo_estado_activo = True
+    elif data.activo is False and cat.active_at is None:
         cat.active_at = datetime.now(timezone.utc)
+        estado_cambiado = True
+        nuevo_estado_activo = False
 
     update_data = data.model_dump(exclude_unset=True, exclude={"activo"})
     for key, value in update_data.items():
         setattr(cat, key, value)
 
-    return uow.categorias.update(cat)
+    updated_cat = uow.categorias.update(cat)
+
+    if estado_cambiado:
+        descendant_ids = uow.categorias.get_descendant_ids(cat_id)
+        for desc_id in descendant_ids:
+            desc_cat = uow.categorias.get_by_id(desc_id)
+            if desc_cat:
+                if nuevo_estado_activo and desc_cat.active_at is not None:
+                    uow.categorias.restaurar(desc_cat)
+                elif not nuevo_estado_activo and desc_cat.active_at is None:
+                    uow.categorias.dar_de_baja(desc_cat)
+
+    return updated_cat
 
 
 def dar_de_baja_categoria(uow: UnitOfWork, cat_id: int):
-    """Baja (reversible) de categoría."""
+    """Baja (reversible) de categoría con cascada a subcategorías."""
     cat = uow.categorias.get_by_id(cat_id)
     if not cat:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     uow.categorias.dar_de_baja(cat)
+
+    # Cascada: dar de baja todas las subcategorías descendientes
+    descendant_ids = uow.categorias.get_descendant_ids(cat_id)
+    for desc_id in descendant_ids:
+        desc_cat = uow.categorias.get_by_id(desc_id)
+        if desc_cat and desc_cat.active_at is None:
+            uow.categorias.dar_de_baja(desc_cat)
 
 
 def delete_categoria(uow: UnitOfWork, cat_id: int):
@@ -134,8 +159,15 @@ def delete_categoria(uow: UnitOfWork, cat_id: int):
 
 
 def restore_categoria(uow: UnitOfWork, cat_id: int):
-    """Restaura una categoría dada de baja."""
+    """Restaura una categoría y todas sus subcategorías."""
     cat = uow.categorias.get_by_id(cat_id)
     if not cat:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     uow.categorias.restaurar(cat)
+
+    # Cascada: restaurar todas las subcategorías descendientes
+    descendant_ids = uow.categorias.get_descendant_ids(cat_id)
+    for desc_id in descendant_ids:
+        desc_cat = uow.categorias.get_by_id(desc_id)
+        if desc_cat and desc_cat.active_at is not None:
+            uow.categorias.restaurar(desc_cat)

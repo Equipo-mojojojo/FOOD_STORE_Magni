@@ -115,6 +115,7 @@ export interface Categoria {
   nombre: string;
   descripcion: string | null;
   padre_id: number | null;
+  imagen_url?: string | null;
   created_at: string;
   updated_at: string;
   active_at: string | null;
@@ -129,12 +130,14 @@ export interface CategoriaCreate {
   nombre: string;
   descripcion?: string | null;
   padre_id?: number | null;
+  imagen_url?: string | null;
 }
 
 export interface CategoriaUpdate {
   nombre?: string;
   descripcion?: string | null;
   padre_id?: number | null;
+  imagen_url?: string | null;
   activo?: boolean;
 }
 

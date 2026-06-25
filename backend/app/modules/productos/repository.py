@@ -91,6 +91,18 @@ class ProductoRepository(BaseRepository[Producto]):
             selectinload(Producto.unidad_venta),
         )
 
+        # Cuando se listan productos activos sin filtro de categoría,
+        # excluir los que SOLO pertenecen a categorías inactivas/eliminadas
+        if estado == "activo" and not categoria_id:
+            from app.modules.categorias.model import Categoria
+            productos_con_cat_activa = (
+                select(ProductoCategoria.producto_id)
+                .join(Categoria, Categoria.id == ProductoCategoria.categoria_id)
+                .where(Categoria.active_at.is_(None))
+                .where(Categoria.deleted_at.is_(None))
+            )
+            query = query.where(Producto.id.in_(productos_con_cat_activa))
+
         # Filtros específicos
         if disponible is not None:
             query = query.where(Producto.disponible == disponible)

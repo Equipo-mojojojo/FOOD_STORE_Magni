@@ -20,6 +20,22 @@ class CategoriaRepository(BaseRepository[Categoria]):
         categoria.active_at = None
         return self.update(categoria)
 
+    def get_descendant_ids(self, categoria_id: int) -> List[int]:
+        """IDs de todas las subcategorías descendientes (CTE recursiva)."""
+        cte = (
+            select(Categoria.id)
+            .where(Categoria.padre_id == categoria_id)
+            .where(Categoria.deleted_at.is_(None))
+            .cte(name="descendants", recursive=True)
+        )
+        cte = cte.union_all(
+            select(Categoria.id)
+            .where(Categoria.padre_id == cte.c.id)
+            .where(Categoria.deleted_at.is_(None))
+        )
+        stmt = select(cte.c.id)
+        return list(self.session.exec(stmt).all())
+
     def eliminar(self, categoria: Categoria) -> Categoria:
         """Eliminación lógica: irreversible para el usuario."""
         categoria.deleted_at = datetime.now(timezone.utc)

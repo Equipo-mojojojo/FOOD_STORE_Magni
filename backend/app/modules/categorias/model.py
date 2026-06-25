@@ -19,6 +19,7 @@ class Categoria(SQLModel, table=True):
     nombre: str = Field(max_length=100)
     descripcion: Optional[str] = Field(default=None, max_length=500)
     padre_id: Optional[int] = Field(default=None, foreign_key="categorias.id")
+    imagen_url: Optional[str] = Field(default=None)
 
     # Auditoría
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

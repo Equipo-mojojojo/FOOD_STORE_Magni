@@ -4,7 +4,7 @@ import { Plus, Search, Edit2, Trash2, RotateCcw, Layers } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import CategoriaForm from "./CategoriaForm";
 import type { Categoria, CategoriasFilters, CategoriaCreate } from "../../types";
-import { useCategoriasPaginated, useCrearCategoria, useActualizarCategoria, useEliminarCategoria, useRestaurarCategoria } from "../../hooks/useCategorias";
+import { useCategoriasPaginated, useCrearCategoria, useActualizarCategoria, useEliminarCategoria, useRestaurarCategoria, useDarDeBajaCategoria } from "../../hooks/useCategorias";
 
 export default function CategoriasGrid() {
   const [filters, setFilters] = useState<CategoriasFilters>({
@@ -37,6 +37,7 @@ export default function CategoriasGrid() {
 
   const crearMut = useCrearCategoria();
   const actualizarMut = useActualizarCategoria();
+  const darDeBajaMut = useDarDeBajaCategoria();
   const eliminarMut = useEliminarCategoria();
   const restaurarMut = useRestaurarCategoria();
 
@@ -183,8 +184,15 @@ export default function CategoriasGrid() {
                   return (
                     <tr key={cat.id} className={`hover:bg-gray-50/50 transition-colors ${isItemDeleted ? 'bg-danger-light/10' : ''}`}>
                       <td className={`px-4 py-3 font-mono ${isItemDeleted ? 'text-danger' : 'text-gray-400'}`}>#{cat.id}</td>
-                      <td className={`px-4 py-3 font-medium max-w-[150px] truncate ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`} title={cat.nombre}>
-                        {cat.nombre}
+                      <td className={`px-4 py-3 font-medium max-w-[200px] flex items-center gap-3 ${isItemDeleted ? 'text-danger line-through' : 'text-gray-900'}`} title={cat.nombre}>
+                        {cat.imagen_url ? (
+                          <img src={cat.imagen_url} alt={cat.nombre} className="w-8 h-8 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 text-gray-400 flex-shrink-0">
+                            <Layers size={14} />
+                          </div>
+                        )}
+                        <span className="truncate">{cat.nombre}</span>
                       </td>
                       <td className={`px-4 py-3 max-w-[250px] truncate ${isItemDeleted ? 'text-danger' : 'text-gray-500'}`} title={cat.descripcion || ""}>
                         {cat.descripcion || <span className="text-gray-300 italic">Sin descripción</span>}
@@ -192,13 +200,22 @@ export default function CategoriasGrid() {
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           {isItemDeleted ? (
-                            <button
-                              onClick={() => handleRestore(cat.id)}
-                              className="p-1.5 text-green-main hover:bg-green-pale rounded transition-colors"
-                              title="Restaurar"
-                            >
-                              <RotateCcw size={16} />
-                            </button>
+                            <div className="flex justify-end gap-1">
+                              <button
+                                onClick={() => handleRestore(cat.id)}
+                                className="p-1.5 text-green-main hover:bg-green-pale rounded transition-colors"
+                                title="Restaurar"
+                              >
+                                <RotateCcw size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(cat.id)}
+                                className="p-1.5 text-gray-400 hover:text-danger hover:bg-danger-light rounded transition-colors"
+                                title="Eliminar definitivamente"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           ) : (
                             <>
                               <button
@@ -250,15 +267,29 @@ export default function CategoriasGrid() {
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setIdAConfirmar(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
-              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">Dar de baja categoría</h2>
-              <p className="text-sm text-gray-500 text-center mb-6">Podrás restaurarla después desde la vista de dados de baja.</p>
+              <h2 className="text-lg font-bold text-gray-900 text-center mb-2">
+                {isDeletedView ? "Eliminar permanentemente" : "Dar de baja categoría"}
+              </h2>
+              <p className="text-sm text-gray-500 text-center mb-6">
+                {isDeletedView 
+                  ? "Esta acción es irreversible y eliminará la categoría definitivamente." 
+                  : "Podrás restaurarla después desde la vista de dados de baja."}
+              </p>
               <div className="flex gap-3">
                 <button onClick={() => setIdAConfirmar(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors">
                   Cancelar
                 </button>
                 <button
                   onClick={async () => {
-                    await eliminarMut.mutateAsync(idAConfirmar);
+                    try {
+                      if (isDeletedView) {
+                        await eliminarMut.mutateAsync(idAConfirmar);
+                      } else {
+                        await darDeBajaMut.mutateAsync(idAConfirmar);
+                      }
+                    } catch (err: any) {
+                      alert(err.response?.data?.detail || "Error al procesar la solicitud");
+                    }
                     setIdAConfirmar(null);
                   }}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white font-medium text-sm hover:bg-danger-dark transition-colors"

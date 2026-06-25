@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { X, Check, RotateCcw } from "lucide-react";
-import type { Categoria} from "../../types";
+import { X, Check, RotateCcw, UploadCloud, Trash2 } from "lucide-react";
+import type { Categoria } from "../../types";
+import { uploadApi } from "../../api/uploadApi";
 
 interface Props {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export default function CategoriaForm({ isOpen, categoria, parentId, onClose, on
     nombre: "",
     descripcion: "",
     padre_id: null,
+    imagen_url: "",
     activo: true
   });
   const [loading, setLoading] = useState(false);
@@ -25,13 +27,15 @@ export default function CategoriaForm({ isOpen, categoria, parentId, onClose, on
         nombre: categoria.nombre,
         descripcion: categoria.descripcion || "",
         padre_id: categoria.padre_id,
-        activo: categoria.deleted_at === null
+        imagen_url: categoria.imagen_url || "",
+        activo: categoria.active_at === null
       });
     } else {
       setFormData({
         nombre: "",
         descripcion: "",
         padre_id: parentId || null,
+        imagen_url: "",
         activo: true
       });
     }
@@ -90,6 +94,49 @@ export default function CategoriaForm({ isOpen, categoria, parentId, onClose, on
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main focus:border-transparent outline-none transition-all resize-none h-24"
               placeholder="De qué se trata esta categoría..."
             />
+          </div>
+
+          {/* Imagen de la Categoría */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Imagen (opcional)</label>
+            <div className="flex items-center gap-4">
+              {formData.imagen_url ? (
+                <div className="relative w-24 h-24 rounded-lg border border-gray-200 overflow-hidden group shadow-sm">
+                  <img src={formData.imagen_url} alt="Vista previa" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, imagen_url: "" })}
+                    className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md animate-in fade-in duration-200"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ) : (
+                <label className={`w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-green-50 transition-colors text-gray-400 hover:text-green-main hover:border-green-main ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <UploadCloud size={24} className="mb-1" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-center px-1">Subir Foto</span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          setLoading(true);
+                          const url = await uploadApi.uploadImagen(file);
+                          setFormData({ ...formData, imagen_url: url });
+                        } catch (err: any) {
+                          alert(err.response?.data?.detail || "Error al subir la imagen");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }
+                    }}
+                  />
+                </label>
+              )}
+            </div>
           </div>
 
           {/* Switch de Estado (Solo en edición) */}
