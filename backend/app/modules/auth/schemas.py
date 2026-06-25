@@ -48,3 +48,9 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
+
+class UserUpdateMe(BaseModel):
+    """Datos permitidos para actualizar el propio perfil."""
+    nombre: str = Field(min_length=1, max_length=80)
+    apellido: str = Field(min_length=1, max_length=80)
+    celular: str = Field(default="", max_length=20)

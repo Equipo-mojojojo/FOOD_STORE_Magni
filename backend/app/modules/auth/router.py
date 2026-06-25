@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.deps import get_current_user, require_role
 from app.core.security import decode_access_token, hash_token
 from app.core.uow import UnitOfWork, get_uow
-from app.modules.auth.schemas import LoginRequest, UserCreate, UserPublic, LoginResponse
+from app.modules.auth.schemas import LoginRequest, UserCreate, UserPublic, LoginResponse, UserUpdateMe
 from app.modules.auth import service
 from app.modules.usuarios.model import Usuario
 
@@ -166,3 +166,32 @@ def read_me(
         celular=current_user.celular,
         roles=roles,
     )
+
+@router.put("/me", response_model=UserPublic)
+def update_me(
+    data: UserUpdateMe,
+    current_user: Annotated[Usuario, Depends(get_current_user)],
+    uow: Annotated[UnitOfWork, Depends(get_uow)],
+):
+    """Actualiza los datos del propio usuario (nombre, apellido, celular)."""
+    with uow:
+        user = uow.usuarios.get_by_id(current_user.id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        user.nombre = data.nombre
+        user.apellido = data.apellido
+        user.celular = data.celular
+        
+        uow.usuarios.update(user)
+        
+        roles = uow.usuario_roles.get_roles_activos(user.id)
+        
+        return UserPublic(
+            id=user.id,
+            nombre=user.nombre,
+            apellido=user.apellido,
+            email=user.email,
+            celular=user.celular,
+            roles=roles,
+        )

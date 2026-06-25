@@ -32,6 +32,7 @@ import PedidoDetallePage from "./pages/PedidoDetallePage";
 import StorefrontCatalogoPage from "./pages/StorefrontCatalogoPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import PaymentResultPage from "./pages/PaymentResultPage";
+import MiPerfilPage from "./pages/MiPerfilPage";
 
 
 function AppLayout() {
@@ -52,7 +53,7 @@ function AppLayout() {
       <Sidebar open={sidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main id="dashboard-scroll" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Routes>
             <Route
               path="/dashboard"
@@ -115,6 +116,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute roles={["ADMIN"]}>
                   <UsuariosPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/perfil"
+              element={
+                <ProtectedRoute roles={["ADMIN", "CAJERO", "COCINA_STOCK"]}>
+                  <MiPerfilPage />
                 </ProtectedRoute>
               }
             />
@@ -203,6 +212,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <PaymentResultPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mi-perfil"
+            element={
+              <ProtectedRoute>
+                <MiPerfilPage />
               </ProtectedRoute>
             }
           />

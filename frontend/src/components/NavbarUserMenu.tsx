@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Package, MapPin, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { User, LogOut, Package, MapPin, LayoutDashboard, ChevronDown, Home } from 'lucide-react';
 
 interface NavbarUserMenuProps {
   usuario: any;
@@ -10,6 +10,11 @@ interface NavbarUserMenuProps {
 
 export default function NavbarUserMenu({ usuario, isAdmin, onLogout }: NavbarUserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const isCliente = !usuario?.roles?.length || usuario.roles.some(
+    (r: any) => r === "CLIENTE" || r?.rol_codigo === "CLIENTE" || r === "CLIENT" || r?.rol_codigo === "CLIENT"
+  );
+  const showCustomerLinks = isCliente || isAdmin;
 
   return (
     <div 
@@ -44,32 +49,55 @@ export default function NavbarUserMenu({ usuario, isAdmin, onLogout }: NavbarUse
 
             {/* Links */}
             <div className="flex flex-col py-2">
+              <Link
+                to={isCliente ? "/mi-perfil" : "/perfil"}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
+                onClick={() => setIsOpen(false)}
+              >
+                <User size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
+                Mi Perfil
+              </Link>
               {isAdmin && (
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <LayoutDashboard size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
-                  Panel de Administración
-                </Link>
+                <>
+                  <Link
+                    to="/"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Home size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
+                    Vista Usuario
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <LayoutDashboard size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
+                    Panel de Administración
+                  </Link>
+                </>
               )}
-              <Link
-                to="/mis-pedidos"
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
-                onClick={() => setIsOpen(false)}
-              >
-                <Package size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
-                Mis Pedidos
-              </Link>
-              <Link
-                to="/mis-direcciones"
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
-                onClick={() => setIsOpen(false)}
-              >
-                <MapPin size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
-                Mis Direcciones
-              </Link>
+              
+              {showCustomerLinks && (
+                <>
+                  <Link
+                    to="/mis-pedidos"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Package size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
+                    Mis Pedidos
+                  </Link>
+                  <Link
+                    to="/mis-direcciones"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-main transition-colors group/link"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <MapPin size={16} className="text-gray-400 group-hover/link:text-green-main transition-colors" />
+                    Mis Direcciones
+                  </Link>
+                </>
+              )}
 
               <div className="h-px bg-gray-100 my-1 mx-4" />
               

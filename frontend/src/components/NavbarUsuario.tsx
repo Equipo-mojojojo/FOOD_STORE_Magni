@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { ShoppingCart, ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingCart, ShoppingBag, User, Menu, X, Package, MapPin, LayoutDashboard, LogOut, Home } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useUiStore } from "../store/uiStore";
 import { useCartStore } from "../store/cartStore";
@@ -33,6 +33,12 @@ export default function NavbarUsuario() {
   const isAdmin = usuario?.roles?.some(
     (r: any) => r === "ADMIN" || r?.rol_codigo === "ADMIN"
   );
+  
+  const isCliente = !usuario?.roles?.length || usuario.roles.some(
+    (r: any) => r === "CLIENTE" || r?.rol_codigo === "CLIENTE" || r === "CLIENT" || r?.rol_codigo === "CLIENT"
+  );
+  
+  const showCustomerLinks = isCliente || isAdmin;
 
   return (
     <div className="min-h-screen bg-cream flex flex-col">
@@ -145,35 +151,61 @@ export default function NavbarUsuario() {
                       <NavbarCategoriesMenu />
                     </div>
                   </div>
-                  <Link
-                    to="/mis-pedidos"
-                    className="text-gray-600 font-medium py-1"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Mis Pedidos
-                  </Link>
-                  <Link
-                    to="/mis-direcciones"
-                    className="text-gray-600 font-medium py-1"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Mis Direcciones
-                  </Link>
+                  {showCustomerLinks && (
+                    <>
+                      <Link
+                        to="/mi-perfil"
+                        className="text-gray-600 font-medium py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <User size={18} className="text-gray-400" />
+                        Mi Perfil
+                      </Link>
+                      <Link
+                        to="/mis-pedidos"
+                        className="text-gray-600 font-medium py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Package size={18} className="text-gray-400" />
+                        Mis Pedidos
+                      </Link>
+                      <Link
+                        to="/mis-direcciones"
+                        className="text-gray-600 font-medium py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <MapPin size={18} className="text-gray-400" />
+                        Mis Direcciones
+                      </Link>
+                    </>
+                  )}
 
                   {isAdmin && (
-                    <Link
-                      to="/dashboard"
-                      className="text-green-main font-bold py-1"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Panel de Administración
-                    </Link>
+                    <>
+                      <Link
+                        to="/"
+                        className="text-green-main font-bold py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Home size={18} className="text-green-main" />
+                        Vista Usuario
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        className="text-green-main font-bold py-1 flex items-center gap-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <LayoutDashboard size={18} className="text-green-main" />
+                        Panel de Administración
+                      </Link>
+                    </>
                   )}
 
                   <button
                     onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                    className="text-red-500 font-medium text-left pt-2 mt-2 border-t border-gray-100"
+                    className="text-red-500 font-medium text-left pt-2 mt-2 border-t border-gray-100 flex items-center gap-2"
                   >
+                    <LogOut size={18} className="text-red-400" />
                     Cerrar Sesión
                   </button>
                 </>
