@@ -116,7 +116,9 @@ export default function ProductDetailPage() {
           <div className="flex-1 min-h-0 overflow-y-auto p-5 md:p-6 lg:p-8 scrollbar-thin">
             {/* Categorías */}
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {producto.categorias.map(cat => (
+              {producto.categorias
+                .filter(cat => !cat.categoria.active_at)
+                .map(cat => (
                 <span key={cat.categoria.id} className="text-[9px] font-extrabold uppercase tracking-widest bg-green-50 text-green-main border border-green-100 px-2.5 py-0.5 rounded-full">
                   {cat.categoria.nombre}
                 </span>

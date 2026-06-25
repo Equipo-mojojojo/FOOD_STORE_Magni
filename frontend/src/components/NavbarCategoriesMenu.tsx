@@ -10,7 +10,7 @@ export default function NavbarCategoriesMenu() {
   // Fetch de categorías usando React Query
   // Solo pedimos las activas y con un staleTime alto para no recargar a cada rato
   const { data: categorias, isLoading, isError } = useQuery({
-    queryKey: ['categorias-tree', 'activo'],
+    queryKey: ['categorias', 'tree', 'activo'],
     queryFn: () => categoriasApi.listTree('activo'),
     staleTime: 1000 * 60 * 5, // 5 minutos de caché
   });

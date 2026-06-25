@@ -464,6 +464,13 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                 {categorias
                   ?.filter(c => !categorias.some(sub => sub.padre_id === c.id)) // Solo hojas
                   .filter(c => c.nombre.toLowerCase().includes(searchCat.toLowerCase()))
+                  .sort((a, b) => {
+                    const isSelectedA = formData.categorias.some(cat => cat.categoria_id === a.id);
+                    const isSelectedB = formData.categorias.some(cat => cat.categoria_id === b.id);
+                    if (isSelectedA && !isSelectedB) return -1;
+                    if (!isSelectedA && isSelectedB) return 1;
+                    return 0;
+                  })
                   .map(c => {
                     const isSelected = formData.categorias.some(cat => cat.categoria_id === c.id);
                     const isPrincipal = formData.categorias.find(cat => cat.categoria_id === c.id)?.es_principal;

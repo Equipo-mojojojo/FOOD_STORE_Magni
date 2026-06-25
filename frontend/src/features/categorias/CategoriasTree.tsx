@@ -6,7 +6,7 @@ import CategoriaForm from "./CategoriaForm";
 import type { Categoria, CategoriaTree as CategoriaTreeType, CategoriaCreate } from "../../types";
 
 export default function CategoriasTree() {
-  const [estado, setEstado] = useState<string>("activo");
+  const [estado, setEstado] = useState<string>("todos");
   const { data: tree, isLoading } = useCategoriasTree(estado);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Categoria | null>(null);
