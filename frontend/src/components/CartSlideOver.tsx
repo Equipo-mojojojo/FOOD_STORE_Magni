@@ -56,7 +56,10 @@ export default function CartSlideOver() {
               <ShoppingBag size={64} strokeWidth={1} />
               <p className="text-lg font-medium text-gray-500">Tu changuito está vacío</p>
               <button 
-                onClick={closeCart}
+                onClick={() => {
+                  closeCart();
+                  navigate("/catalogo");
+                }}
                 className="text-green-main font-semibold hover:underline"
               >
                 Volver al catálogo
