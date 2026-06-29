@@ -73,6 +73,7 @@ export interface IngredienteUpdate {
   unidad_medida_id?: number | null;
   activo?: boolean;
   actualizar_precios_productos?: boolean;
+  productos_a_actualizar?: number[];
 }
 
 export interface ProductoAfectadoResponse {
@@ -80,6 +81,8 @@ export interface ProductoAfectadoResponse {
   nombre: string;
   precio_base_actual: number;
   margen_ganancia: number;
+  cantidad_ingrediente: number;
+  unidad_ingrediente: string;
 }
 
 export interface PaginatedResponse<T> {
