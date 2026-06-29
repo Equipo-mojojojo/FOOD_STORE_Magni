@@ -16,7 +16,7 @@ export interface ResumenStock {
   total_no_recuperados: number;
 }
 
-export function useResumenStockCancelacion(detalles: DetallePedido[]) {
+export function useResumenStockCancelacion(detalles: DetallePedido[], estadoPedido?: string) {
   const queries = useQueries({
     queries: detalles.map((d) => ({
       queryKey: ["productos", d.producto_id],
@@ -35,11 +35,12 @@ export function useResumenStockCancelacion(detalles: DetallePedido[]) {
   const items: ItemStockCancelacion[] = detalles.map((detalle, idx) => {
     const producto = queries[idx].data;
     const esElaborable = (producto?.ingredientes.length ?? 0) > 0;
+    const recuperaInsumos = estadoPedido === "PENDIENTE" || estadoPedido === "CONFIRMADO";
     return {
       producto_id: detalle.producto_id,
       nombre_snapshot: detalle.nombre_snapshot,
       cantidad: detalle.cantidad,
-      stock_repuesto: !esElaborable,
+      stock_repuesto: !esElaborable || recuperaInsumos,
       ingredientes: esElaborable
         ? (producto?.ingredientes ?? []).map((pi) => ({
             nombre: pi.ingrediente.nombre,

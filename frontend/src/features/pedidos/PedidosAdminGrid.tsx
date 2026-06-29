@@ -34,9 +34,10 @@ export const ESTADO_LABEL: Record<string, string> = {
 
 const FSM: Record<string, string[]> = {
   PENDIENTE:  ["CONFIRMADO", "CANCELADO"],
-  CONFIRMADO: ["CANCELADO"],
-  LISTO:      ["EN_CAMINO", "ENTREGADO"],
-  EN_CAMINO:  ["ENTREGADO"],
+  CONFIRMADO: ["EN_PREP", "CANCELADO"],
+  EN_PREP:    ["LISTO", "CANCELADO"],
+  LISTO:      ["EN_CAMINO", "ENTREGADO", "CANCELADO"],
+  EN_CAMINO:  ["ENTREGADO", "CANCELADO"],
 };
 
 
@@ -51,8 +52,11 @@ function CancelacionSlideOver({ pedido, isPending, onClose, onConfirmar }: Cance
   const { data: detalle, isLoading: loadingDetalle } = usePedido(pedido.id);
   const { resumen, isLoading: loadingStock } = useResumenStockCancelacion(
     detalle?.detalles ?? [],
+    pedido.estado_codigo,
   );
   const isLoading = loadingDetalle || loadingStock;
+
+  const recuperaInsumos = pedido.estado_codigo === "PENDIENTE" || pedido.estado_codigo === "CONFIRMADO";
 
   return (
     <>
@@ -125,14 +129,19 @@ function CancelacionSlideOver({ pedido, isPending, onClose, onConfirmar }: Cance
               </p>
             ) : (
               <>
-                {/* Nota */}
+                {/* Nota dinámica */}
                 <div className="flex items-start gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 mb-3">
                   <Info size={13} className="mt-0.5 flex-shrink-0 text-blue-400" />
                   <p>
-                    Los <span className="font-semibold text-gray-700">productos elaborados</span> (con
-                    ingredientes) no reponen insumos. Los{" "}
-                    <span className="font-semibold text-gray-700">productos finalizados</span> sí
-                    devuelven su stock automáticamente.
+                    {recuperaInsumos ? (
+                      <>
+                        Como el pedido está <strong>{pedido.estado_codigo === "PENDIENTE" ? "Pendiente" : "Confirmado"}</strong>, tanto los ingredientes de productos elaborados como los productos finalizados <strong>se repondrán</strong> al stock.
+                      </>
+                    ) : (
+                      <>
+                        Como el pedido ya está en <strong>Preparación</strong> o posterior, los ingredientes elaborados <strong>no se repondrán</strong>. Solo se devolverán productos finalizados (bebidas, etc.).
+                      </>
+                    )}
                   </p>
                 </div>
 
@@ -250,10 +259,15 @@ interface AccionButtonsProps {
 }
 
 function AccionButtons({ pedido, onSolicitarCancelacion }: AccionButtonsProps) {
-  const avanzar    = useAvanzarEstado();
-  const siguientes = (FSM[pedido.estado_codigo] ?? []).filter(
-    (estado) => !(pedido.direccion_id === null && estado === "EN_CAMINO"),
-  );
+  const avanzar = useAvanzarEstado();
+
+  const siguientes = (FSM[pedido.estado_codigo] ?? []).filter((estado) => {
+    if (pedido.direccion_id === null && estado === "EN_CAMINO") return false;
+    // Ocultar transiciones de cocina (Preparación / Listo) del tablero de administración.
+    // Estas transiciones se gestionan exclusivamente desde la pantalla de Cocina KDS.
+    if (estado === "EN_PREP" || estado === "LISTO") return false;
+    return true;
+  });
 
   if (siguientes.length === 0) return <span className="text-xs text-gray-400">—</span>;
 
@@ -297,11 +311,7 @@ export default function PedidosAdminGrid() {
 
   const hasRole           = useAuthStore((s) => s.hasRole);
   const canManagePedidos  = hasRole("ADMIN") || hasRole("CAJERO");
-  const estadoOptions     = hasRole("ADMIN")
-    ? Object.entries(ESTADO_LABEL)
-    : Object.entries(ESTADO_LABEL).filter(([estado]) =>
-        ["PENDIENTE", "LISTO", "EN_CAMINO", "ENTREGADO", "CANCELADO"].includes(estado),
-      );
+  const estadoOptions     = Object.entries(ESTADO_LABEL);
 
   const queryClient          = useQueryClient();
   const { data, isLoading }  = usePedidos(filters);
@@ -314,8 +324,17 @@ export default function PedidosAdminGrid() {
     (msg: PedidoWsMessage) => {
       if (msg.event !== "ERROR") queryClient.invalidateQueries({ queryKey: ["pedidos"] });
       if (msg.event === "PEDIDO_CANCELADO") {
-        const data = msg.data as { pedido_id: number };
-        setToast({ id: data.pedido_id, mensaje: `El cliente canceló el pedido #${data.pedido_id}` });
+        const payload = msg.data as { id: number; cancelado_por?: string; motivo_cancelacion?: string };
+        const pedidoId = payload.id;
+        let msgTexto = `El pedido #${pedidoId} fue cancelado`;
+        if (payload.cancelado_por === "cliente") {
+          msgTexto = `El cliente canceló el pedido #${pedidoId}`;
+        } else if (payload.cancelado_por === "mercadopago") {
+          msgTexto = `Pago rechazado: Mercado Pago canceló el pedido #${pedidoId}`;
+        } else if (payload.cancelado_por === "operador") {
+          msgTexto = `Un operador canceló el pedido #${pedidoId}`;
+        }
+        setToast({ id: pedidoId, mensaje: msgTexto });
         setTimeout(() => setToast(null), 6000);
       }
     },

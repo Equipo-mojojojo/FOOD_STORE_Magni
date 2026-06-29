@@ -1,5 +1,6 @@
 /** Grilla de ingredientes con filtros y paginación. */
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, Search, Edit2, Trash2, AlertTriangle, ArrowUpDown, Download, RotateCcw } from "lucide-react";
 import { ingredientesApi } from "../../api/ingredientesApi";
 import Pagination from "../../components/Pagination";
@@ -13,6 +14,9 @@ interface Props {
 }
 
 export default function IngredientesGrid({ estado = "activo" }: Props) {
+  const [searchParams] = useSearchParams();
+  const initialSortBy = searchParams.get("sort_by") || "nombre";
+
   const [filters, setFilters] = useState<IngredientesFilters>({
     page: 1,
     per_page: 10,
@@ -20,7 +24,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
     es_alergeno: "",
     es_producto_terminado: "",
     estado: estado,
-    sort_by: "nombre",
+    sort_by: initialSortBy,
     sort_order: "asc",
     created_from: "",
     created_to: "",
@@ -214,6 +218,7 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
               className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-main focus:border-transparent outline-none bg-white"
             >
               <option value="nombre">Ordenar: Nombre</option>
+              <option value="stock_critico">Ordenar: Stock Crítico</option>
               <option value="created_at">Ordenar: Creación</option>
               <option value="updated_at">Ordenar: Actualización</option>
             </select>

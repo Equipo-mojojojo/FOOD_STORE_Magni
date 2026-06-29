@@ -2,11 +2,12 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { usePedido } from "../../hooks/usePedidos";
 import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedidosWebSocket";
 import PedidoTimeline from "../../components/PedidoTimeline";
 import { PaymentButton } from "../../components/PaymentButton";
+import { useReordenar } from "../../hooks/useReordenar";
 import { useIngredientesPublicos } from "../../hooks/useIngredientes";
 import { parseBackendDate, ARGENTINA_TIME_ZONE } from "../../utils/dates";
 
@@ -41,6 +42,7 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
   const { data: pedido, isLoading, isError } = usePedido(pedidoId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { reordenar, isLoading: isReordenando } = useReordenar();
 
   const { isConnected, subscribeToOrder } = usePedidosWebSocket({
     enabled: !!pedido,
@@ -114,6 +116,14 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
           >
             {ESTADO_LABEL[pedido.estado_codigo] || pedido.estado_codigo}
           </span>
+          <button
+            onClick={() => reordenar(pedido.id)}
+            disabled={isReordenando}
+            className="text-sm font-semibold px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            <RefreshCw size={14} className={isReordenando ? "animate-spin" : ""} />
+            Volver a pedir
+          </button>
         </div>
         <PedidoTimeline estado={pedido.estado_codigo} isRetiro={pedido.direccion_id === null} />
 
@@ -147,6 +157,23 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
           <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-gray-500 text-sm">Notas</p>
             <p className="text-gray-800 text-sm mt-1">{pedido.notas}</p>
+          </div>
+        )}
+
+        {pedido.estado_codigo === "CANCELADO" && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+              <p className="text-red-800 font-bold text-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" />
+                Pedido Cancelado
+              </p>
+              <p className="text-red-700 text-sm mt-1.5">
+                <span className="font-semibold">Motivo:</span>{" "}
+                {pedido.historial?.find((h) => h.estado_hacia === "CANCELADO")?.motivo || (
+                  <span className="italic text-red-500/70">No se especificó motivo de cancelación.</span>
+                )}
+              </p>
+            </div>
           </div>
         )}
 

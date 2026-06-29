@@ -425,8 +425,11 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                 />
                 <select
                   value={formData.unidad_venta_id || ""}
+                  disabled={!!producto}
                   onChange={(e) => setFormData({ ...formData, unidad_venta_id: Number(e.target.value) || null })}
-                  className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm bg-white"
+                  className={`px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-main outline-none text-sm bg-white ${
+                    producto ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""
+                  }`}
                 >
                   <option value="">Und.</option>
                   {unidadesMedida?.map(u => (
@@ -436,16 +439,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-6">
-              <input
-                type="checkbox"
-                id="disponible"
-                checked={formData.disponible}
-                onChange={(e) => setFormData({ ...formData, disponible: e.target.checked })}
-                className="w-4 h-4 text-green-main focus:ring-green-main border-gray-300 rounded"
-              />
-              <label htmlFor="disponible" className="text-sm font-medium text-gray-700">Habilitado para la venta</label>
-            </div>
+
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">

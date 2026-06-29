@@ -301,9 +301,17 @@ export default function ProductosGrid() {
                           </span>
                         ) : (
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                            prod.disponible ? 'bg-green-pale text-green-dark' : 'bg-gray-100 text-gray-400'
+                            !prod.disponible 
+                              ? 'bg-gray-100 text-gray-500' 
+                              : prod.stock_disponible === 0 
+                                ? 'bg-amber-100 text-amber-800' 
+                                : 'bg-green-pale text-green-dark'
                           }`}>
-                            {prod.disponible ? 'Disponible' : 'Sin stock'}
+                            {!prod.disponible 
+                              ? 'No disponible' 
+                              : prod.stock_disponible === 0 
+                                ? 'Sin stock' 
+                                : 'Disponible'}
                           </span>
                         )}
                       </td>
