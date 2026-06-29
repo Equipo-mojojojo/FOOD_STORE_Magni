@@ -68,7 +68,7 @@ export default function NavbarCategoriesMenu() {
                     
                     {/* Submenú Flotante (Flyout) */}
                     {padre.subcategorias && padre.subcategorias.length > 0 && (
-                      <div className="absolute left-full top-0 hidden group-hover/item:block pl-1 z-50">
+                      <div className="absolute right-full md:left-full md:right-auto top-0 hidden group-hover/item:block pr-1 md:pl-1 md:pr-0 z-50">
                         <div className="bg-white shadow-xl rounded-xl border border-gray-100 min-w-[200px] py-2">
                           {padre.subcategorias.map((sub) => (
                             <Link 
