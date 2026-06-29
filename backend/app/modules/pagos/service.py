@@ -126,6 +126,47 @@ class PaymentService:
             except Exception as ws_err:
                 logger.error("Error enviando notificación WebSocket: %s", ws_err)
 
+    async def _actualizar_pedido_a_cancelado(self, pedido: Pedido, pago: Pago):
+        """Cancela el pedido cuando MP rechaza el pago: repone stock y notifica."""
+        if pedido.estado_codigo != "PENDIENTE":
+            return
+
+        estado_actual = pedido.estado_codigo
+        estado_destino = "CANCELADO"
+
+        # Reponer stock de productos finalizados (misma regla que PedidoService)
+        for detalle in pedido.detalles:
+            producto = self.uow.productos.get_by_id_with_relations(detalle.producto_id)
+            if producto:
+                es_elaborable = len(producto.ingredientes) > 0
+                if not es_elaborable:
+                    producto.stock_cantidad += detalle.cantidad
+                    self.uow.productos.update(producto)
+
+        pedido.estado_codigo = estado_destino
+        pedido.updated_at = datetime.now(timezone.utc)
+        self.uow.pedidos.update(pedido)
+
+        self.uow.historial_estados.add(HistorialEstadoPedido(
+            pedido_id=pedido.id,
+            estado_desde=estado_actual,
+            estado_hacia=estado_destino,
+            usuario_id=pedido.usuario_id,
+            motivo=f"Pago rechazado por Mercado Pago (MP #{pago.mp_payment_id})",
+        ))
+
+        # Notificación WebSocket
+        event = "PEDIDO_CANCELADO"
+        from app.modules.pedidos.schemas import PedidoResponse
+        pedido_res = PedidoResponse.model_validate(pedido)
+        data = pedido_res.model_dump(mode="json")
+
+        try:
+            await manager.broadcast_to_order(pedido.id, event, data)
+            await manager.broadcast_to_roles(["cajero", "admin"], event, data)
+        except Exception as ws_err:
+            logger.error("Error enviando notificación WebSocket: %s", ws_err)
+
     # ── Operaciones públicas ───────────────────────────────────────────────
 
     def crear_pago(self, pedido_id: int) -> PagoCrearResponse:
@@ -277,9 +318,13 @@ class PaymentService:
                 self.uow.pagos.update(pago)
 
                 if nuevo_estado == "aprobado":
-                    pedido = self.uow.pedidos.get_by_id(pago.pedido_id)
+                    pedido = self.uow.pedidos.get_by_id_with_relations(pago.pedido_id)
                     if pedido:
                         await self._actualizar_pedido_a_confirmado(pedido, pago)
+                elif nuevo_estado == "rechazado":
+                    pedido = self.uow.pedidos.get_by_id_with_relations(pago.pedido_id)
+                    if pedido:
+                        await self._actualizar_pedido_a_cancelado(pedido, pago)
 
             return {
                 "status": "processed",
@@ -343,6 +388,8 @@ class PaymentService:
 
                     if nuevo_estado == "aprobado":
                         await self._actualizar_pedido_a_confirmado(pedido, pago)
+                    elif nuevo_estado == "rechazado":
+                        await self._actualizar_pedido_a_cancelado(pedido, pago)
 
                 return PagoEstadoResponse(estado=nuevo_estado, pedido_id=pedido_id)
 

@@ -3,6 +3,8 @@ import { useParams, useSearchParams, Link } from "react-router-dom";
 import { pedidosApi } from "../api/pedidosApi";
 import axiosClient from "../api/axiosClient";
 import { PaymentButton } from "../components/PaymentButton";
+import { useReordenar } from "../hooks/useReordenar";
+import { RefreshCw } from "lucide-react";
 import type { PedidoDetail } from "../types";
 
 type ResultStatus = "confirmando" | "aprobado" | "pendiente_mp" | "rechazado" | "error";
@@ -13,18 +15,12 @@ export default function PaymentResultPage() {
   const [resultStatus, setResultStatus] = useState<ResultStatus>("confirmando");
   const [pedido, setPedido] = useState<PedidoDetail | null>(null);
   const [loadingPedido, setLoadingPedido] = useState(false);
+  const { reordenar, isLoading: isReordenando } = useReordenar();
 
   const pedidoId = Number(id);
   const paymentId = searchParams.get("payment_id");
 
   useEffect(() => {
-    // Si la redirección es de fallo inmediato
-    if (status === "failure") {
-      setResultStatus("rechazado");
-      cargarPedido();
-      return;
-    }
-
     const confirmarPago = async () => {
       try {
         const payload = {
@@ -38,14 +34,26 @@ export default function PaymentResultPage() {
         if (backendEstado === "aprobado") {
           setResultStatus("aprobado");
         } else if (backendEstado === "pendiente") {
-          setResultStatus("pendiente_mp");
+          // Si la URL dice failure pero el backend dice pendiente,
+          // confiar en la redirección de MP
+          if (status === "failure") {
+            setResultStatus("rechazado");
+            cargarPedido();
+          } else {
+            setResultStatus("pendiente_mp");
+          }
         } else {
           setResultStatus("rechazado");
           cargarPedido();
         }
       } catch (error) {
         console.error("Error al confirmar pago:", error);
-        setResultStatus("error");
+        // Si falla el confirm, igualmente mostrar rechazo si MP redirigió a failure
+        if (status === "failure") {
+          setResultStatus("rechazado");
+        } else {
+          setResultStatus("error");
+        }
         cargarPedido();
       }
     };
@@ -180,7 +188,7 @@ export default function PaymentResultPage() {
       </p>
 
       {loadingPedido ? (
-        <div className="mt-8 text-slate-500 text-sm">Cargando detalles del pedido para reintentar...</div>
+        <div className="mt-8 text-slate-500 text-sm">Cargando detalles del pedido...</div>
       ) : pedido ? (
         <div className="mt-8 p-6 rounded-xl border border-slate-200 bg-white shadow-sm text-left">
           <h3 className="text-lg font-bold text-slate-800 mb-4">Resumen del Pedido</h3>
@@ -195,17 +203,27 @@ export default function PaymentResultPage() {
             </div>
           </div>
 
-          <div className="mt-6">
-            <PaymentButton pedidoId={pedido.id} monto={Number(pedido.total)} />
-          </div>
+          {pedido.estado_codigo === "PENDIENTE" && (
+            <div className="mt-6">
+              <PaymentButton pedidoId={pedido.id} monto={Number(pedido.total)} />
+            </div>
+          )}
         </div>
       ) : (
-        <p className="mt-6 text-sm text-red-500">No se pudieron obtener los datos para reintentar.</p>
+        <p className="mt-6 text-sm text-red-500">No se pudieron obtener los datos del pedido.</p>
       )}
 
-      <div className="mt-6">
-        <Link to="/carrito" className="text-sm font-semibold text-blue-600 hover:text-blue-800">
-          &larr; Volver al Carrito
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <button
+          onClick={() => reordenar(pedidoId)}
+          disabled={isReordenando}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow transition-all hover:bg-blue-700 disabled:opacity-50"
+        >
+          <RefreshCw size={16} className={isReordenando ? "animate-spin" : ""} />
+          Volver a pedir
+        </button>
+        <Link to="/catalogo" className="text-sm font-semibold text-blue-600 hover:text-blue-800">
+          &larr; Ir al catálogo
         </Link>
       </div>
     </div>

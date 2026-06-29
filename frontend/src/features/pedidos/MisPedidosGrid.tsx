@@ -2,8 +2,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { XCircle, X } from "lucide-react";
+import { XCircle, X, RefreshCw } from "lucide-react";
 import { usePedidos, useCancelarPedido } from "../../hooks/usePedidos";
+import { useReordenar } from "../../hooks/useReordenar";
 import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedidosWebSocket";
 import { useAuthStore } from "../../store/authStore";
 import PedidoTimeline from "../../components/PedidoTimeline";
@@ -128,6 +129,7 @@ export default function MisPedidosGrid({ filters }: Props) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data, isLoading } = usePedidos(filters);
   const cancelar        = useCancelarPedido();
+  const { reordenar, isLoading: isReordenando } = useReordenar();
 
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoResponse | null>(null);
 
@@ -222,9 +224,17 @@ export default function MisPedidosGrid({ filters }: Props) {
               <PedidoTimeline estado={pedido.estado_codigo} compact isRetiro={pedido.direccion_id === null} />
             </Link>
 
-            {/* Botón cancelar — fuera del Link para no propagar el click */}
-            {PUEDE_CANCELAR.includes(pedido.estado_codigo) && (
-              <div className="px-5 pb-4">
+            {/* Botones de acción — fuera del Link para no propagar el click */}
+            <div className="px-5 pb-4 flex items-center gap-3">
+              <button
+                onClick={() => reordenar(pedido.id)}
+                disabled={isReordenando}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={isReordenando ? "animate-spin" : ""} />
+                Volver a pedir
+              </button>
+              {PUEDE_CANCELAR.includes(pedido.estado_codigo) && (
                 <button
                   onClick={() => setPedidoACancelar(pedido)}
                   className="text-xs font-semibold text-red-500 hover:text-red-700 flex items-center gap-1 transition-colors"
@@ -232,8 +242,8 @@ export default function MisPedidosGrid({ filters }: Props) {
                   <XCircle size={14} />
                   Cancelar pedido
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
       </div>

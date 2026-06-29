@@ -2,11 +2,12 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { usePedido } from "../../hooks/usePedidos";
 import { usePedidosWebSocket, type PedidoWsMessage } from "../../hooks/usePedidosWebSocket";
 import PedidoTimeline from "../../components/PedidoTimeline";
 import { PaymentButton } from "../../components/PaymentButton";
+import { useReordenar } from "../../hooks/useReordenar";
 import { useIngredientesPublicos } from "../../hooks/useIngredientes";
 import { parseBackendDate, ARGENTINA_TIME_ZONE } from "../../utils/dates";
 
@@ -41,6 +42,7 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
   const { data: pedido, isLoading, isError } = usePedido(pedidoId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { reordenar, isLoading: isReordenando } = useReordenar();
 
   const { isConnected, subscribeToOrder } = usePedidosWebSocket({
     enabled: !!pedido,
@@ -114,6 +116,14 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
           >
             {ESTADO_LABEL[pedido.estado_codigo] || pedido.estado_codigo}
           </span>
+          <button
+            onClick={() => reordenar(pedido.id)}
+            disabled={isReordenando}
+            className="text-sm font-semibold px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            <RefreshCw size={14} className={isReordenando ? "animate-spin" : ""} />
+            Volver a pedir
+          </button>
         </div>
         <PedidoTimeline estado={pedido.estado_codigo} isRetiro={pedido.direccion_id === null} />
 
