@@ -264,6 +264,12 @@ class PedidoService:
                     detail="Los pedidos con retiro en local no pueden pasar a 'EN_CAMINO'. Usar 'ENTREGADO'.",
                 )
 
+            if pedido.direccion_id is not None and estado_actual == "LISTO" and estado_destino == "ENTREGADO":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Los pedidos con envío a domicilio deben pasar por 'EN_CAMINO' antes de 'ENTREGADO'.",
+                )
+
             if usuario.role != "CLIENT":
                 transiciones_por_rol = ROLE_TRANSITIONS.get(usuario.role, {})
                 transiciones_permitidas = transiciones_por_rol.get(estado_actual, [])

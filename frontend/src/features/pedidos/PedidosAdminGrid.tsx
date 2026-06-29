@@ -262,7 +262,10 @@ function AccionButtons({ pedido, onSolicitarCancelacion }: AccionButtonsProps) {
   const avanzar = useAvanzarEstado();
 
   const siguientes = (FSM[pedido.estado_codigo] ?? []).filter((estado) => {
+    // Si es retiro en local, no puede ir a EN_CAMINO
     if (pedido.direccion_id === null && estado === "EN_CAMINO") return false;
+    // Si es delivery, no puede ir directo a ENTREGADO desde LISTO (debe pasar por EN_CAMINO primero)
+    if (pedido.direccion_id !== null && pedido.estado_codigo === "LISTO" && estado === "ENTREGADO") return false;
     // Ocultar transiciones de cocina (Preparación / Listo) del tablero de administración.
     // Estas transiciones se gestionan exclusivamente desde la pantalla de Cocina KDS.
     if (estado === "EN_PREP" || estado === "LISTO") return false;
