@@ -1,11 +1,12 @@
 
 import React, { useState } from "react";
 
-import { ChefHat, Package, ShieldCheck, Tags, ShoppingBag, ClipboardList, Users, X, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
+import { ChefHat, Package, ShieldCheck, Tags, ShoppingBag, ClipboardList, Users, X, DollarSign, ShoppingCart, TrendingUp, AlertTriangle } from "lucide-react";
 
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useDashboardEstadisticas } from "../hooks/useEstadisticas";
+import { useIngredientes } from "../hooks/useIngredientes";
 import {
   XAxis,
   YAxis,
@@ -29,9 +30,35 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function DashboardPage() {
   const [showBanner, setShowBanner] = useState(true);
+  const [showStockAlert, setShowStockAlert] = useState(true);
   const [diasFiltro, setDiasFiltro] = useState<1 | 7 | 30>(30);
   const nombre = useAuthStore((s) => s.usuario?.nombre || 'Usuario');
   const { data: stats, isLoading } = useDashboardEstadisticas();
+
+  // Obtener ingredientes para el aviso de stock mínimo
+  const { data: ingredientes } = useIngredientes({
+    page: 1,
+    per_page: 100, // Recuperar hasta 100 ingredientes activos para el aviso
+    search: "",
+    estado: "activo",
+    sort_by: "nombre",
+    sort_order: "asc",
+    es_alergeno: "",
+    es_producto_terminado: "",
+    created_from: "",
+    created_to: "",
+    updated_from: "",
+    updated_to: "",
+    starts_with: "",
+  });
+
+  const insumosCriticos = React.useMemo(() => {
+    if (!ingredientes?.items) return [];
+    return ingredientes.items.filter(
+      (item) => item.stock_actual <= (item.stock_minimo || 0)
+    );
+  }, [ingredientes]);
+
 
   // Pre-procesar datos del gráfico para rellenar con ceros si no hay datos
   const chartData = React.useMemo(() => {
@@ -140,6 +167,41 @@ export default function DashboardPage() {
           <p className="text-white/90 text-sm max-w-xl">
             Panel de administración del sistema Food Store. Gestiona ingredientes, productos y pedidos desde aquí.
           </p>
+        </div>
+      )}
+
+      {/* Critical Stock Alert Banner */}
+      {showStockAlert && insumosCriticos.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-900 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300 relative">
+          <button 
+            onClick={() => setShowStockAlert(false)}
+            className="absolute top-4 right-4 text-red-800/80 hover:text-red-900 hover:bg-red-100/50 p-1 rounded-full transition-colors"
+            title="Cerrar alerta"
+          >
+            <X size={18} />
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={24} />
+            <div>
+              <h2 className="text-base font-bold text-red-800">Insumos con stock crítico</h2>
+              <p className="text-sm text-red-700 mt-0.5">
+                Hay {insumosCriticos.length} ingrediente{insumosCriticos.length !== 1 ? 's' : ''} por debajo de su stock mínimo de reposición.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {insumosCriticos.map((item) => (
+                  <span key={item.id} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-red-100 text-red-800 text-xs font-semibold border border-red-200 shadow-sm">
+                    {item.nombre}: {item.stock_actual} {item.unidad_medida?.simbolo || 'u'} (mín: {item.stock_minimo})
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <Link 
+            to="/ingredientes?sort_by=stock_critico" 
+            className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white font-bold text-sm px-4 py-2.5 rounded-lg transition-colors text-center shadow-sm"
+          >
+            Gestionar Stock
+          </Link>
         </div>
       )}
 

@@ -80,9 +80,20 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
         total = len(self.session.exec(query).all())
 
         # Sort
-        sort_column = getattr(Ingrediente, sort_by, Ingrediente.nombre)
-        order_func = asc if sort_order == "asc" else desc
-        query = query.order_by(order_func(sort_column))
+        if sort_by == "stock_critico":
+            from sqlalchemy import case
+            sort_expression = case(
+                (Ingrediente.stock_actual <= Ingrediente.stock_minimo, 0),
+                else_=1
+            )
+            query = query.order_by(
+                sort_expression, 
+                asc(Ingrediente.nombre) if sort_order == "asc" else desc(Ingrediente.nombre)
+            )
+        else:
+            sort_column = getattr(Ingrediente, sort_by, Ingrediente.nombre)
+            order_func = asc if sort_order == "asc" else desc
+            query = query.order_by(order_func(sort_column))
 
         # Pagination
         pages = math.ceil(total / per_page) if total > 0 else 1

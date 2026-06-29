@@ -215,8 +215,9 @@ class ProductoRepository(BaseRepository[Producto]):
         return self.update(producto)
 
     def restore(self, producto: Producto) -> Producto:
-        """Restaura un producto dado de baja (limpia active_at)."""
+        """Restaura un producto dado de baja (limpia active_at) y lo habilita para la venta."""
         producto.active_at = None
+        producto.disponible = True
         return self.update(producto)
 
     def eliminar(self, producto: Producto) -> Producto:
