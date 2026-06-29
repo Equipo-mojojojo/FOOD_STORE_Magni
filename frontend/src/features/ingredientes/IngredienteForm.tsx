@@ -38,6 +38,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   const [error, setError] = useState("");
   const [productosAfectados, setProductosAfectados] = useState<ProductoAfectadoResponse[]>([]);
   const [mostrarConfirmacionPrecios, setMostrarConfirmacionPrecios] = useState(false);
+  const [productosAActualizarIds, setProductosAActualizarIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -150,7 +151,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     return payload;
   };
 
-  const executeSave = async (actualizarPrecios: boolean) => {
+  const executeSave = async (actualizarPrecios: boolean, limitProductos?: number[]) => {
     setLoading(true);
     setError("");
     try {
@@ -164,7 +165,8 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         stock_minimo: Number(stockMinimo),
         unidad_medida_id: Number(unidadMedidaId),
         activo,
-        actualizar_precios_productos: actualizarPrecios
+        actualizar_precios_productos: actualizarPrecios,
+        productos_a_actualizar: limitProductos
       }, ingrediente?.id);
 
       // Si es producto terminado, crear o actualizar el producto vinculado
@@ -308,6 +310,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
         const afectados = await ingredientesApi.getProductosAfectados(ingrediente.id);
         if (afectados.length > 0) {
           setProductosAfectados(afectados);
+          setProductosAActualizarIds(afectados.map((p) => p.id));
           setMostrarConfirmacionPrecios(true);
           return;
         }
@@ -692,21 +695,43 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
               <h3 className="text-lg font-bold text-gray-900">Actualización de Precios</h3>
             </div>
             
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              El costo de este insumo cambió. Esto afecta a los siguientes productos:
+            <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+              El costo de este insumo cambió. Seleccioná los productos que querés actualizar automáticamente:
             </p>
 
             <div className="max-h-48 overflow-y-auto mb-6 border border-gray-100 rounded-xl p-3 bg-gray-50/50 space-y-2">
-              {productosAfectados.map(p => (
-                <div key={p.id} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100 last:border-0">
-                  <span className="font-medium text-gray-700">{p.nombre}</span>
-                  <span className="text-gray-500 font-mono">Precio: ${p.precio_base_actual.toFixed(2)}</span>
-                </div>
-              ))}
+              {productosAfectados.map(p => {
+                const isSelected = productosAActualizarIds.includes(p.id);
+                return (
+                  <label key={p.id} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-100/50 px-1 rounded transition-colors">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setProductosAActualizarIds(prev => [...prev, p.id]);
+                          } else {
+                            setProductosAActualizarIds(prev => prev.filter(id => id !== p.id));
+                          }
+                        }}
+                        className="w-3.5 h-3.5 text-green-main focus:ring-green-main border-gray-300 rounded"
+                      />
+                      <span className="font-semibold text-gray-700">{p.nombre}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        (usa {p.cantidad_ingrediente} {p.unidad_ingrediente})
+                      </span>
+                    </div>
+                    <span className="text-gray-500 font-mono">
+                      ${p.precio_base_actual.toFixed(2)}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
 
             <p className="text-xs text-gray-500 mb-6 leading-relaxed bg-blue-50 text-blue-700 p-2.5 rounded-lg">
-              ℹ️ Si elegís <strong>Actualizar Precios</strong>, se recalcularán automáticamente los precios base de venta según el nuevo costo y el margen de ganancia de cada producto.
+              ℹ️ Se recalcularán automáticamente los precios de venta de los productos seleccionados usando su margen de ganancia.
             </p>
 
             <div className="flex flex-col gap-2">
@@ -714,11 +739,12 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 type="button"
                 onClick={async () => {
                   setMostrarConfirmacionPrecios(false);
-                  await executeSave(true);
+                  await executeSave(true, productosAActualizarIds);
                 }}
-                className="w-full py-2.5 bg-green-main text-white font-bold rounded-xl text-sm hover:bg-green-dark transition-colors shadow-sm"
+                disabled={productosAActualizarIds.length === 0}
+                className="w-full py-2.5 bg-green-main text-white font-bold rounded-xl text-sm hover:bg-green-dark transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sí, actualizar precios
+                Actualizar precios seleccionados ({productosAActualizarIds.length})
               </button>
               <button
                 type="button"

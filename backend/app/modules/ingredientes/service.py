@@ -132,38 +132,37 @@ class IngredienteService:
             
             afectados = []
             for p in productos:
+                prod_ing = next((pi for pi in p.ingredientes if pi.ingrediente_id == ingrediente_id), None)
+                cantidad = 0.0
+                unidad_simbolo = "u"
+                if prod_ing:
+                    cantidad = float(prod_ing.cantidad)
+                    unidad_simbolo = prod_ing.unidad_medida.simbolo if prod_ing.unidad_medida else "u"
+
                 afectados.append(
                     ProductoAfectadoResponse(
                         id=p.id,
                         nombre=p.nombre,
                         precio_base_actual=float(p.precio_base),
                         margen_ganancia=float(p.margen_ganancia),
+                        cantidad_ingrediente=cantidad,
+                        unidad_ingrediente=unidad_simbolo,
                     )
                 )
             return afectados
 
     def create(self, data: IngredienteCreate):
-        """Crea un nuevo ingrediente."""
-        from sqlalchemy.exc import IntegrityError
+        """Crea un ingrediente con transacción atómica."""
         with self.uow:
-            create_data = data.model_dump(exclude={"activo"})
-            ingrediente = Ingrediente(**create_data)
-            
-            try:
-                self.uow.ingredientes.add(ingrediente)
-                # Forzar carga de relación para el schema
-                if ingrediente.unidad_medida_id:
-                    _ = ingrediente.unidad_medida
-            except IntegrityError:
-                self.uow.rollback()
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Este ingrediente ya existe"
-                )
+            ingrediente = Ingrediente(**data.model_dump())
+            ingrediente = self.uow.ingredientes.add(ingrediente)
+            # Forzar carga de relación para el schema de retorno
+            if ingrediente.unidad_medida_id:
+                _ = ingrediente.unidad_medida
         return ingrediente
 
     def update(self, ingrediente_id: int, data: IngredienteUpdate):
-        """Actualiza un ingrediente existente."""
+        """Actualiza un ingrediente y opcionalmente recalcula precios de productos seleccionados."""
         from sqlalchemy.exc import IntegrityError
         with self.uow:
             ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
@@ -172,7 +171,7 @@ class IngredienteService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Ingrediente no encontrado",
                 )
-            update_data = data.model_dump(exclude_unset=True, exclude={"activo", "actualizar_precios_productos"})
+            update_data = data.model_dump(exclude_unset=True, exclude={"activo", "actualizar_precios_productos", "productos_a_actualizar"})
             
             # Manejo de estado (activo/inactivo)
             if data.activo is True:
@@ -190,7 +189,7 @@ class IngredienteService:
                     _ = ingrediente.unidad_medida
                 # Si la bandera está activa y se actualizó correctamente
                 if data.actualizar_precios_productos:
-                    recalcular_precios_base_por_ingrediente(self.uow, ingrediente_id)
+                    recalcular_precios_base_por_ingrediente(self.uow, ingrediente_id, limit_productos=data.productos_a_actualizar)
             except IntegrityError:
                 self.uow.rollback()
                 raise HTTPException(

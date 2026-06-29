@@ -233,10 +233,12 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
 
     return uow.productos.update(prod)
 
-def recalcular_precios_base_por_ingrediente(uow: UnitOfWork, ingrediente_id: int):
+def recalcular_precios_base_por_ingrediente(uow: UnitOfWork, ingrediente_id: int, limit_productos: list[int] | None = None):
     """Actualiza el precio_base de todos los productos que usan este ingrediente."""
     productos = uow.productos.get_by_ingrediente_id(ingrediente_id)
     for prod in productos:
+        if limit_productos is not None and prod.id not in limit_productos:
+            continue
         nuevo_costo = calcular_costo_total(prod)
         nuevo_precio_base = nuevo_costo * (Decimal("1.0") + prod.margen_ganancia)
         prod.precio_base = nuevo_precio_base
