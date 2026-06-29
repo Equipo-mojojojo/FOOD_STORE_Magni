@@ -24,16 +24,18 @@ FSM_TRANSITIONS: dict[str, list[str]] = {
     "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
     "CONFIRMADO": ["EN_PREP", "CANCELADO"],
     "EN_PREP": ["LISTO", "CANCELADO"],
-    "LISTO": ["EN_CAMINO", "ENTREGADO"],
-    "EN_CAMINO": ["ENTREGADO"],
+    "LISTO": ["EN_CAMINO", "ENTREGADO", "CANCELADO"],
+    "EN_CAMINO": ["ENTREGADO", "CANCELADO"],
 }
 
 ROLE_TRANSITIONS: dict[str, dict[str, list[str]]] = {
     "ADMIN": FSM_TRANSITIONS,
     "CAJERO": {
         "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
-        "LISTO": ["EN_CAMINO", "ENTREGADO"],
-        "EN_CAMINO": ["ENTREGADO"],
+        "CONFIRMADO": ["CANCELADO"],
+        "EN_PREP": ["CANCELADO"],
+        "LISTO": ["EN_CAMINO", "ENTREGADO", "CANCELADO"],
+        "EN_CAMINO": ["ENTREGADO", "CANCELADO"],
     },
     "COCINA_STOCK": {
         "CONFIRMADO": ["EN_PREP"],
@@ -66,7 +68,7 @@ ROLES_POR_ESTADO: dict[str, list[str]] = {
 
 ESTADOS_COCINA = ("CONFIRMADO", "EN_PREP")
 ESTADOS_VISIBLES_POR_ROL: dict[str, list[str]] = {
-    "CAJERO": ["PENDIENTE", "LISTO", "EN_CAMINO", "ENTREGADO", "CANCELADO"],
+    "CAJERO": ["PENDIENTE", "CONFIRMADO", "EN_PREP", "LISTO", "EN_CAMINO", "ENTREGADO", "CANCELADO"],
     "COCINA_STOCK": ["CONFIRMADO", "EN_PREP"],
 }
 
@@ -277,15 +279,26 @@ class PedidoService:
             if not self.uow.estados_pedido.get_by_codigo(estado_destino):
                 raise HTTPException(status_code=400, detail=f"Estado '{estado_destino}' no existe")
 
-            # Si se cancela, devolver el stock de cada ítem al inventario
+            # Si se cancela, devolver el stock al inventario
             if estado_destino == "CANCELADO":
+                recupera_insumos = estado_actual in ("PENDIENTE", "CONFIRMADO")
                 for detalle in pedido.detalles:
                     producto = self.uow.productos.get_by_id_with_relations(detalle.producto_id)
                     if producto:
                         es_elaborable = len(producto.ingredientes) > 0
-                        if not es_elaborable:
-                            # Solo reponemos stock si es un producto finalizado
-                            # Por regla de negocio: no se puede "des-cocinar" una pizza elaborada
+                        if es_elaborable:
+                            if recupera_insumos:
+                                # Devolver el stock de ingredientes al inventario
+                                for pi in producto.ingredientes:
+                                    if pi.ingrediente and (detalle.personalizacion is None or pi.ingrediente.id not in detalle.personalizacion):
+                                        f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
+                                        f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
+                                        qty_base_total = pi.cantidad * Decimal(str(f_receta)) * Decimal(str(detalle.cantidad))
+                                        reposicion = qty_base_total / Decimal(str(f_ing))
+                                        pi.ingrediente.stock_actual += reposicion
+                                        self.uow.ingredientes.update(pi.ingrediente)
+                        else:
+                            # Los productos finalizados siempre reponen stock
                             producto.stock_cantidad += detalle.cantidad
                             self.uow.productos.update(producto)
 
@@ -334,5 +347,26 @@ class PedidoService:
             return
 
         data = pedido.model_dump(mode="json")
+
+        # Contexto de cancelación para notificaciones
+        if pedido.estado_codigo == "CANCELADO":
+            from sqlmodel import select
+            from sqlalchemy import desc
+            from app.modules.pedidos.model import HistorialEstadoPedido
+            stmt = (
+                select(HistorialEstadoPedido)
+                .where(HistorialEstadoPedido.pedido_id == pedido.id)
+                .order_by(desc(HistorialEstadoPedido.created_at))
+            )
+            ultimo_historial = self.uow.session.exec(stmt).first()
+            if ultimo_historial:
+                data["motivo_cancelacion"] = ultimo_historial.motivo
+                if ultimo_historial.usuario_id == pedido.usuario_id:
+                    data["cancelado_por"] = "cliente"
+                elif ultimo_historial.motivo and "Mercado Pago" in ultimo_historial.motivo:
+                    data["cancelado_por"] = "mercadopago"
+                else:
+                    data["cancelado_por"] = "operador"
+
         await manager.broadcast_to_order(pedido.id, event, data)
         await manager.broadcast_to_roles(ROLES_POR_ESTADO.get(pedido.estado_codigo, []), event, data)

@@ -160,6 +160,23 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
           </div>
         )}
 
+        {pedido.estado_codigo === "CANCELADO" && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+              <p className="text-red-800 font-bold text-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" />
+                Pedido Cancelado
+              </p>
+              <p className="text-red-700 text-sm mt-1.5">
+                <span className="font-semibold">Motivo:</span>{" "}
+                {pedido.historial?.find((h) => h.estado_hacia === "CANCELADO")?.motivo || (
+                  <span className="italic text-red-500/70">No se especificó motivo de cancelación.</span>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         {pedido.forma_pago_codigo === "MERCADOPAGO" && pedido.estado_codigo === "PENDIENTE" && (
           <div className="mt-6 pt-4 border-t border-gray-100 max-w-sm">
             <h4 className="text-sm font-semibold text-gray-700 mb-2">Pago requerido</h4>

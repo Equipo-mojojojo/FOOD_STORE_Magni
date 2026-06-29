@@ -134,12 +134,21 @@ class PaymentService:
         estado_actual = pedido.estado_codigo
         estado_destino = "CANCELADO"
 
-        # Reponer stock de productos finalizados (misma regla que PedidoService)
+        # Reponer stock de ingredientes (ya que el pedido cancelado por MP siempre estuvo en PENDIENTE)
         for detalle in pedido.detalles:
             producto = self.uow.productos.get_by_id_with_relations(detalle.producto_id)
             if producto:
                 es_elaborable = len(producto.ingredientes) > 0
-                if not es_elaborable:
+                if es_elaborable:
+                    for pi in producto.ingredientes:
+                        if pi.ingrediente and (detalle.personalizacion is None or pi.ingrediente.id not in detalle.personalizacion):
+                            f_ing = float(pi.ingrediente.unidad_medida.factor_conversion) if pi.ingrediente.unidad_medida else 1.0
+                            f_receta = float(pi.unidad_medida.factor_conversion) if pi.unidad_medida else 1.0
+                            qty_base_total = pi.cantidad * Decimal(str(f_receta)) * Decimal(str(detalle.cantidad))
+                            reposicion = qty_base_total / Decimal(str(f_ing))
+                            pi.ingrediente.stock_actual += reposicion
+                            self.uow.ingredientes.update(pi.ingrediente)
+                else:
                     producto.stock_cantidad += detalle.cantidad
                     self.uow.productos.update(producto)
 
@@ -160,6 +169,8 @@ class PaymentService:
         from app.modules.pedidos.schemas import PedidoResponse
         pedido_res = PedidoResponse.model_validate(pedido)
         data = pedido_res.model_dump(mode="json")
+        data["cancelado_por"] = "mercadopago"
+        data["motivo_cancelacion"] = f"Pago rechazado por Mercado Pago (MP #{pago.mp_payment_id})"
 
         try:
             await manager.broadcast_to_order(pedido.id, event, data)
