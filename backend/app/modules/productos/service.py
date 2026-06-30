@@ -224,22 +224,26 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
                     uow.ingredientes.dar_de_baja(pi.ingrediente)
 
     if data.categorias is not None:
-        uow.producto_categorias.delete_by_producto(prod_id)
-        for cat in data.categorias:
-            pc = ProductoCategoria(producto_id=prod_id, categoria_id=cat.categoria_id, es_principal=cat.es_principal)
-            uow.producto_categorias.add(pc)
+        # Usamos la reasignación de colecciones; con cascade="all, delete-orphan",
+        # SQLAlchemy borra automáticamente los registros huérfanos e inserta los nuevos.
+        prod.categorias = [
+            ProductoCategoria(producto_id=prod_id, categoria_id=cat.categoria_id, es_principal=cat.es_principal)
+            for cat in data.categorias
+        ]
 
     if data.ingredientes is not None:
-        uow.producto_ingredientes.delete_by_producto(prod_id)
-        for ing in data.ingredientes:
-            pi = ProductoIngrediente(
+        # Usamos la reasignación de colecciones; con cascade="all, delete-orphan",
+        # SQLAlchemy borra automáticamente los registros huérfanos e inserta los nuevos.
+        prod.ingredientes = [
+            ProductoIngrediente(
                 producto_id=prod_id, 
                 ingrediente_id=ing.ingrediente_id,
                 cantidad=ing.cantidad,
                 unidad_medida_id=ing.unidad_medida_id,
                 es_removible=ing.es_removible
             )
-            uow.producto_ingredientes.add(pi)
+            for ing in data.ingredientes
+        ]
 
     return uow.productos.update(prod)
 
