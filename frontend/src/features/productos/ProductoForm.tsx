@@ -235,6 +235,14 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
       setError("El precio base debe ser mayor a 0");
       return;
     }
+    if (formData.categorias.length === 0) {
+      setError("Debés seleccionar al menos una categoría para el producto.");
+      return;
+    }
+    if (formData.ingredientes.length === 0) {
+      setError("Debés agregar al menos un ingrediente para el producto.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
