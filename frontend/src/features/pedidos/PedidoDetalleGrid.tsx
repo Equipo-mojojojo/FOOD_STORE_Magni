@@ -36,9 +36,10 @@ interface Props {
   pedidoId: number;
   backTo?: string;
   backLabel?: string;
+  showReorder?: boolean;
 }
 
-export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volver" }: Props) {
+export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volver", showReorder = true }: Props) {
   const { data: pedido, isLoading, isError } = usePedido(pedidoId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -116,14 +117,16 @@ export default function PedidoDetalleGrid({ pedidoId, backTo, backLabel = "Volve
           >
             {ESTADO_LABEL[pedido.estado_codigo] || pedido.estado_codigo}
           </span>
-          <button
-            onClick={() => reordenar(pedido.id)}
-            disabled={isReordenando}
-            className="text-sm font-semibold px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-          >
-            <RefreshCw size={14} className={isReordenando ? "animate-spin" : ""} />
-            Volver a pedir
-          </button>
+          {showReorder && (
+            <button
+              onClick={() => reordenar(pedido.id)}
+              disabled={isReordenando}
+              className="text-sm font-semibold px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <RefreshCw size={14} className={isReordenando ? "animate-spin" : ""} />
+              Volver a pedir
+            </button>
+          )}
         </div>
         <PedidoTimeline estado={pedido.estado_codigo} isRetiro={pedido.direccion_id === null} />
 

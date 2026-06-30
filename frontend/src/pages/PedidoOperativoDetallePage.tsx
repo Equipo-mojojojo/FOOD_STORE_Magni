@@ -24,7 +24,7 @@ export default function PedidoOperativoDetallePage() {
 
   return (
     <div className="max-w-5xl">
-      <PedidoDetalleGrid pedidoId={pedidoId} backTo={backTo} backLabel={backLabel} />
+      <PedidoDetalleGrid pedidoId={pedidoId} backTo={backTo} backLabel={backLabel} showReorder={false} />
     </div>
   );
 }

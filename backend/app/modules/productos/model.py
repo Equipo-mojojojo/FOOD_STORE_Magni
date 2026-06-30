@@ -61,8 +61,14 @@ class Producto(SQLModel, table=True):
 
     # Relaciones
     unidad_venta: Optional["UnidadMedida"] = Relationship()
-    categorias: List["ProductoCategoria"] = Relationship(back_populates="producto")
-    ingredientes: List["ProductoIngrediente"] = Relationship(back_populates="producto")
+    categorias: List["ProductoCategoria"] = Relationship(
+        back_populates="producto",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    ingredientes: List["ProductoIngrediente"] = Relationship(
+        back_populates="producto",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 

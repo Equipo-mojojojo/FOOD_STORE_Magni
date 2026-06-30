@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Check, UploadCloud, Trash2 } from "lucide-react";
+import { X, Check, UploadCloud, Trash2, AlertTriangle } from "lucide-react";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
 import { useIngredientes } from "../../hooks/useIngredientes";
 import { useUnidadesMedida } from "../../hooks/useUnidadesMedida";
@@ -52,7 +52,7 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
     per_page: 500,
     search: "",
     es_alergeno: "",
-    estado: "activo",
+    estado: "todos",
     sort_by: "nombre",
     sort_order: "asc",
     created_from: "",
@@ -132,6 +132,12 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
 
   // Si tiene ingredientes, el stock físico debe ser 0 (se calcula dinámicamente)
   const esElaborable = formData.ingredientes.length > 0;
+
+  // Detectar si alguno de los ingredientes seleccionados está dado de baja (inactivo)
+  const tieneIngredientesInactivos = formData.ingredientes.some(pi => {
+    const ing = ingredientesData?.items.find(i => i.id === pi.ingrediente_id);
+    return ing && ing.active_at !== null;
+  });
 
   if (!isOpen) return null;
 
@@ -235,6 +241,14 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
       setError("El precio base debe ser mayor a 0");
       return;
     }
+    if (formData.categorias.length === 0) {
+      setError("Debés seleccionar al menos una categoría para el producto.");
+      return;
+    }
+    if (formData.ingredientes.length === 0) {
+      setError("Debés agregar al menos un ingrediente para el producto.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -279,6 +293,15 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
         {error && (
           <div className="mx-6 mt-4 bg-danger-light text-danger-dark px-4 py-3 rounded-lg text-sm border border-danger/20">
             {error}
+          </div>
+        )}
+
+        {tieneIngredientesInactivos && (
+          <div className="mx-6 mt-4 bg-yellow-50 text-yellow-800 px-4 py-3 rounded-lg text-sm border border-yellow-200/50 flex items-center gap-2 font-medium animate-in fade-in duration-200">
+            <AlertTriangle size={18} className="text-yellow-600 flex-shrink-0" />
+            <span>
+              <strong>Atención:</strong> Este producto contiene ingredientes que están dados de baja en el inventario. Debés reemplazarlos o darlos de alta para habilitar la venta.
+            </span>
           </div>
         )}
 
@@ -514,19 +537,39 @@ export default function ProductoForm({ isOpen, producto, onClose, onSave }: Prop
                     const ingredienteData = formData.ingredientes.find(ing => ing.ingrediente_id === i.id);
                     const isSelected = !!ingredienteData;
                     const esTerminado = i.es_producto_terminado;
+                    const isInactive = i.active_at !== null;
                     // Si el producto ya tiene un insumo terminado, bloqueamos TODO para que no se pueda destildar ni cambiar.
                     const bloqueado = tieneInsumoTerminado;
 
                     return (
-                      <div key={i.id} className={`flex flex-col gap-2 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-green-50/50 border-green-200' : bloqueado ? 'opacity-40 cursor-not-allowed border-transparent' : 'hover:bg-white border-transparent'}`}>
+                      <div key={i.id} className={`flex flex-col gap-2 p-2 rounded-lg transition-colors border ${
+                        isInactive && isSelected
+                          ? 'bg-red-50/40 border-red-200'
+                          : isSelected 
+                            ? 'bg-green-50/50 border-green-200' 
+                            : bloqueado 
+                              ? 'opacity-40 cursor-not-allowed border-transparent' 
+                              : 'hover:bg-white border-transparent'
+                      }`}>
                         <label className={`flex items-center gap-3 ${bloqueado ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${isSelected ? 'bg-green-main border-green-main text-white' : 'border-gray-300 bg-white group-hover:border-green-main'}`}>
+                          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                            isInactive && isSelected
+                              ? 'bg-red-500 border-red-500 text-white'
+                              : isSelected 
+                                ? 'bg-green-main border-green-main text-white' 
+                                : 'border-gray-300 bg-white group-hover:border-green-main'
+                          }`}>
                             {isSelected && <Check size={14} strokeWidth={3} />}
                           </div>
                           <input type="checkbox" className="hidden" checked={isSelected} onChange={() => !bloqueado && toggleIngrediente(i.id)} disabled={bloqueado} />
                           <span className="text-sm font-medium text-gray-700">
                             {i.nombre}
                             {esTerminado && <span className="ml-1 text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold">TERMINADO</span>}
+                            {isInactive && (
+                              <span className="ml-1 text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold font-mono">
+                                DADO DE BAJA
+                              </span>
+                            )}
                             {' '}<span className="text-[10px] text-gray-400 font-normal">($ {i.precio_costo}/{i.unidad_medida?.simbolo || 'unid'})</span>
                           </span>
                         </label>
