@@ -200,7 +200,7 @@ def create_producto(uow: UnitOfWork, data: ProductoCreate) -> Producto:
 
 def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Producto:
     """Actualiza producto y sincroniza relaciones N:N."""
-    prod = uow.productos.get_by_id(prod_id)
+    prod = uow.productos.get_by_id_with_relations(prod_id)
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
@@ -210,8 +210,18 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
 
     if data.activo is True:
         prod.active_at = None
+        # Si tiene ingredientes terminados vinculados, restaurarlos
+        for pi in prod.ingredientes:
+            if pi.ingrediente and pi.ingrediente.es_producto_terminado:
+                if pi.ingrediente.active_at is not None:
+                    uow.ingredientes.restaurar(pi.ingrediente)
     elif data.activo is False:
         prod.active_at = datetime.now(timezone.utc)
+        # Si tiene ingredientes terminados vinculados, darlos de baja
+        for pi in prod.ingredientes:
+            if pi.ingrediente and pi.ingrediente.es_producto_terminado:
+                if pi.ingrediente.active_at is None:
+                    uow.ingredientes.dar_de_baja(pi.ingrediente)
 
     if data.categorias is not None:
         uow.producto_categorias.delete_by_producto(prod_id)
@@ -269,17 +279,29 @@ def update_disponibilidad_producto(uow: UnitOfWork, prod_id: int, disponible: bo
     return uow.productos.update(prod)
 
 def dar_de_baja_producto(uow: UnitOfWork, prod_id: int):
-    prod = uow.productos.get_by_id(prod_id)
+    prod = uow.productos.get_by_id_with_relations(prod_id)
     if not prod or prod.deleted_at:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     uow.productos.dar_de_baja(prod)
+    
+    # Si tiene ingredientes terminados vinculados, darlos de baja
+    for pi in prod.ingredientes:
+        if pi.ingrediente and pi.ingrediente.es_producto_terminado:
+            if pi.ingrediente.active_at is None:
+                uow.ingredientes.dar_de_baja(pi.ingrediente)
 
 
 def restore_producto(uow: UnitOfWork, prod_id: int):
-    prod = uow.productos.get_by_id(prod_id)
+    prod = uow.productos.get_by_id_with_relations(prod_id)
     if not prod or prod.deleted_at:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     uow.productos.restore(prod)
+    
+    # Si tiene ingredientes terminados vinculados, restaurarlos
+    for pi in prod.ingredientes:
+        if pi.ingrediente and pi.ingrediente.es_producto_terminado:
+            if pi.ingrediente.active_at is not None:
+                uow.ingredientes.restaurar(pi.ingrediente)
 
 
 def eliminar_producto(uow: UnitOfWork, prod_id: int):

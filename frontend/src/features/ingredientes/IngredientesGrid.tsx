@@ -77,11 +77,10 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
 
   const handleSave = async (formData: IngredienteCreate & { actualizar_precios_productos?: boolean }, id?: number) => {
     if (id) {
-      await actualizarMut.mutateAsync({ id, data: formData });
+      return await actualizarMut.mutateAsync({ id, data: formData });
     } else {
-      await crearMut.mutateAsync(formData);
+      return await crearMut.mutateAsync(formData);
     }
-    setModalOpen(false);
   };
 
   const handleEliminar = (id: number) => {
