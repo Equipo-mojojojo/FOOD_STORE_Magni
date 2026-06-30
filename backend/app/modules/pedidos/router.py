@@ -127,33 +127,29 @@ async def cancelar_pedido(
 @router.websocket("/ws")
 async def pedidos_websocket(websocket: WebSocket):
     token = websocket.cookies.get("access_token")
-    if not token:
-        await websocket.accept()
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token requerido")
-        return
+    user_id = None
+    roles = []
 
-    payload = decode_access_token(token)
-    user_id_raw = payload.get("sub") if payload else None
-    if user_id_raw is None:
-        await websocket.accept()
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalido")
-        return
+    if token:
+        payload = decode_access_token(token)
+        user_id_raw = payload.get("sub") if payload else None
+        if user_id_raw is not None:
+            try:
+                user_id = int(user_id_raw)
+                roles = payload.get("roles", []) if payload else []
+            except ValueError:
+                pass
 
-    try:
-        user_id = int(user_id_raw)
-    except ValueError:
-        await websocket.accept()
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalido")
-        return
+            if user_id is not None:
+                with UnitOfWork() as uow:
+                    user = uow.usuarios.get_by_id(user_id)
+                    if user is None or user.deleted_at is not None:
+                        await websocket.accept()
+                        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Usuario invalido")
+                        return
 
-    roles: list[str] = payload.get("roles", []) if payload else []
-    with UnitOfWork() as uow:
-        user = uow.usuarios.get_by_id(user_id)
-        if user is None or user.deleted_at is not None:
-            await websocket.accept()
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Usuario invalido")
-            return
-
+    # Si es invitado (sin token), se conectará con roles=[] y user_id=None.
+    # El manager lo asociará automáticamente al rol por defecto "client".
     await manager.connect(websocket, roles=roles, user_id=user_id)
     staff_roles = {"ADMIN", "CAJERO", "COCINA_STOCK"}
 

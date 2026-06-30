@@ -195,6 +195,7 @@ def create_producto(uow: UnitOfWork, data: ProductoCreate) -> Producto:
         )
         uow.producto_ingredientes.add(pi)
 
+    _broadcast_producto_event(prod.id)
     return prod
 
 
@@ -245,7 +246,9 @@ def update_producto(uow: UnitOfWork, prod_id: int, data: ProductoUpdate) -> Prod
             for ing in data.ingredientes
         ]
 
-    return uow.productos.update(prod)
+    updated_prod = uow.productos.update(prod)
+    _broadcast_producto_event(updated_prod.id)
+    return updated_prod
 
 def recalcular_precios_base_por_ingrediente(uow: UnitOfWork, ingrediente_id: int, limit_productos: list[int] | None = None):
     """Actualiza el precio_base de todos los productos que usan este ingrediente."""
@@ -258,6 +261,7 @@ def recalcular_precios_base_por_ingrediente(uow: UnitOfWork, ingrediente_id: int
         prod.precio_base = nuevo_precio_base
         prod.updated_at = datetime.now(timezone.utc)
         uow.productos.update(prod)
+        _broadcast_producto_event(prod.id)
 
 def update_stock_producto(uow: UnitOfWork, prod_id: int, stock_cantidad: int) -> Producto:
     """Actualiza solo el stock físico del producto."""
@@ -268,7 +272,9 @@ def update_stock_producto(uow: UnitOfWork, prod_id: int, stock_cantidad: int) ->
     prod.stock_cantidad = stock_cantidad
     prod.updated_at = datetime.now(timezone.utc)
 
-    return uow.productos.update(prod)
+    updated_prod = uow.productos.update(prod)
+    _broadcast_producto_event(updated_prod.id)
+    return updated_prod
 
 
 def update_disponibilidad_producto(uow: UnitOfWork, prod_id: int, disponible: bool) -> Producto:
@@ -280,7 +286,9 @@ def update_disponibilidad_producto(uow: UnitOfWork, prod_id: int, disponible: bo
     prod.disponible = disponible
     prod.updated_at = datetime.now(timezone.utc)
 
-    return uow.productos.update(prod)
+    updated_prod = uow.productos.update(prod)
+    _broadcast_producto_event(updated_prod.id)
+    return updated_prod
 
 def dar_de_baja_producto(uow: UnitOfWork, prod_id: int):
     prod = uow.productos.get_by_id_with_relations(prod_id)
@@ -293,6 +301,7 @@ def dar_de_baja_producto(uow: UnitOfWork, prod_id: int):
         if pi.ingrediente and pi.ingrediente.es_producto_terminado:
             if pi.ingrediente.active_at is None:
                 uow.ingredientes.dar_de_baja(pi.ingrediente)
+    _broadcast_producto_event(prod.id)
 
 
 def restore_producto(uow: UnitOfWork, prod_id: int):
@@ -306,6 +315,7 @@ def restore_producto(uow: UnitOfWork, prod_id: int):
         if pi.ingrediente and pi.ingrediente.es_producto_terminado:
             if pi.ingrediente.active_at is not None:
                 uow.ingredientes.restaurar(pi.ingrediente)
+    _broadcast_producto_event(prod.id)
 
 
 def eliminar_producto(uow: UnitOfWork, prod_id: int):
@@ -319,7 +329,25 @@ def eliminar_producto(uow: UnitOfWork, prod_id: int):
         if pi.ingrediente and pi.ingrediente.es_producto_terminado:
             pi.ingrediente.es_producto_terminado = False
             uow.ingredientes.update(pi.ingrediente)
+    _broadcast_producto_event(prod.id)
 
 
 def get_unidades_medida(uow: UnitOfWork):
     return uow.unidades_medida.get_all()
+
+
+def _broadcast_producto_event(prod_id: int):
+    import asyncio
+    from app.core import websocket
+    from app.core.websocket import manager
+
+    loop = websocket.main_loop
+    if loop and loop.is_running():
+        asyncio.run_coroutine_threadsafe(
+            manager.broadcast_to_roles(
+                roles=["admin", "cajero", "cocina_stock", "client"],
+                event="PRODUCTO_UPDATED",
+                data={"id": prod_id},
+            ),
+            loop
+        )

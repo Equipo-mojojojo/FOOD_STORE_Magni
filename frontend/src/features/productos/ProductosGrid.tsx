@@ -11,6 +11,7 @@ import {
   useActualizarDisponibilidadProducto,
 } from "../../hooks/useProductos";
 import { useCategoriasFlat } from "../../hooks/useCategorias";
+import { useProductosWebSocket } from "../../hooks/useProductosWebSocket";
 import Pagination from "../../components/Pagination";
 import ProductoForm from "./ProductoForm";
 import type { Producto, ProductosFilters, ProductoCreate } from "../../types";
@@ -62,6 +63,7 @@ export default function ProductosGrid() {
 
   const { data, isLoading } = useProductos(filters);
   const { data: categorias } = useCategoriasFlat();
+  useProductosWebSocket();
 
   const crearMut = useCrearProducto();
   const actualizarMut = useActualizarProducto();

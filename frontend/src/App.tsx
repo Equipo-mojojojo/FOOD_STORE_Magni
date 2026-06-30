@@ -8,6 +8,7 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import NavbarUsuario from "./components/NavbarUsuario";
 import ScrollToTop from "./components/ScrollToTop";
+import { useProductosWebSocket } from "./hooks/useProductosWebSocket";
 
 import { Toaster } from "sonner";
 
@@ -36,6 +37,7 @@ import MiPerfilPage from "./pages/MiPerfilPage";
 
 
 function AppLayout() {
+  useProductosWebSocket();
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const closeSidebar = useUiStore((s) => s.closeSidebar);
 

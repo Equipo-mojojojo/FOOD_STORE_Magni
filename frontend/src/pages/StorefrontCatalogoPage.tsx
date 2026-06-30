@@ -6,8 +6,10 @@ import { productosApi } from "../api/productosApi";
 import { categoriasApi } from "../api/categoriasApi";
 import ProductCard from "../components/ProductCard";
 import { useDebounce } from "../hooks/useDebounce";
+import { useProductosWebSocket } from "../hooks/useProductosWebSocket";
 
 export default function StorefrontCatalogoPage() {
+  useProductosWebSocket();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryCategoria = searchParams.get("categoria");
   

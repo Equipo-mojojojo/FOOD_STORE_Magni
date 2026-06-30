@@ -4,11 +4,13 @@ import { ShoppingCart, ShoppingBag, User, Menu, X, Package, MapPin, LayoutDashbo
 import { useAuthStore } from "../store/authStore";
 import { useUiStore } from "../store/uiStore";
 import { useCartStore } from "../store/cartStore";
+import { useProductosWebSocket } from "../hooks/useProductosWebSocket";
 import NavbarCategoriesMenu from "./NavbarCategoriesMenu";
 import NavbarUserMenu from "./NavbarUserMenu";
 import CartSlideOver from "./CartSlideOver";
 
 export default function NavbarUsuario() {
+  useProductosWebSocket();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const usuario = useAuthStore((s) => s.usuario);
   const logout = useAuthStore((s) => s.logout);

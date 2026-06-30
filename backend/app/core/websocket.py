@@ -8,6 +8,8 @@ from fastapi import WebSocket
 
 logger = logging.getLogger("app.core.websocket")
 
+main_loop = None
+
 
 class ConnectionManager:
     """Tracks sockets in role rooms and order-specific rooms."""
@@ -16,7 +18,7 @@ class ConnectionManager:
         self.rooms: dict[str, set[WebSocket]] = {}
         self.socket_rooms: dict[WebSocket, set[str]] = {}
 
-    async def connect(self, websocket: WebSocket, roles: Iterable[str], user_id: int) -> None:
+    async def connect(self, websocket: WebSocket, roles: Iterable[str], user_id: int | None = None) -> None:
         await websocket.accept()
 
         normalized_roles = {role.strip().lower() for role in roles if role.strip()}

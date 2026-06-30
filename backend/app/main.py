@@ -61,8 +61,11 @@ app.mount("/static/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="stati
 
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     """Se ejecuta al levantar el server. Crea las tablas si no existen."""
+    import asyncio
+    from app.core import websocket
+    websocket.main_loop = asyncio.get_running_loop()
     create_all_tables()
 
 
