@@ -189,6 +189,13 @@ class IngredienteService:
                     for p in productos:
                         if p.active_at is None:
                             self.uow.productos.dar_de_baja(p)
+                
+                # Marcar disponibilidad como False para todos los productos que lo usan
+                productos = self.uow.productos.get_by_ingrediente_id(ingrediente_id)
+                for p in productos:
+                    if p.disponible:
+                        p.disponible = False
+                        self.uow.productos.update(p)
 
             for key, value in update_data.items():
                 setattr(ingrediente, key, value)
@@ -249,6 +256,13 @@ class IngredienteService:
                 for p in productos:
                     if p.active_at is None:
                         self.uow.productos.dar_de_baja(p)
+
+            # Para cualquier ingrediente dado de baja: marcar productos que lo usan como NO disponibles
+            productos = self.uow.productos.get_by_ingrediente_id(ingrediente_id)
+            for p in productos:
+                if p.disponible:
+                    p.disponible = False
+                    self.uow.productos.update(p)
         return ingrediente
 
     def restaurar(self, ingrediente_id: int):

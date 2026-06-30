@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Search, Edit2, Trash2, AlertTriangle, ArrowUpDown, Download, RotateCcw } from "lucide-react";
 import { ingredientesApi } from "../../api/ingredientesApi";
+import { productosApi } from "../../api/productosApi";
 import Pagination from "../../components/Pagination";
 import IngredienteForm from "./IngredienteForm";
-import type { Ingrediente, IngredientesFilters, IngredienteCreate } from "../../types";
+import type { Ingrediente, IngredientesFilters, IngredienteCreate, ProductoAfectadoResponse } from "../../types";
 import { useIngredientes, useCrearIngrediente, useActualizarIngrediente, useEliminarIngrediente, useRestaurarIngrediente, useDarDeBajaIngrediente } from "../../hooks/useIngredientes";
 import { formatArgentinaDate } from "../../utils/dates";
 
@@ -36,6 +37,10 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
   const [editingItem, setEditingItem] = useState<Ingrediente | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [itemAConfirmar, setItemAConfirmar] = useState<{ id: number; tipo: 'eliminar' | 'baja' } | null>(null);
+  const [ingredienteARestaurar, setIngredienteARestaurar] = useState<Ingrediente | null>(null);
+  const [productosAfectadosRestaurar, setProductosAfectadosRestaurar] = useState<ProductoAfectadoResponse[]>([]);
+  const [productosAActivarIds, setProductosAActivarIds] = useState<number[]>([]);
+  const [mostrarConfirmacionAlta, setMostrarConfirmacionAlta] = useState(false);
 
   const { data, isLoading: loading } = useIngredientes(filters);
 
@@ -357,7 +362,22 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
                         {isItemDeleted ? (
                           <>
                             <button
-                              onClick={() => restaurarMut.mutateAsync(item.id)}
+                              onClick={async () => {
+                                try {
+                                  const afectados = await ingredientesApi.getProductosAfectados(item.id);
+                                  if (afectados.length > 0) {
+                                    setIngredienteARestaurar(item);
+                                    setProductosAfectadosRestaurar(afectados);
+                                    setProductosAActivarIds(afectados.map(p => p.id));
+                                    setMostrarConfirmacionAlta(true);
+                                  } else {
+                                    await restaurarMut.mutateAsync(item.id);
+                                  }
+                                } catch (err) {
+                                  console.error("Error buscando productos afectados", err);
+                                  await restaurarMut.mutateAsync(item.id);
+                                }
+                              }}
                               className="p-2 text-green-main hover:bg-green-pale rounded-lg transition-colors"
                               title="Restaurar"
                             >
@@ -446,6 +466,88 @@ export default function IngredientesGrid({ estado = "activo" }: Props) {
                   className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white font-medium text-sm hover:bg-danger-dark transition-colors"
                 >
                   Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {mostrarConfirmacionAlta && ingredienteARestaurar && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fade-in" onClick={() => setMostrarConfirmacionAlta(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 border border-gray-100 animate-scale-in">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-green-50 rounded-xl text-green-600">
+                  <RotateCcw size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Restaurar Insumo</h3>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+                Estás restaurando el insumo <strong>{ingredienteARestaurar.nombre}</strong>. Este forma parte de las siguientes recetas. Seleccioná los productos que querés volver a marcar como <strong>disponibles para la venta</strong>:
+              </p>
+
+              <div className="max-h-48 overflow-y-auto mb-6 border border-gray-100 rounded-xl p-3 bg-gray-50/50 space-y-2">
+                {productosAfectadosRestaurar.map(p => {
+                  const isSelected = productosAActivarIds.includes(p.id);
+                  return (
+                    <label key={p.id} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-100/50 px-1 rounded transition-colors">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setProductosAActivarIds(prev => [...prev, p.id]);
+                            } else {
+                              setProductosAActivarIds(prev => prev.filter(id => id !== p.id));
+                            }
+                          }}
+                          className="w-3.5 h-3.5 text-green-main focus:ring-green-main border-gray-300 rounded"
+                        />
+                        <span className="font-semibold text-gray-700">{p.nombre}</span>
+                      </div>
+                      <span className="text-gray-500 font-mono">
+                        (usa {p.cantidad_ingrediente} {p.unidad_ingrediente})
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarConfirmacionAlta(false);
+                    setIngredienteARestaurar(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await restaurarMut.mutateAsync(ingredienteARestaurar.id);
+                      if (productosAActivarIds.length > 0) {
+                        await Promise.all(
+                          productosAActivarIds.map(id => productosApi.updateDisponibilidad(id, true))
+                        );
+                      }
+                    } catch (err) {
+                      console.error("Error al restaurar insumo o activar productos", err);
+                    } finally {
+                      setMostrarConfirmacionAlta(false);
+                      setIngredienteARestaurar(null);
+                    }
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-green-main text-white font-bold text-sm hover:bg-green-dark transition-colors shadow-sm"
+                >
+                  Confirmar Alta
                 </button>
               </div>
             </div>
