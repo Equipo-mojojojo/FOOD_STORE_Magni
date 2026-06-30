@@ -305,10 +305,16 @@ def restore_producto(uow: UnitOfWork, prod_id: int):
 
 
 def eliminar_producto(uow: UnitOfWork, prod_id: int):
-    prod = uow.productos.get_by_id(prod_id)
+    prod = uow.productos.get_by_id_with_relations(prod_id)
     if not prod:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     uow.productos.eliminar(prod)
+    
+    # Si tiene ingredientes terminados vinculados, convertirlos a insumos normales (es_producto_terminado = False)
+    for pi in prod.ingredientes:
+        if pi.ingrediente and pi.ingrediente.es_producto_terminado:
+            pi.ingrediente.es_producto_terminado = False
+            uow.ingredientes.update(pi.ingrediente)
 
 
 def get_unidades_medida(uow: UnitOfWork):

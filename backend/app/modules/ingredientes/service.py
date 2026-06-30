@@ -223,6 +223,13 @@ class IngredienteService:
                     detail="El ingrediente ya fue eliminado",
                 )
             self.uow.ingredientes.eliminar(ingrediente)
+            
+            # Si es ingrediente terminado, eliminar los productos relacionados
+            if ingrediente.es_producto_terminado:
+                productos = self.uow.productos.get_by_ingrediente_id(ingrediente_id)
+                for p in productos:
+                    if p.deleted_at is None:
+                        self.uow.productos.eliminar(p)
         return ingrediente
 
     def dar_de_baja(self, ingrediente_id: int):
