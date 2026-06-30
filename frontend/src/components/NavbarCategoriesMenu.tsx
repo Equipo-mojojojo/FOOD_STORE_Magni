@@ -54,36 +54,7 @@ export default function NavbarCategoriesMenu() {
             {!isLoading && !isError && categorias && (
               <div className="flex flex-col">
                 {categorias.map((padre) => (
-                  <div key={padre.id} className="group/item relative">
-                    <Link 
-                      to={`/catalogo?categoria=${padre.id}`} 
-                      className="w-full text-left px-5 py-2.5 hover:bg-green-50 flex items-center justify-between transition-colors text-gray-800 font-medium"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <span>{padre.nombre}</span>
-                      {padre.subcategorias?.length > 0 && (
-                        <ChevronRight size={16} className="text-gray-400 group-hover/item:text-green-main transition-colors" />
-                      )}
-                    </Link>
-                    
-                    {/* Submenú Flotante (Flyout) */}
-                    {padre.subcategorias && padre.subcategorias.length > 0 && (
-                      <div className="absolute right-full md:left-full md:right-auto top-0 hidden group-hover/item:block pr-1 md:pl-1 md:pr-0 z-50">
-                        <div className="bg-white shadow-xl rounded-xl border border-gray-100 min-w-[200px] py-2">
-                          {padre.subcategorias.map((sub) => (
-                            <Link 
-                              key={sub.id}
-                              to={`/catalogo?categoria=${sub.id}`} 
-                              className="block px-5 py-2 hover:bg-green-50 transition-colors text-sm text-gray-600 hover:text-green-main font-medium"
-                              onClick={() => setIsOpen(false)}
-                            >
-                              {sub.nombre}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <CategoryItem key={padre.id} item={padre} onClose={() => setIsOpen(false)} isFirstLevel={true} />
                 ))}
 
                 {categorias.length === 0 && (
@@ -93,6 +64,53 @@ export default function NavbarCategoriesMenu() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CategoryItemProps {
+  item: any;
+  onClose: () => void;
+  isFirstLevel?: boolean;
+}
+
+function CategoryItem({ item, onClose, isFirstLevel = false }: CategoryItemProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const hasSub = item.subcategorias && item.subcategorias.length > 0;
+  
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Link 
+        to={`/catalogo?categoria=${item.id}`} 
+        className={`w-full text-left px-5 py-2.5 hover:bg-green-50 flex items-center justify-between transition-colors font-medium ${
+          isFirstLevel 
+            ? "text-gray-800 text-sm md:text-base" 
+            : "text-gray-600 hover:text-green-main text-sm"
+        }`}
+        onClick={onClose}
+      >
+        <span>{item.nombre}</span>
+        {hasSub && (
+          <ChevronRight 
+            size={16} 
+            className={`text-gray-400 transition-colors ${isHovered ? "text-green-main" : ""}`} 
+          />
+        )}
+      </Link>
+      
+      {hasSub && isHovered && (
+        <div className="absolute right-full md:left-full md:right-auto top-0 pr-1 md:pl-1 md:pr-0 z-50 animate-in fade-in zoom-in-95 duration-100">
+          <div className="bg-white shadow-xl rounded-xl border border-gray-100 min-w-[200px] py-2">
+            {item.subcategorias.map((sub: any) => (
+              <CategoryItem key={sub.id} item={sub} onClose={onClose} isFirstLevel={false} />
+            ))}
           </div>
         </div>
       )}
