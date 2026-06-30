@@ -11,7 +11,7 @@ interface Props {
   isOpen: boolean;
   ingrediente: Ingrediente | null; // null = crear, object = editar
   onClose: () => void;
-  onSave: (data: IngredienteCreate & { actualizar_precios_productos?: boolean }, id?: number) => Promise<void>;
+  onSave: (data: IngredienteCreate & { actualizar_precios_productos?: boolean }, id?: number) => Promise<any>;
 }
 
 export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }: Props) {
@@ -108,23 +108,20 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   // Buscar producto vinculado a este ingrediente (para edición)
   const fetchLinkedProduct = async (ingredienteId: number) => {
     try {
-      const productosList = await productosApi.list({
-        page: 1, per_page: 50, search: "", estado: "",
-        sort_by: "", sort_order: "desc",
-        created_from: "", created_to: "",
-        updated_from: "", updated_to: "",
-        starts_with: ""
-      });
-      // Buscar un producto que tenga este ingrediente en su receta
-      const linked = productosList.items.find(p =>
-        p.ingredientes?.some(pi => pi.ingrediente.id === ingredienteId)
-      );
-      if (linked) {
+      const afectados = await ingredientesApi.getProductosAfectados(ingredienteId);
+      const linkedAfectado = afectados[0];
+      if (linkedAfectado) {
+        const linked = await productosApi.getById(linkedAfectado.id);
         const catPrincipal = linked.categorias?.find(c => c.es_principal) || linked.categorias?.[0];
         if (catPrincipal) setCategoriaId(catPrincipal.categoria.id);
         setMargenGanancia(linked.margen_ganancia ?? "");
         setPrecioBase(linked.precio_base ?? "");
         setImagenes(linked.imagenes ?? []);
+      } else {
+        setCategoriaId("");
+        setMargenGanancia("");
+        setPrecioBase("");
+        setImagenes([]);
       }
     } catch (err) {
       console.error("Error buscando producto vinculado", err);
@@ -155,7 +152,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
     setLoading(true);
     setError("");
     try {
-      await onSave({ 
+      const savedIngrediente = await onSave({ 
         nombre: nombre.trim(), 
         descripcion: descripcion.trim() || null, 
         es_alergeno: esAlergeno,
@@ -172,24 +169,16 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
       // Si es producto terminado, crear o actualizar el producto vinculado
       if (esProductoTerminado) {
         try {
-          const ingId = ingrediente?.id;
+          const ingId = ingrediente?.id || savedIngrediente?.id;
 
-          if (ingrediente) {
-            // EDICIÓN: buscar producto vinculado y actualizarlo
-            const productosList = await productosApi.list({
-              page: 1, per_page: 50, search: "", estado: "",
-              sort_by: "", sort_order: "desc",
-              created_from: "", created_to: "",
-              updated_from: "", updated_to: "",
-              starts_with: ""
-            });
-            const linked = productosList.items.find(p =>
-              p.ingredientes?.some(pi => pi.ingrediente.id === ingId)
-            );
+          if (ingId) {
+            // Buscamos si ya tiene un producto vinculado usando el ID del ingrediente
+            const afectados = await ingredientesApi.getProductosAfectados(ingId);
+            const linkedAfectado = afectados[0];
 
-            if (linked) {
+            if (linkedAfectado) {
               // Actualizar producto existente
-              await productosApi.update(linked.id, {
+              await productosApi.update(linkedAfectado.id, {
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim() || null,
                 precio_base: Number(precioBase || 0),
@@ -200,7 +189,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 unidad_venta_id: null,
                 categorias: getCategoriasPayload(),
                 ingredientes: [{
-                  ingrediente_id: ingId!,
+                  ingrediente_id: ingId,
                   cantidad: 1,
                   unidad_medida_id: Number(unidadMedidaId),
                   es_removible: false
@@ -220,45 +209,7 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
                 unidad_venta_id: null,
                 categorias: getCategoriasPayload(),
                 ingredientes: [{
-                  ingrediente_id: ingId!,
-                  cantidad: 1,
-                  unidad_medida_id: Number(unidadMedidaId),
-                  es_removible: false
-                }],
-                imagenes
-              });
-            }
-          } else {
-            // CREACIÓN: buscar el ingrediente recién creado por nombre
-            const ingData = await ingredientesApi.list({
-              search: nombre.trim(),
-              page: 1,
-              per_page: 1,
-              es_alergeno: "",
-              estado: "activo",
-              sort_by: "created_at",
-              sort_order: "desc",
-              created_from: "",
-              created_to: "",
-              updated_from: "",
-              updated_to: "",
-              starts_with: ""
-            });
-            const nuevoIngId = ingData?.items?.[0]?.id;
-
-            if (nuevoIngId) {
-              await productosApi.create({
-                nombre: nombre.trim(),
-                descripcion: descripcion.trim() || null,
-                precio_base: Number(precioBase || 0),
-                stock_cantidad: 0,
-                margen_ganancia: Number(margenGanancia || 0),
-                disponible: true,
-                activo: true,
-                unidad_venta_id: null,
-                categorias: getCategoriasPayload(),
-                ingredientes: [{
-                  ingrediente_id: nuevoIngId,
+                  ingrediente_id: ingId,
                   cantidad: 1,
                   unidad_medida_id: Number(unidadMedidaId),
                   es_removible: false
@@ -330,33 +281,37 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl p-6 animate-scale-in max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5 border-b pb-4">
-          <div>
-            <h2 className="text-lg font-bold text-green-dark">
-              {ingrediente ? "Editar Insumo" : "Nuevo Insumo / Ingrediente"}
-            </h2>
-            <p className="text-xs text-gray-500">Define los parámetros del insumo para el cálculo de stock y costos.</p>
-          </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-            <X size={20} className="text-gray-500" />
-          </button>
-        </div>
-
-        {error && (
-          <div className="bg-danger-light text-danger-dark px-4 py-2 rounded-lg text-sm mb-4 border border-danger/20">
-            {error}
-          </div>
-        )}
-
         {(() => {
           const selectedUnidad = unidades.find(u => u.id === Number(unidadMedidaId));
           const stepValue = selectedUnidad?.tipo === "unidad" ? "1" : "0.001";
 
           return (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh] overflow-hidden flex-1">
+              {/* HEADER FIJO */}
+              <div className="flex items-center justify-between p-6 border-b pb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-green-dark">
+                    {ingrediente ? "Editar Insumo" : "Nuevo Insumo / Ingrediente"}
+                  </h2>
+                  <p className="text-xs text-gray-500">Define los parámetros del insumo para el cálculo de stock y costos.</p>
+                </div>
+                <button type="button" onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+
+              {/* ALERTA FIJA DEBAJO DEL TÍTULO */}
+              {error && (
+                <div className="mx-6 mt-4 bg-danger-light text-danger-dark px-4 py-2 rounded-lg text-sm border border-danger/20">
+                  {error}
+                </div>
+              )}
+
+              {/* CONTENIDO SCROLLABLE */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* SECCIÓN 1: DATOS BÁSICOS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -663,24 +618,26 @@ export default function IngredienteForm({ isOpen, ingrediente, onClose, onSave }
               </div>
             )}
           </div>
+        </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-green-main text-white rounded-lg hover:bg-green-dark transition-colors disabled:opacity-50 text-sm font-bold shadow-md"
-            >
-              {loading ? "Guardando..." : "Guardar Insumo"}
-            </button>
-          </div>
-        </form>
+        {/* FOOTER FIJO */}
+              <div className="p-6 border-t bg-gray-50 rounded-b-2xl flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2.5 bg-green-main text-white rounded-lg hover:bg-green-dark transition-colors disabled:opacity-50 text-sm font-bold shadow-md"
+                >
+                  {loading ? "Guardando..." : "Guardar Insumo"}
+                </button>
+              </div>
+            </form>
           );
         })()}
       </div>
